@@ -1,7 +1,8 @@
 <div align="center">
   <img src="public/favicon-512.png" alt="Líng Huà" width="120" />
 
-# Líng Huà · 凌华
+# Líng Huà · 灵话<img width="130" height="65" alt="image" src="https://github.com/user-attachments/assets/eabada0b-ae0d-4033-a7ee-98ec40d3106b" />
+
 
 **A Mandarin Chinese learning platform built for Arabic speakers, powered by Huawei Cloud AI.**
 
@@ -17,7 +18,7 @@
 
 ## About
 
-**Líng Huà** (凌华, "transcendent flower") is a web app that helps Arabic-speaking students learn Mandarin Chinese. It was built for the **Huawei ICT Competition 2025–2026** to address a real gap: the lack of Mandarin learning tools designed for the Arabic phonetic and educational context.
+**Líng Huà** (灵话, "intelligent language") is a web app that helps Arabic-speaking students learn Mandarin Chinese. It was built for the **Huawei ICT Competition 2025–2026** to address a real gap: the lack of Mandarin learning tools designed for the Arabic phonetic and educational context.
 
 Most language learning apps assume an English-speaking learner. Líng Huà flips that — every feature is designed around how Arabic speakers actually approach Mandarin: tone confusion, retroflex consonants (zh / ch / sh), and unfamiliar character forms. Pronunciation feedback even includes **Arabic phonetic transliteration** so students can map Mandarin sounds onto familiar letters.
 
