@@ -38,6 +38,7 @@ const Flashcards = () => {
   const [vocabulary, setVocabulary] = useState<VocabWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isScoring, setIsScoring] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [dueCount, setDueCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
@@ -300,11 +301,14 @@ const Flashcards = () => {
   };
 
   const handleSpeak = async () => {
-    if (!vocabulary[currentIndex]) return;
+    if (!vocabulary[currentIndex] || isSpeaking) return;
+    setIsSpeaking(true);
     try {
       await speakText(vocabulary[currentIndex].hanzi, "zh");
     } catch {
       toast({ title: t("flashcards.tts_failed"), description: t("flashcards.tts_failed_desc"), variant: "destructive" });
+    } finally {
+      setIsSpeaking(false);
     }
   };
 
@@ -434,7 +438,8 @@ const Flashcards = () => {
                 <Button
                   size="lg"
                   onClick={handleSpeak}
-                  className="bg-gradient-lavender hover:scale-105 transition-transform"
+                  disabled={isSpeaking}
+                  className="bg-gradient-lavender hover:scale-105 transition-transform disabled:opacity-60"
                 >
                   <Volume2 className="w-5 h-5 mr-2" />
                   {t("flashcards.listen")}
@@ -498,7 +503,8 @@ const Flashcards = () => {
                 <Button
                   size="lg"
                   onClick={handleSpeak}
-                  className="bg-gradient-lavender hover:scale-105 transition-transform"
+                  disabled={isSpeaking}
+                  className="bg-gradient-lavender hover:scale-105 transition-transform disabled:opacity-60"
                 >
                   <Volume2 className="w-5 h-5 mr-2" />
                   {t("flashcards.listen")}
