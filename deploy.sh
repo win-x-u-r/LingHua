@@ -74,6 +74,7 @@ log "Installing system packages..."
 apt-get install -y -qq \
   curl git build-essential \
   python3 python3-pip python3-venv \
+  ffmpeg \
   nginx certbot python3-certbot-nginx \
   ufw
 
