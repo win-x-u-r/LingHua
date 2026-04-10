@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/favicon-512.png" alt="Líng Huà" width="120" />
 
-# Líng Huà · 灵话<img width="130" height="65" alt="image" src="https://github.com/user-attachments/assets/eabada0b-ae0d-4033-a7ee-98ec40d3106b" />
+# Líng Huà · 灵话
 
 
 **A Mandarin Chinese learning platform built for Arabic speakers, powered by Huawei Cloud AI.**
