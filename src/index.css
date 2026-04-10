@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Vibrant red Chinese-inspired palette */
+    --background: 0 20% 97%;
+    --foreground: 220 30% 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 25%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 25%;
+
+    /* Vibrant red primary */
+    --primary: 0 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 90% 62%;
+
+    /* Mint secondary */
+    --secondary: 140 65% 85%;
+    --secondary-foreground: 140 80% 25%;
+
+    /* Lavender accent */
+    --accent: 230 55% 85%;
+    --accent-foreground: 230 80% 30%;
+
+    /* Gold sunshine */
+    --sunshine: 45 100% 55%;
+    --sunshine-foreground: 45 100% 20%;
+
+    --muted: 220 20% 93%;
+    --muted-foreground: 220 20% 50%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 30% 88%;
+    --input: 220 30% 88%;
+    --ring: 0 85% 55%;
+
+    --radius: 1rem;
+
+    /* Gradients */
+    --gradient-coral: linear-gradient(135deg, hsl(0 85% 55%), hsl(350 90% 50%));
+    --gradient-mint: linear-gradient(135deg, hsl(140 65% 85%), hsl(160 70% 80%));
+    --gradient-lavender: linear-gradient(135deg, hsl(230 55% 85%), hsl(250 60% 80%));
+    --gradient-rainbow: linear-gradient(90deg, hsl(0 85% 55%), hsl(140 65% 85%), hsl(230 55% 85%), hsl(45 100% 55%));
+
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(0 85% 55% / 0.3);
+    --shadow-glow: 0 0 30px hsl(0 90% 62% / 0.4);
+
+    /* Animations */
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Nunito', 'Arial', sans-serif;
+  }
+
+  /* RTL Support */
+  [dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+  }
+
+  /* Logical property helpers for RTL/LTR consistency */
+  [dir="rtl"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }
+  [dir="rtl"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
+  [dir="rtl"] .mr-4 { margin-right: 0; margin-left: 1rem; }
+  [dir="rtl"] .ml-4 { margin-left: 0; margin-right: 1rem; }
+
+  /* Flip flex row direction in RTL */
+  [dir="rtl"] .flex-row { flex-direction: row-reverse; }
+  [dir="rtl"] .flex-row-reverse { flex-direction: row; }
+
+  /* Keep grid and card layouts neutral (they work with RTL automatically) */
+
+  /* Fix text alignment for specific elements */
+  [dir="rtl"] input,
+  [dir="rtl"] textarea {
+    text-align: right;
+  }
+
+  /* Chinese text always LTR within RTL context */
+  [dir="rtl"] [lang="zh"],
+  .chinese-text {
+    direction: ltr;
+    text-align: left;
+  }
+
+  /* Kid-friendly animations */
+  @keyframes bounce-in {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in 0.5s ease-out;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-wiggle {
+    animation: wiggle 0.5s ease-in-out;
+  }
+}

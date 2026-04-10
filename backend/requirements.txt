@@ -1,0 +1,12 @@
+flask==3.1.0
+flask-cors==5.0.1
+requests==2.32.3
+python-dotenv==1.0.1
+pydub==0.25.1
+numpy==1.26.4
+pypinyin==0.53.0
+gunicorn==22.0.0
+huaweicloudsdkcore>=3.1.80
+huaweicloudsdksis>=3.1.80
+huaweicloudsdktms>=3.1.80
+mindspore>=2.3.0
