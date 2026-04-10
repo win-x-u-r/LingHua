@@ -113,14 +113,15 @@ const Flashcards = () => {
               ? Math.round(validScores.reduce((sum, a) => sum + a.score, 0) / validScores.length)
               : 0;
 
-          // Count distinct words with 3+ scores >= 85
-          const wordHighScoreCount: Record<string, number> = {};
+          // Count distinct words where best score >= 85 (mastered)
+          const wordBestScore: Record<string, number> = {};
           for (const a of validScores) {
-            if (a.score >= 85 && a.vocab_id) {
-              wordHighScoreCount[a.vocab_id] = (wordHighScoreCount[a.vocab_id] || 0) + 1;
+            if (!a.vocab_id) continue;
+            if (!wordBestScore[a.vocab_id] || a.score > wordBestScore[a.vocab_id]) {
+              wordBestScore[a.vocab_id] = a.score;
             }
           }
-          const completedWords = Object.values(wordHighScoreCount).filter((c) => c >= 3).length;
+          const completedWords = Object.values(wordBestScore).filter((s) => s >= 85).length;
 
           const { data: progressData } = await (supabase as any)
             .from("progress")

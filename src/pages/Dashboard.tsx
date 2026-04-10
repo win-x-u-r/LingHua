@@ -203,21 +203,20 @@ const Dashboard = () => {
       }
       setWordsToReview(dueCount);
 
-      // 5. Level progress — mastered = scored 85+ at least 3 times
-      const vocabAttemptMap: Record<string, number[]> = {};
+      // 5. Level progress — mastered = best score >= 85 on the word
+      const vocabBestScore: Record<string, number> = {};
       for (const a of allAttempts) {
         if (a.score == null || !a.vocab_id) continue;
-        if (!vocabAttemptMap[a.vocab_id]) vocabAttemptMap[a.vocab_id] = [];
-        vocabAttemptMap[a.vocab_id].push(a.score);
+        if (!vocabBestScore[a.vocab_id] || a.score > vocabBestScore[a.vocab_id]) {
+          vocabBestScore[a.vocab_id] = a.score;
+        }
       }
       const levelMap: Record<string, { mastered: number; total: number }> = {};
       for (const v of vocab) {
         const lvl = v.level || "beginner";
         if (!levelMap[lvl]) levelMap[lvl] = { mastered: 0, total: 0 };
         levelMap[lvl].total++;
-        const scores = vocabAttemptMap[v.id] || [];
-        const highScores = scores.filter((s: number) => s >= 85);
-        if (highScores.length >= 3) {
+        if ((vocabBestScore[v.id] ?? 0) >= 85) {
           levelMap[lvl].mastered++;
         }
       }
