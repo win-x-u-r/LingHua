@@ -74,6 +74,7 @@ const translations: Record<string, Record<Language, string>> = {
 
   // Flashcards - extra
   "flashcards.try_pronunciation": { en: "Try Pronunciation", ar: "جرب النطق" },
+  "flashcards.stroke_complete": { en: "Stroke Complete!", ar: "!اكتملت الخطوط" },
   "flashcards.tap_show_answer": { en: "Tap card to show answer", ar: "اضغط على البطاقة لإظهار الجواب" },
   "flashcards.loading": { en: "Loading vocabulary...", ar: "...جار تحميل المفردات" },
   "flashcards.no_vocab": { en: "No vocabulary found for this level.", ar: ".لا توجد مفردات لهذا المستوى" },

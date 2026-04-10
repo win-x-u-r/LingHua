@@ -6,9 +6,10 @@ import HanziWriter from "hanzi-writer";
 
 interface StrokeOrderProps {
   character: string;
+  onQuizComplete?: () => void;
 }
 
-const StrokeOrder = ({ character }: StrokeOrderProps) => {
+const StrokeOrder = ({ character, onQuizComplete }: StrokeOrderProps) => {
   const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const writerRef = useRef<HanziWriter | null>(null);
@@ -67,9 +68,12 @@ const StrokeOrder = ({ character }: StrokeOrderProps) => {
     if (!writerRef.current) return;
     setMode("quiz");
     writerRef.current.quiz({
-      onComplete: () => setMode("idle"),
+      onComplete: () => {
+        setMode("idle");
+        onQuizComplete?.();
+      },
     });
-  }, []);
+  }, [onQuizComplete]);
 
   return (
     <div className="flex flex-col items-center gap-2">

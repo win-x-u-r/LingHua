@@ -11,6 +11,7 @@ import { speakText, pronounceAndScore } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateWordReview, getDueWords } from "@/lib/spacedRepetition";
+import { shouldUpdateStreak } from "@/lib/gamification";
 import StrokeOrder from "@/components/StrokeOrder";
 
 type Level = "beginner" | "intermediate" | "advanced";
@@ -96,15 +97,58 @@ const Flashcards = () => {
         setXp(newXp);
 
         if (user) {
+          // Compute completed_words (mastered = scored 85+ at least 3 times) and avg_score
+          // from ALL attempts so the dashboard summary stats are accurate.
+          const { data: allAttempts } = await (supabase as any)
+            .from("attempts")
+            .select("vocab_id, score")
+            .eq("user_id", user.id);
+
+          const attemptsList = (allAttempts || []) as Array<{ vocab_id: string; score: number }>;
+          const validScores = attemptsList.filter((a) => a.score != null);
+
+          const avgScore =
+            validScores.length > 0
+              ? Math.round(validScores.reduce((sum, a) => sum + a.score, 0) / validScores.length)
+              : 0;
+
+          // Count distinct words with 3+ scores >= 85
+          const wordHighScoreCount: Record<string, number> = {};
+          for (const a of validScores) {
+            if (a.score >= 85 && a.vocab_id) {
+              wordHighScoreCount[a.vocab_id] = (wordHighScoreCount[a.vocab_id] || 0) + 1;
+            }
+          }
+          const completedWords = Object.values(wordHighScoreCount).filter((c) => c >= 3).length;
+
           const { data: progressData } = await (supabase as any)
             .from("progress")
-            .select("id")
+            .select("id, current_streak, last_practice_date")
             .eq("user_id", user.id)
             .maybeSingle();
-          if (progressData) {
-            await (supabase as any).from("progress").update({ total_xp: newXp }).eq("id", progressData.id);
+
+          // Compute new streak based on last practice date
+          const streakResult = shouldUpdateStreak(progressData?.last_practice_date ?? null);
+          let newStreak = progressData?.current_streak ?? 0;
+          if (streakResult.newStreak === -1) {
+            // Already practiced today, no change
+          } else if (streakResult.streakBroken) {
+            newStreak = 1; // Streak was broken, reset to 1
           } else {
-            await (supabase as any).from("progress").insert({ user_id: user.id, total_xp: newXp });
+            newStreak = newStreak + streakResult.newStreak; // Continue streak
+          }
+
+          const updatePayload = {
+            total_xp: newXp,
+            avg_score: avgScore,
+            completed_words: completedWords,
+            current_streak: newStreak,
+            last_practice_date: new Date().toISOString().slice(0, 10),
+          };
+          if (progressData) {
+            await (supabase as any).from("progress").update(updatePayload).eq("id", progressData.id);
+          } else {
+            await (supabase as any).from("progress").insert({ user_id: user.id, ...updatePayload });
           }
         }
 
@@ -201,6 +245,30 @@ const Flashcards = () => {
       .eq("user_id", user.id)
       .maybeSingle();
     if (data) setXp(data.total_xp);
+  };
+
+  const handleStrokeComplete = async () => {
+    if (!user) return;
+    const earnedXp = 2; // 2 XP per correct stroke completion
+    const newXp = xp + earnedXp;
+    setXp(newXp);
+
+    const { data: progressData } = await (supabase as any)
+      .from("progress")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (progressData) {
+      await (supabase as any).from("progress").update({ total_xp: newXp }).eq("id", progressData.id);
+    } else {
+      await (supabase as any).from("progress").insert({ user_id: user.id, total_xp: newXp });
+    }
+
+    toast({
+      title: t("flashcards.stroke_complete"),
+      description: `+${earnedXp} XP`,
+    });
   };
 
   const handleMicToggle = async () => {
@@ -417,7 +485,11 @@ const Flashcards = () => {
                 </h4>
                 <div className="flex gap-4 justify-center flex-wrap">
                   {[...currentWord.hanzi].map((char, idx) => (
-                    <StrokeOrder key={`${currentWord.id}-${char}-${idx}`} character={char} />
+                    <StrokeOrder
+                      key={`${currentWord.id}-${char}-${idx}`}
+                      character={char}
+                      onQuizComplete={handleStrokeComplete}
+                    />
                   ))}
                 </div>
               </div>

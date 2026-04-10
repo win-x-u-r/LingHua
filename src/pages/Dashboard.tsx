@@ -125,7 +125,7 @@ const Dashboard = () => {
           .maybeSingle(),
         supabase
           .from("vocab")
-          .select("id, hanzi, pinyin, arabic_translation, level"),
+          .select("id, hanzi, pinyin, arabic_translation, level, category"),
         (supabase as any)
           .from("word_reviews" as any)
           .select("id, vocab_id, next_review_date, total_attempts, best_score")
@@ -180,7 +180,7 @@ const Dashboard = () => {
         if (a.score == null || !a.vocab_id) continue;
         const v = vocabMap[a.vocab_id];
         if (!v) continue;
-        const cat = v.level || "other";
+        const cat = v.category || "other";
         if (!categoryMap[cat]) categoryMap[cat] = [];
         categoryMap[cat].push(a.score);
       }
