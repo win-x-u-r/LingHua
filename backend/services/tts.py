@@ -22,28 +22,33 @@ VOICE_MAP = {
 
 
 def text_to_speech(text: str, lang: str) -> bytes:
-    """Convert text to speech audio using Huawei Cloud SIS RTTS.
+    """Convert text to speech audio.
 
-    For Chinese text, converts to pinyin first and uses the English voice,
-    since Chinese TTS voices are not available in the me-east-1 region.
-
-    Args:
-        text: The text to convert to speech.
-        lang: Language code ("zh", "ar", "en").
+    Routing:
+      - Chinese: signals the frontend to use browser SpeechSynthesis
+        (Huawei SIS international does not offer Chinese voices).
+      - Arabic: prefers Munsit (dialect-aware, low-latency PCM streaming),
+        falls back to Huawei SIS RTTS if Munsit is unavailable.
+      - English (and any other): Huawei SIS RTTS.
 
     Returns:
         Audio bytes (WAV format).
     """
-    voice = VOICE_MAP.get(lang, "english_dh_female")
-
-    # Chinese: convert to pinyin with tone marks so the English voice
-    # speaks the romanized pronunciation (e.g. "nǐ hǎo")
     # Chinese TTS is not available on Huawei SIS international regions.
     # Return a signal so the frontend uses browser speech synthesis instead.
     if lang == "zh":
-        from flask import jsonify
         raise ValueError("BROWSER_TTS_CHINESE")
 
+    # Arabic: prefer Munsit's dialect-aware TTS for speed + better Gulf voices
+    if lang == "ar" and Config.MUNSIT_API_KEY:
+        try:
+            from services.munsit_tts import synthesize_arabic
+            return synthesize_arabic(text)
+        except Exception as e:
+            print(f"[TTS] Munsit Arabic TTS failed, falling back to Huawei SIS: {e}")
+
+    # Everything else (English, Arabic-fallback): Huawei SIS RTTS
+    voice = VOICE_MAP.get(lang, "english_dh_female")
     pcm_data = _rtts_websocket(text, voice)
     return _pcm_to_wav(pcm_data, sample_rate=16000)
 

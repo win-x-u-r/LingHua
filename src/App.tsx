@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import InstallPWA from "./components/InstallPWA";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Translator from "./pages/Translator";
@@ -46,6 +47,7 @@ const AppRoutes = () => (
       </Routes>
     </main>
     <Footer />
+    <InstallPWA />
   </div>
 );
 

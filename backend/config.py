@@ -49,3 +49,12 @@ class Config:
 
     # Temp directory for audio processing
     TEMP_DIR = os.getenv("TEMP_DIR", "tmp")
+
+    # ────────────────────────────────────────────────────────────────
+    # Munsit — Arabic-dialect ASR + TTS (UAE-based regional partner)
+    # ────────────────────────────────────────────────────────────────
+    MUNSIT_API_KEY = os.getenv("MUNSIT_API_KEY", "")
+    MUNSIT_STT_MODEL = os.getenv("MUNSIT_STT_MODEL", "munsit")
+    MUNSIT_TTS_MODEL = os.getenv("MUNSIT_TTS_MODEL", "faseeh-mini-v1-preview")
+    MUNSIT_TTS_VOICE_ID = os.getenv("MUNSIT_TTS_VOICE_ID", "")  # auto-detected if empty
+    MUNSIT_API_BASE = "https://api.munsit.com/api/v1"

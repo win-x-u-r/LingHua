@@ -98,7 +98,9 @@ if [[ -d "$INSTALL_DIR/.git" ]]; then
   log "Repo already exists, pulling latest..."
   cd "$INSTALL_DIR"
   git fetch --all
-  git reset --hard origin/main
+  # Detect default branch (master or main) and reset to it
+  DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "master")
+  git reset --hard "origin/${DEFAULT_BRANCH}"
 else
   log "Cloning repository to $INSTALL_DIR..."
   git clone "$REPO_URL" "$INSTALL_DIR"
