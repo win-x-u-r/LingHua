@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"), override=True)
 
 
 class Config:
@@ -58,3 +58,8 @@ class Config:
     MUNSIT_TTS_MODEL = os.getenv("MUNSIT_TTS_MODEL", "faseeh-mini-v1-preview")
     MUNSIT_TTS_VOICE_ID = os.getenv("MUNSIT_TTS_VOICE_ID", "")  # auto-detected if empty
     MUNSIT_API_BASE = "https://api.munsit.com/api/v1"
+
+    # ────────────────────────────────────────────────────────────────
+    # Claude (Anthropic) — AI Tutor
+    # ────────────────────────────────────────────────────────────────
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")

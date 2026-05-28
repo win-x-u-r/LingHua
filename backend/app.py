@@ -19,6 +19,7 @@ from services.translation import translate_text
 from services.tts import text_to_speech
 from services.asr import speech_to_text
 from services.scoring import score_pronunciation
+from services.tutor import chat as tutor_chat
 
 app = Flask(__name__)
 CORS(app, origins=Config.CORS_ORIGINS)
@@ -210,6 +211,35 @@ def score():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": f"Scoring failed: {str(e)}"}), 500
+
+
+@app.route("/tutor/chat", methods=["POST"])
+def tutor():
+    """AI tutor conversation endpoint powered by Claude.
+
+    Request JSON:
+        { "messages": [{"role": "user"|"assistant", "content": str}, ...] }
+
+    Response JSON:
+        { "reply": str }
+    """
+    data = request.get_json()
+    if not data or "messages" not in data:
+        return jsonify({"error": "Missing 'messages' field"}), 400
+
+    messages = data["messages"]
+    if not isinstance(messages, list) or not messages:
+        return jsonify({"error": "'messages' must be a non-empty array"}), 400
+
+    if not Config.ANTHROPIC_API_KEY:
+        return jsonify({"error": "ANTHROPIC_API_KEY is not configured on the server"}), 503
+
+    try:
+        reply = tutor_chat(messages)
+        return jsonify({"reply": reply})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": f"Tutor request failed: {str(e)}"}), 500
 
 
 if __name__ == "__main__":

@@ -196,6 +196,34 @@ export async function transcribeArabicMunsit(file: File): Promise<string> {
   return data.text;
 }
 
+export interface TutorMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface TutorResponse {
+  reply: string;
+}
+
+/**
+ * Send conversation history to the AI tutor and get a reply.
+ */
+export async function tutorChat(messages: TutorMessage[]): Promise<string> {
+  const response = await fetch(`${API_BASE}/tutor/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || `Tutor request failed: ${response.statusText}`);
+  }
+
+  const data: TutorResponse = await response.json();
+  return data.reply;
+}
+
 /**
  * Score pronunciation accuracy (0-100) using the backend MindSpore scorer.
  */

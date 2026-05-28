@@ -201,6 +201,25 @@ const translations: Record<string, Record<Language, string>> = {
   "dashboard.sessions": { en: "sessions", ar: "جلسات" },
   "dashboard.loading": { en: "Loading dashboard...", ar: "...جار تحميل اللوحة" },
 
+  // AI Tutor
+  "nav.tutor": { en: "Tutor", ar: "المعلم" },
+  "tutor.title": { en: "AI Tutor", ar: "المعلم الذكي" },
+  "tutor.subtitle": { en: "Conversation practice with Huà, your Mandarin tutor", ar: "تدرب على المحادثة مع هوا، معلمك في اللغة الماندرينية" },
+  "tutor.placeholder": { en: "Type in Arabic, English, or Chinese…", ar: "…اكتب بالعربية أو الإنجليزية أو الصينية" },
+  "tutor.send": { en: "Send", ar: "إرسال" },
+  "tutor.clear": { en: "New conversation", ar: "محادثة جديدة" },
+  "tutor.thinking": { en: "Huà is thinking…", ar: "…هوا يفكر" },
+  "tutor.error": { en: "Tutor Error", ar: "خطأ في المعلم" },
+  "tutor.error_desc": { en: "Could not reach the tutor. Make sure the backend is running and ANTHROPIC_API_KEY is set.", ar: ".تعذر الوصول إلى المعلم. تأكد أن الخادم يعمل ومفتاح API مضبوط" },
+  "tutor.welcome": { en: "你好！I'm Huà, your Mandarin tutor. What would you like to practice today? We can chat about anything — just start talking!", ar: "!你好 أنا هوا، معلمك في اللغة الماندرينية. بماذا تريد أن تتدرب اليوم؟ يمكننا التحدث عن أي شيء — فقط ابدأ" },
+  "tutor.listen": { en: "Listen", ar: "استمع" },
+  "tutor.autoplay": { en: "Auto-play replies", ar: "تشغيل الردود تلقائياً" },
+  "tutor.recording": { en: "Recording… tap to stop", ar: "...جار التسجيل، اضغط للإيقاف" },
+  "tutor.transcribing": { en: "Transcribing…", ar: "...جار التحويل" },
+  "tutor.speaking": { en: "Speaking…", ar: "...جار التحدث" },
+  "tutor.mic_error": { en: "Microphone Error", ar: "خطأ في الميكروفون" },
+  "tutor.transcribe_error": { en: "Could not transcribe audio. Make sure the backend is running.", ar: ".تعذر تحويل الصوت. تأكد أن الخادم يعمل" },
+
   // Profile
   "profile.classroom": { en: "Classroom", ar: "الفصل الدراسي" },
   "profile.current_classroom": { en: "Current Classroom", ar: "الفصل الحالي" },

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Languages, BookOpen, BarChart3, Info, Globe, Mic, User, LogOut } from "lucide-react";
+import { Languages, BookOpen, BarChart3, Info, Globe, Mic, User, LogOut, MessageCircle } from "lucide-react";
 import lanternLogo from "@/assets/lantern-logo.png";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -19,7 +19,10 @@ const Navbar = () => {
     { path: "/flashcards", labelKey: "nav.flashcards", icon: BookOpen },
     { path: "/practice", labelKey: "nav.practice", icon: Mic },
     ...(user
-      ? [{ path: "/dashboard", labelKey: "nav.dashboard", icon: BarChart3 }]
+      ? [
+          { path: "/dashboard", labelKey: "nav.dashboard", icon: BarChart3 },
+          { path: "/tutor", labelKey: "nav.tutor", icon: MessageCircle },
+        ]
       : []),
     { path: "/about", labelKey: "nav.about", icon: Info },
   ];
