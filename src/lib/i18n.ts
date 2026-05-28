@@ -110,6 +110,7 @@ const translations: Record<string, Record<Language, string>> = {
   "practice.arabic": { en: "Arabic", ar: "العربية" },
   "practice.correct": { en: "Correct", ar: "صحيح" },
   "practice.incorrect": { en: "Wrong", ar: "خطأ" },
+  "practice.tap_hint": { en: "Tap any sound to hear it", ar: "اضغط على أي صوت لسماعه" },
 
   // Translator - extra
   "translator.arabic_label": { en: "Arabic | عربي", ar: "عربي | Arabic" },

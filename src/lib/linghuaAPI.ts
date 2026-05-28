@@ -15,11 +15,14 @@ export interface ScoreBreakdown {
   label: string;
 }
 
-export interface PronunciationSegment {
+export interface PhonemeSegment {
   char: string;
   pinyin: string;
   tone: number;
   arabic: string;
+}
+
+export interface PronunciationSegment extends PhonemeSegment {
   char_correct: boolean;
   pinyin_correct: boolean;
   tone_correct: boolean;
@@ -251,4 +254,21 @@ export async function scorePronunciation(
   if (!response.ok) throw new Error(`Scoring failed: ${response.statusText}`);
 
   return await response.json();
+}
+
+/**
+ * Get a per-character phoneme breakdown (char/pinyin/tone/arabic, no scoring)
+ * so each segment can be tapped to hear that sound.
+ */
+export async function getBreakdown(text: string): Promise<PhonemeSegment[]> {
+  const response = await fetch(`${API_BASE}/breakdown`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+
+  if (!response.ok) throw new Error(`Breakdown failed: ${response.statusText}`);
+
+  const data: { segments: PhonemeSegment[] } = await response.json();
+  return data.segments ?? [];
 }

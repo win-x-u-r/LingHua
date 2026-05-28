@@ -18,7 +18,7 @@ from config import Config
 from services.translation import translate_text
 from services.tts import text_to_speech
 from services.asr import speech_to_text
-from services.scoring import score_pronunciation
+from services.scoring import score_pronunciation, get_breakdown
 from services.tutor import chat as tutor_chat
 
 app = Flask(__name__)
@@ -211,6 +211,31 @@ def score():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": f"Scoring failed: {str(e)}"}), 500
+
+
+@app.route("/breakdown", methods=["POST"])
+def breakdown():
+    """Per-character phoneme breakdown for clickable practice (no scoring).
+
+    Request JSON:
+        { "text": str }
+
+    Response JSON:
+        { "segments": [{"char": str, "pinyin": str, "tone": int, "arabic": str}, ...] }
+    """
+    data = request.get_json()
+    if not data or "text" not in data:
+        return jsonify({"error": "Missing 'text' field"}), 400
+
+    text = data["text"].strip()
+    if not text:
+        return jsonify({"segments": []})
+
+    try:
+        return jsonify({"segments": get_breakdown(text)})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": f"Breakdown failed: {str(e)}"}), 500
 
 
 @app.route("/tutor/chat", methods=["POST"])

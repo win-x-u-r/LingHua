@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Mic, MicOff, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone } from "@/hooks/use-microphone";
-import { pronounceAndScore, type PronunciationSegment } from "@/lib/linghuaAPI";
+import { pronounceAndScore, getBreakdown, type PronunciationSegment, type PhonemeSegment } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PronunciationFeedback from "@/components/PronunciationFeedback";
 
@@ -21,6 +21,7 @@ const Practice = () => {
   const [score, setScore] = useState<number | null>(null);
   const [scoreBreakdown, setScoreBreakdown] = useState<{ character: number; pinyin: number; tone: number } | null>(null);
   const [segments, setSegments] = useState<PronunciationSegment[]>([]);
+  const [breakdownSegments, setBreakdownSegments] = useState<PhonemeSegment[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -32,6 +33,22 @@ const Practice = () => {
       toast({ title: t("common.mic_error"), description: micError, variant: "destructive" });
     }
   }, [micError, toast]);
+
+  // Fetch a clickable phoneme breakdown as the user types (debounced),
+  // so they can tap each character/pinyin/tone/Arabic segment to hear it.
+  useEffect(() => {
+    const text = expectedText.trim();
+    if (!text) {
+      setBreakdownSegments([]);
+      return;
+    }
+    const handle = setTimeout(() => {
+      getBreakdown(text)
+        .then(setBreakdownSegments)
+        .catch(() => setBreakdownSegments([]));
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [expectedText]);
 
   // Process recorded audio when blob is ready
   useEffect(() => {
@@ -143,6 +160,13 @@ const Practice = () => {
               <p className="text-sm text-muted-foreground mt-2">
                 {t("practice.example")}
               </p>
+
+              {/* Clickable phoneme breakdown — tap any sound to hear it (before recording) */}
+              {breakdownSegments.length > 0 && (
+                <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border">
+                  <PronunciationFeedback segments={breakdownSegments} />
+                </div>
+              )}
             </div>
 
             {/* Mic Recording Button */}

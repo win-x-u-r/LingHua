@@ -7,12 +7,13 @@ import { Mic, MicOff, Volume2, ChevronRight, Star, RotateCcw } from "lucide-reac
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone } from "@/hooks/use-microphone";
 import { supabase } from "@/integrations/supabase/client";
-import { speakText, pronounceAndScore } from "@/lib/linghuaAPI";
+import { speakText, pronounceAndScore, getBreakdown, type PhonemeSegment } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateWordReview, getDueWords } from "@/lib/spacedRepetition";
 import { shouldUpdateStreak } from "@/lib/gamification";
 import StrokeOrder from "@/components/StrokeOrder";
+import PronunciationFeedback from "@/components/PronunciationFeedback";
 
 type Level = "beginner" | "intermediate" | "advanced";
 type Mode = Level | "review";
@@ -40,6 +41,7 @@ const Flashcards = () => {
   const [isScoring, setIsScoring] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [dueCount, setDueCount] = useState(0);
+  const [cardBreakdown, setCardBreakdown] = useState<PhonemeSegment[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { isRecording, startRecording, stopRecording, audioBlob, error: micError } = useMicrophone();
@@ -66,6 +68,19 @@ const Flashcards = () => {
       toast({ title: t("common.mic_error"), description: micError, variant: "destructive" });
     }
   }, [micError, toast]);
+
+  // Fetch the clickable phoneme breakdown for the current word so each
+  // character/pinyin/tone/Arabic segment on the card back is tap-to-hear.
+  useEffect(() => {
+    const word = vocabulary[currentIndex];
+    if (!word?.hanzi) {
+      setCardBreakdown([]);
+      return;
+    }
+    getBreakdown(word.hanzi)
+      .then(setCardBreakdown)
+      .catch(() => setCardBreakdown([]));
+  }, [vocabulary, currentIndex]);
 
   // Process recorded audio via Huawei ASR + MindSpore scoring
   useEffect(() => {
@@ -418,7 +433,7 @@ const Flashcards = () => {
           onClick={() => setIsFlipped(!isFlipped)}
         >
           <div
-            className={`flashcard-inner relative w-full min-h-[400px] transition-transform duration-500`}
+            className={`flashcard-inner relative w-full min-h-[460px] transition-transform duration-500`}
             style={{
               transformStyle: "preserve-3d",
               transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -469,12 +484,18 @@ const Flashcards = () => {
 
             {/* Back: Pinyin + Arabic + Actions */}
             <Card
-              className="absolute inset-0 p-8 bg-gradient-to-br from-card to-muted/20 shadow-glow border-2 border-secondary/10 flex flex-col items-center justify-center"
+              className="absolute inset-0 p-6 bg-gradient-to-br from-card to-muted/20 shadow-glow border-2 border-secondary/10 flex flex-col items-center justify-start overflow-y-auto"
               style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
             >
-              <div className="text-5xl font-bold mb-4 text-foreground">{currentWord.hanzi}</div>
-              <div className="text-2xl text-muted-foreground mb-2">{currentWord.pinyin}</div>
-              <div className="text-xl font-medium mb-6" dir="rtl">{currentWord.arabic_translation}</div>
+              <div className="text-5xl font-bold mb-3 text-foreground">{currentWord.hanzi}</div>
+              <div className="text-lg font-medium mb-3" dir="rtl">{currentWord.arabic_translation}</div>
+
+              {/* Clickable phoneme breakdown — tap any sound to hear it */}
+              {cardBreakdown.length > 0 && (
+                <div className="mb-4" onClick={(e) => e.stopPropagation()}>
+                  <PronunciationFeedback segments={cardBreakdown} compact />
+                </div>
+              )}
 
               {currentWord.image_url && (
                 <img

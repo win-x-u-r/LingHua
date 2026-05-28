@@ -194,6 +194,20 @@ def _build_segments(expected_clean: str, actual_clean: str) -> list[dict]:
     return result
 
 
+def get_breakdown(text: str) -> list[dict]:
+    """Per-character phoneme breakdown (no scoring) for clickable practice.
+
+    Returns one entry per character: {char, pinyin, tone, arabic}. Used by the
+    /breakdown endpoint so learners can tap any character / pinyin / tone /
+    Arabic segment to hear that sound, without needing a recording.
+    """
+    clean = _strip_punctuation(text)
+    return [
+        {"char": s["char"], "pinyin": s["pinyin"], "tone": s["tone"], "arabic": s["arabic"]}
+        for s in _char_segments(clean)
+    ]
+
+
 def score_pronunciation(expected: str, actual: str) -> dict:
     """Score pronunciation accuracy using MindSpore.
 
