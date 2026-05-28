@@ -12,6 +12,7 @@ Scoring dimensions:
 """
 
 import re
+import difflib
 from pypinyin import pinyin, Style
 from models.pronunciation_model import PronunciationModel
 
@@ -74,6 +75,27 @@ _PINYIN_TO_ARABIC = {
 }
 
 
+def _syllable_to_arabic(base: str) -> str:
+    """Convert one toneless pinyin syllable (e.g. 'hao') to its Arabic
+    phonetic approximation using greedy 3/2/1-char chunk matching."""
+    base = base.lower()
+    arabic = ""
+    i = 0
+    while i < len(base):
+        matched = False
+        for length in (3, 2, 1):
+            chunk = base[i:i + length]
+            if chunk in _PINYIN_TO_ARABIC:
+                arabic += _PINYIN_TO_ARABIC[chunk]
+                i += length
+                matched = True
+                break
+        if not matched:
+            arabic += base[i]
+            i += 1
+    return arabic
+
+
 def _pinyin_to_arabic(text: str) -> str:
     """Convert pinyin with tone marks to Arabic phonetic approximation.
 
@@ -87,26 +109,89 @@ def _pinyin_to_arabic(text: str) -> str:
     syllables = pinyin(clean, style=Style.TONE3, heteronym=False)
     result = []
     for s in syllables:
-        syl = s[0].lower()
-        # Remove tone number
-        base = re.sub(r'[0-9]', '', syl)
-        arabic = ""
-        i = 0
-        while i < len(base):
-            # Try 3-char, 2-char, then 1-char matches
-            matched = False
-            for length in (3, 2, 1):
-                chunk = base[i:i+length]
-                if chunk in _PINYIN_TO_ARABIC:
-                    arabic += _PINYIN_TO_ARABIC[chunk]
-                    i += length
-                    matched = True
-                    break
-            if not matched:
-                arabic += base[i]
-                i += 1
-        result.append(arabic)
+        # Remove tone number, then map the bare syllable
+        base = re.sub(r'[0-9]', '', s[0].lower())
+        result.append(_syllable_to_arabic(base))
     return " ".join(result)
+
+
+def _char_segments(clean: str) -> list[dict]:
+    """Build per-character data for a clean (punctuation-free) Chinese string.
+
+    Returns one entry per character: {char, pinyin (toned), tone (1-5),
+    base (toneless pinyin), arabic}. pypinyin yields one syllable per Han
+    character, so this aligns 1:1 with the characters.
+    """
+    chars = list(clean)
+    toned = pinyin(clean, style=Style.TONE, heteronym=False)
+    numbered = pinyin(clean, style=Style.TONE3, heteronym=False)
+    n = min(len(chars), len(toned), len(numbered))
+    segments = []
+    for i in range(n):
+        num_syl = numbered[i][0].lower()
+        base = re.sub(r'[0-9]', '', num_syl)
+        digit = re.search(r'[1-5]', num_syl)
+        segments.append({
+            "char": chars[i],
+            "pinyin": toned[i][0],
+            "tone": int(digit.group()) if digit else 5,
+            "base": base,
+            "arabic": _syllable_to_arabic(base),
+        })
+    return segments
+
+
+def _build_segments(expected_clean: str, actual_clean: str) -> list[dict]:
+    """Produce per-character correctness for color-coded feedback.
+
+    Aligns the recognized syllables to the expected ones on base (toneless)
+    pinyin so homophones count as a sound-match while still flagging the
+    wrong character. Each returned segment marks char/pinyin/tone correctness.
+    """
+    expected = _char_segments(expected_clean)
+    if not expected:
+        return []
+    recognized = _char_segments(actual_clean)
+
+    exp_base = [s["base"] for s in expected]
+    rec_base = [s["base"] for s in recognized]
+
+    # Map each expected index -> recognized index (or None) via alignment.
+    mapping: dict[int, int] = {}
+    matcher = difflib.SequenceMatcher(None, exp_base, rec_base, autojunk=False)
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            for k in range(i2 - i1):
+                mapping[i1 + k] = j1 + k
+        elif tag == "replace":
+            for k in range(i2 - i1):
+                rj = j1 + k
+                mapping[i1 + k] = rj if rj < j2 else None
+        elif tag == "delete":
+            for k in range(i1, i2):
+                mapping[k] = None
+        # "insert": extra recognized syllables, nothing to map for expected
+
+    result = []
+    for i, seg in enumerate(expected):
+        j = mapping.get(i)
+        if j is None:
+            char_ok = pinyin_ok = tone_ok = False
+        else:
+            rec = recognized[j]
+            pinyin_ok = seg["base"] == rec["base"]
+            tone_ok = seg["tone"] == rec["tone"]
+            char_ok = seg["char"] == rec["char"]
+        result.append({
+            "char": seg["char"],
+            "pinyin": seg["pinyin"],
+            "tone": seg["tone"],
+            "arabic": seg["arabic"],
+            "char_correct": char_ok,
+            "pinyin_correct": pinyin_ok,
+            "tone_correct": tone_ok,
+        })
+    return result
 
 
 def score_pronunciation(expected: str, actual: str) -> dict:
@@ -127,6 +212,7 @@ def score_pronunciation(expected: str, actual: str) -> dict:
             "expected_arabic": _pinyin_to_arabic(expected) if expected else "",
             "recognized_pinyin": "",
             "recognized_arabic": "",
+            "segments": [],
             "breakdown": {
                 "character": {"score": 0, "weight": 40, "label": "Character Accuracy"},
                 "pinyin": {"score": 0, "weight": 35, "label": "Pinyin Similarity"},
@@ -151,6 +237,7 @@ def score_pronunciation(expected: str, actual: str) -> dict:
         "expected_arabic": _pinyin_to_arabic(expected),
         "recognized_pinyin": _get_pinyin_display(actual),
         "recognized_arabic": _pinyin_to_arabic(actual),
+        "segments": _build_segments(expected_clean, actual_clean),
         "breakdown": {
             "character": {"score": int(round(char_score)), "weight": 40, "label": "Character Accuracy"},
             "pinyin": {"score": int(round(pinyin_score)), "weight": 35, "label": "Pinyin Similarity"},

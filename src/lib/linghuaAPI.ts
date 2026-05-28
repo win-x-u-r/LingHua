@@ -15,6 +15,16 @@ export interface ScoreBreakdown {
   label: string;
 }
 
+export interface PronunciationSegment {
+  char: string;
+  pinyin: string;
+  tone: number;
+  arabic: string;
+  char_correct: boolean;
+  pinyin_correct: boolean;
+  tone_correct: boolean;
+}
+
 export interface ScoreResponse {
   score: number;
   recognized: string;
@@ -22,6 +32,7 @@ export interface ScoreResponse {
   expected_arabic: string;
   recognized_pinyin: string;
   recognized_arabic: string;
+  segments?: PronunciationSegment[];
   breakdown: {
     character: ScoreBreakdown;
     pinyin: ScoreBreakdown;

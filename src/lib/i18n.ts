@@ -107,6 +107,9 @@ const translations: Record<string, Record<Language, string>> = {
   "practice.characters": { en: "Characters", ar: "الأحرف" },
   "practice.pinyin": { en: "Pinyin", ar: "بينيين" },
   "practice.tones": { en: "Tones", ar: "النغمات" },
+  "practice.arabic": { en: "Arabic", ar: "العربية" },
+  "practice.correct": { en: "Correct", ar: "صحيح" },
+  "practice.incorrect": { en: "Wrong", ar: "خطأ" },
 
   // Translator - extra
   "translator.arabic_label": { en: "Arabic | عربي", ar: "عربي | Arabic" },

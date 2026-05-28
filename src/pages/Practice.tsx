@@ -7,8 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { Mic, MicOff, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone } from "@/hooks/use-microphone";
-import { pronounceAndScore } from "@/lib/linghuaAPI";
+import { pronounceAndScore, type PronunciationSegment } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
+import PronunciationFeedback from "@/components/PronunciationFeedback";
 
 const Practice = () => {
   const [expectedText, setExpectedText] = useState("");
@@ -19,6 +20,7 @@ const Practice = () => {
   const [recognizedArabic, setRecognizedArabic] = useState("");
   const [score, setScore] = useState<number | null>(null);
   const [scoreBreakdown, setScoreBreakdown] = useState<{ character: number; pinyin: number; tone: number } | null>(null);
+  const [segments, setSegments] = useState<PronunciationSegment[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -51,6 +53,7 @@ const Practice = () => {
           pinyin: result.breakdown.pinyin.score,
           tone: result.breakdown.tone.score,
         });
+        setSegments(result.segments ?? []);
 
         const { breakdown } = result;
         const details = `Characters: ${breakdown.character.score}% | Pinyin: ${breakdown.pinyin.score}% | Tones: ${breakdown.tone.score}%`;
@@ -87,6 +90,7 @@ const Practice = () => {
     } else {
       setRecognizedText("");
       setScore(null);
+      setSegments([]);
       await startRecording();
     }
   };
@@ -217,6 +221,12 @@ const Practice = () => {
                       <p className="text-sm text-muted-foreground font-medium" dir="rtl">{recognizedArabic}</p>
                     )}
                   </div>
+
+                  {segments.length > 0 && (
+                    <div className="pt-4 border-t">
+                      <PronunciationFeedback segments={segments} />
+                    </div>
+                  )}
 
                   {score !== null && (
                     <div className="pt-4 border-t">
