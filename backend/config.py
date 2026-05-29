@@ -63,3 +63,16 @@ class Config:
     # Claude (Anthropic) — AI Tutor
     # ────────────────────────────────────────────────────────────────
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
+    # ────────────────────────────────────────────────────────────────
+    # OpenAI — Realtime voice conversation + Whisper STT
+    # ────────────────────────────────────────────────────────────────
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+    # ────────────────────────────────────────────────────────────────
+    # ElevenLabs — AI Voice TTS
+    # ────────────────────────────────────────────────────────────────
+    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+    # Multilingual v2 voice — warm, natural, great Chinese pronunciation
+    ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "9BWtsMINqrJLrRacOk9x")  # Aria
+    ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_multilingual_v2")

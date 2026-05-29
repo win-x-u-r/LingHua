@@ -7,9 +7,10 @@ MindSpore-based pronunciation scoring for the Ling Hua educational platform.
 import os
 import sys
 import traceback
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response, stream_with_context
 from flask_cors import CORS
 from io import BytesIO
+import json
 
 # Ensure backend directory is in path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -19,7 +20,7 @@ from services.translation import translate_text
 from services.tts import text_to_speech
 from services.asr import speech_to_text
 from services.scoring import score_pronunciation, get_breakdown
-from services.tutor import chat as tutor_chat
+from services.tutor import chat as tutor_chat, chat_stream as tutor_chat_stream
 
 app = Flask(__name__)
 CORS(app, origins=Config.CORS_ORIGINS)
@@ -82,9 +83,21 @@ def tts():
 
     try:
         audio_bytes = text_to_speech(text, lang)
+        # Detect audio format from magic bytes
+        # WAV: starts with "RIFF"; MP3: starts with ID3 tag or sync bytes 0xFF 0xEx
+        if audio_bytes[:4] == b"RIFF":
+            mimetype = "audio/wav"
+        elif audio_bytes[:3] == b"ID3" or (
+            len(audio_bytes) >= 2
+            and audio_bytes[0] == 0xFF
+            and (audio_bytes[1] & 0xE0) == 0xE0
+        ):
+            mimetype = "audio/mpeg"
+        else:
+            mimetype = "audio/wav"
         return send_file(
             BytesIO(audio_bytes),
-            mimetype="audio/wav",
+            mimetype=mimetype,
             as_attachment=False,
         )
     except ValueError as e:
@@ -205,6 +218,92 @@ def breakdown():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": f"Breakdown failed: {str(e)}"}), 500
+
+
+@app.route("/tutor/realtime-session", methods=["POST"])
+def tutor_realtime_session():
+    """WebRTC SDP signaling for OpenAI Realtime GA API.
+
+    Accepts a WebRTC SDP offer from the browser, forwards it to OpenAI with
+    the server-side API key, and returns the SDP answer plus session config.
+
+    Request JSON:
+        { "sdp": "<offer SDP string>", "model": str (optional), "voice": str (optional) }
+
+    Response JSON:
+        { "sdp": "<answer SDP string>", "instructions": str }
+    """
+    import requests as http_req
+    from services.tutor import SYSTEM_PROMPT
+
+    if not Config.OPENAI_API_KEY:
+        return jsonify({"error": "OPENAI_API_KEY is not configured"}), 503
+
+    data = request.get_json()
+    if not data or "sdp" not in data:
+        return jsonify({"error": "Missing 'sdp' field"}), 400
+
+    model = data.get("model", "gpt-realtime-2025-08-28")
+    sdp_offer = data["sdp"]
+
+    # voice is NOT a valid query param for the GA API — set it via session.update
+    # after the data channel opens (handled on the frontend)
+    resp = http_req.post(
+        f"https://api.openai.com/v1/realtime?model={model}",
+        headers={
+            "Authorization": f"Bearer {Config.OPENAI_API_KEY}",
+            "Content-Type": "application/sdp",
+        },
+        data=sdp_offer,
+        timeout=30,
+    )
+
+    if not resp.ok:
+        return jsonify({"error": resp.text}), resp.status_code
+
+    return jsonify({"sdp": resp.text, "instructions": SYSTEM_PROMPT})
+
+
+@app.route("/tutor/stream", methods=["POST"])
+def tutor_stream():
+    """Streaming AI tutor endpoint — returns Server-Sent Events.
+
+    Request JSON:
+        { "messages": [{"role": "user"|"assistant", "content": str}, ...] }
+
+    Response: text/event-stream
+        data: {"text": "<chunk>"}\n\n   (repeated)
+        data: [DONE]\n\n               (final)
+    """
+    data = request.get_json()
+    if not data or "messages" not in data:
+        return jsonify({"error": "Missing 'messages' field"}), 400
+
+    messages = data["messages"]
+    if not isinstance(messages, list) or not messages:
+        return jsonify({"error": "'messages' must be a non-empty array"}), 400
+
+    if not Config.ANTHROPIC_API_KEY:
+        return jsonify({"error": "ANTHROPIC_API_KEY is not configured on the server"}), 503
+
+    def generate():
+        try:
+            for chunk in tutor_chat_stream(messages):
+                yield f"data: {json.dumps({'text': chunk})}\n\n"
+        except Exception as e:
+            traceback.print_exc()
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        finally:
+            yield "data: [DONE]\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.route("/tutor/chat", methods=["POST"])

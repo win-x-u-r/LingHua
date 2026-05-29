@@ -2,32 +2,42 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Trash2, Volume2, Bot, User, Mic, MicOff, Volume1 } from "lucide-react";
+import { Send, Trash2, Volume2, VolumeX, Bot, User, Mic, MicOff, Volume1 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { tutorChat, speakText, speechToText, type TutorMessage } from "@/lib/linghuaAPI";
-import { useMicrophone } from "@/hooks/use-microphone";
+import { tutorStream, speakText, stopSpeakText, type TutorMessage } from "@/lib/linghuaAPI";
+import { useLiveSpeechRecognition } from "@/hooks/use-live-speech-recognition";
 
 interface Message extends TutorMessage {
   id: number;
 }
 
-type VoiceStatus = "idle" | "recording" | "transcribing" | "thinking" | "speaking";
+/** Detect the dominant language of a text snippet. */
+function detectLang(text: string): string {
+  if (/[一-鿿]/.test(text)) return "zh";
+  if (/[؀-ۿ]/.test(text)) return "ar";
+  return "en";
+}
 
-const STATUS_LABELS: Record<VoiceStatus, string> = {
-  idle: "",
-  recording: "tutor.recording",
-  transcribing: "tutor.transcribing",
-  thinking: "tutor.thinking",
-  speaking: "tutor.speaking",
-};
+type VoiceStatus = "idle" | "recording" | "thinking" | "speaking";
 
 const Tutor = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { isRecording, startRecording, stopRecording, audioBlob, error: micError } = useMicrophone();
+
+  const [micLang, setMicLang] = useState<"ar-SA" | "en-US" | "zh-CN">("en-US");
+
+  const {
+    isListening,
+    liveTranscript,
+    error: speechError,
+    isSupported: speechSupported,
+    start: startSpeech,
+    stop: stopSpeech,
+    reset: resetSpeech,
+  } = useLiveSpeechRecognition({ lang: micLang, continuous: false });
 
   const welcomeMessage: Message = {
     id: 0,
@@ -41,72 +51,54 @@ const Tutor = () => {
   const [autoPlay, setAutoPlay] = useState(false);
   const [speakingId, setSpeakingId] = useState<number | null>(null);
   const nextId = useRef(1);
-  const isBusy = voiceStatus !== "idle";
+  const isBusy = voiceStatus === "thinking" || voiceStatus === "speaking";
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, voiceStatus]);
+  }, [messages, voiceStatus, liveTranscript]);
 
   useEffect(() => {
-    if (micError) {
-      toast({ title: t("tutor.mic_error"), description: micError, variant: "destructive" });
+    if (speechError) {
+      toast({ title: t("tutor.mic_error"), description: speechError, variant: "destructive" });
       setVoiceStatus("idle");
     }
-  }, [micError]);
-
-  // When a recording finishes, transcribe then send
-  useEffect(() => {
-    if (!audioBlob) return;
-
-    const transcribeAndSend = async () => {
-      setVoiceStatus("transcribing");
-      try {
-        const file = new File([audioBlob], "recording.webm", { type: audioBlob.type });
-        const transcript = await speechToText(file, "zh");
-        if (transcript.trim()) {
-          await sendText(transcript);
-        } else {
-          setVoiceStatus("idle");
-        }
-      } catch {
-        toast({ title: t("tutor.error"), description: t("tutor.transcribe_error"), variant: "destructive" });
-        setVoiceStatus("idle");
-      }
-    };
-
-    transcribeAndSend();
-  }, [audioBlob]);
+  }, [speechError]);
 
   const sendText = useCallback(async (text: string) => {
     const userMsg: Message = { id: nextId.current++, role: "user", content: text };
+    const assistantId = nextId.current++;
 
-    setMessages((prev) => {
-      const updated = [...prev, userMsg];
+    const history: TutorMessage[] = messages
+      .filter((m) => m.id !== 0)
+      .map(({ role, content }) => ({ role, content }));
+    history.push({ role: "user", content: text });
 
-      const history: TutorMessage[] = updated
-        .filter((m) => m.id !== 0)
-        .map(({ role, content }) => ({ role, content }));
+    setMessages((prev) => [...prev, userMsg, { id: assistantId, role: "assistant", content: "" }]);
+    setVoiceStatus("thinking");
 
-      setVoiceStatus("thinking");
+    try {
+      let firstChunk = true;
+      const reply = await tutorStream(history, (chunk) => {
+        if (firstChunk) { setVoiceStatus("idle"); firstChunk = false; }
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: m.content + chunk } : m
+          )
+        );
+      });
 
-      tutorChat(history)
-        .then(async (reply) => {
-          const assistantMsg: Message = { id: nextId.current++, role: "assistant", content: reply };
-          setMessages((p) => [...p, assistantMsg]);
-
-          if (autoPlay) {
-            setVoiceStatus("speaking");
-            try { await speakText(reply, "zh"); } catch { /* ignore TTS errors */ }
-          }
-        })
-        .catch(() => {
-          toast({ title: t("tutor.error"), description: t("tutor.error_desc"), variant: "destructive" });
-        })
-        .finally(() => setVoiceStatus("idle"));
-
-      return updated;
-    });
-  }, [autoPlay, t, toast]);
+      if (autoPlay) {
+        setVoiceStatus("speaking");
+        try { await speakText(reply, detectLang(reply)); } catch { /* ignore */ }
+        setVoiceStatus("idle");
+      }
+    } catch {
+      toast({ title: t("tutor.error"), description: t("tutor.error_desc"), variant: "destructive" });
+      setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+    } finally {
+      setVoiceStatus("idle");
+    }
+  }, [autoPlay, t, toast, messages]); // eslint-disable-line
 
   const handleSendTyped = () => {
     const text = input.trim();
@@ -123,29 +115,51 @@ const Tutor = () => {
   };
 
   const handleMicToggle = async () => {
-    if (isRecording) {
-      stopRecording();
-      // voiceStatus transitions to "transcribing" via the audioBlob useEffect
+    if (isListening) {
+      stopSpeech();
     } else {
+      if (!speechSupported) {
+        toast({ title: t("tutor.mic_error"), description: "Speech recognition not supported. Use Chrome.", variant: "destructive" });
+        return;
+      }
+      resetSpeech();
       setVoiceStatus("recording");
-      await startRecording();
+      try {
+        const transcript = await startSpeech();
+        setVoiceStatus("idle");
+        if (transcript.trim()) await sendText(transcript.trim());
+      } catch {
+        setVoiceStatus("idle");
+      }
     }
   };
 
   const handleSpeak = async (msg: Message) => {
+    if (speakingId === msg.id) {
+      stopSpeakText();
+      setSpeakingId(null);
+      return;
+    }
     setSpeakingId(msg.id);
-    try { await speakText(msg.content, "zh"); } catch { /* ignore */ }
+    try { await speakText(msg.content, detectLang(msg.content)); } catch { /* ignore */ }
     finally { setSpeakingId(null); }
   };
 
   const clearConversation = () => {
+    stopSpeakText();
     nextId.current = 1;
     setMessages([{ ...welcomeMessage, id: 0 }]);
     setInput("");
     setVoiceStatus("idle");
+    resetSpeech();
   };
 
-  const statusLabel = STATUS_LABELS[voiceStatus] ? t(STATUS_LABELS[voiceStatus]) : "";
+  const statusLabel = (() => {
+    if (voiceStatus === "thinking") return t("tutor.thinking");
+    if (voiceStatus === "speaking") return t("tutor.speaking");
+    if (isListening) return t("tutor.recording");
+    return "";
+  })();
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl flex flex-col h-[calc(100vh-4rem)]">
@@ -158,7 +172,6 @@ const Tutor = () => {
           <p className="text-sm text-muted-foreground mt-0.5">{t("tutor.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Auto-play toggle */}
           <Button
             variant={autoPlay ? "default" : "outline"}
             size="sm"
@@ -205,12 +218,15 @@ const Tutor = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className={`h-6 w-6 transition-opacity ${speakingId === msg.id ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-100"}`}
                     onClick={() => handleSpeak(msg)}
-                    disabled={speakingId === msg.id || isBusy}
-                    title={t("tutor.listen")}
+                    disabled={isBusy && speakingId !== msg.id}
+                    title={speakingId === msg.id ? "Stop" : t("tutor.listen")}
                   >
-                    <Volume2 className="w-3.5 h-3.5" />
+                    {speakingId === msg.id
+                      ? <VolumeX className="w-3.5 h-3.5" />
+                      : <Volume2 className="w-3.5 h-3.5" />
+                    }
                   </Button>
                 )}
               </div>
@@ -228,6 +244,18 @@ const Tutor = () => {
               <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
               <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
               <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
+            </div>
+          </div>
+        )}
+
+        {/* Live transcript bubble while recording */}
+        {isListening && (
+          <div className="flex gap-3 flex-row-reverse">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+              <User className="w-4 h-4 text-white" />
+            </div>
+            <div className="max-w-[80%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm bg-primary/10 border border-primary/20 text-muted-foreground italic min-w-[60px]">
+              {liveTranscript || "…"}
             </div>
           </div>
         )}
@@ -250,25 +278,47 @@ const Tutor = () => {
           placeholder={t("tutor.placeholder")}
           rows={1}
           className="resize-none flex-1 min-h-[44px] max-h-32 overflow-y-auto"
-          disabled={isBusy}
+          disabled={isBusy || isListening}
         />
+
+        {/* Mic language selector */}
+        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+          <p className="text-[10px] text-muted-foreground">
+            {micLang === "ar-SA" ? "🎙 AR" : micLang === "zh-CN" ? "🎙 ZH" : "🎙 EN"}
+          </p>
+          <div className="flex rounded-lg border border-border overflow-hidden text-xs">
+            {(["ar-SA", "en-US", "zh-CN"] as const).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => !isListening && !isBusy && setMicLang(lang)}
+                className={`px-2 py-1 transition-colors ${
+                  micLang === lang
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                } ${isListening || isBusy ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              >
+                {lang === "ar-SA" ? "ع" : lang === "en-US" ? "EN" : "中"}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Mic button */}
         <Button
-          variant={isRecording ? "destructive" : "outline"}
+          variant={isListening ? "destructive" : "outline"}
           size="icon"
-          className={`h-11 w-11 flex-shrink-0 transition-all ${isRecording ? "animate-pulse" : ""}`}
+          className={`h-11 w-11 flex-shrink-0 transition-all ${isListening ? "animate-pulse" : ""}`}
           onClick={handleMicToggle}
-          disabled={voiceStatus === "transcribing" || voiceStatus === "thinking" || voiceStatus === "speaking"}
-          title={isRecording ? t("tutor.recording") : "Speak"}
+          disabled={isBusy}
+          title={isListening ? t("tutor.recording") : `Speak (${micLang})`}
         >
-          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </Button>
 
         {/* Send button */}
         <Button
           onClick={handleSendTyped}
-          disabled={!input.trim() || isBusy}
+          disabled={!input.trim() || isBusy || isListening}
           className="bg-gradient-coral h-11 px-4 flex-shrink-0"
         >
           <Send className="w-4 h-4" />

@@ -71,12 +71,24 @@ let _currentAudio: HTMLAudioElement | null = null;
 
 // Pre-load browser voices for Chinese TTS fallback
 let _voices: SpeechSynthesisVoice[] = [];
+let _preferredVoiceName: string | null = null;
+
 function _loadVoices() {
   _voices = window.speechSynthesis?.getVoices() ?? [];
 }
 if (typeof window !== "undefined" && window.speechSynthesis) {
   _loadVoices();
   window.speechSynthesis.addEventListener("voiceschanged", _loadVoices);
+}
+
+/** Get all available voices for a given language prefix (e.g. "zh", "ar") */
+export function getVoicesForLang(langPrefix: string): SpeechSynthesisVoice[] {
+  return _voices.filter((v) => v.lang.startsWith(langPrefix));
+}
+
+/** Set the preferred voice by name for browser TTS */
+export function setPreferredVoice(name: string | null) {
+  _preferredVoiceName = name;
 }
 
 /**
@@ -124,6 +136,19 @@ export async function speakText(text: string, lang: string): Promise<void> {
   });
 }
 
+/**
+ * Stop any currently playing TTS (both Huawei audio and browser speech synthesis).
+ */
+export function stopSpeakText(): void {
+  if (_currentAudio) {
+    _currentAudio.pause();
+    _currentAudio = null;
+  }
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+}
+
 function browserSpeak(text: string, langTag: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     if (!window.speechSynthesis) {
@@ -135,8 +160,11 @@ function browserSpeak(text: string, langTag: string): Promise<void> {
     utterance.rate = 0.85;
     utterance.volume = 1;
 
-    // Pick a matching voice
-    const voice = _voices.find((v) => v.lang.startsWith(langTag.split("-")[0]));
+    // Pick preferred voice, or fall back to first matching language voice
+    const langPrefix = langTag.split("-")[0];
+    const voice = (_preferredVoiceName
+      ? _voices.find((v) => v.name === _preferredVoiceName)
+      : null) ?? _voices.find((v) => v.lang.startsWith(langPrefix));
     if (voice) utterance.voice = voice;
 
     utterance.onend = () => resolve();
@@ -197,6 +225,58 @@ export interface TutorMessage {
 
 export interface TutorResponse {
   reply: string;
+}
+
+/**
+ * Stream a tutor reply token by token.
+ * Calls onChunk with each text fragment, resolves with the full reply when done.
+ */
+export async function tutorStream(
+  messages: TutorMessage[],
+  onChunk: (chunk: string) => void
+): Promise<string> {
+  const response = await fetch(`${API_BASE}/tutor/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!response.ok || !response.body) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || `Stream failed: ${response.statusText}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let full = "";
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (payload === "[DONE]") return full;
+      try {
+        const parsed = JSON.parse(payload) as { text?: string; error?: string };
+        if (parsed.error) throw new Error(parsed.error);
+        if (parsed.text) {
+          full += parsed.text;
+          onChunk(parsed.text);
+        }
+      } catch {
+        // skip malformed lines
+      }
+    }
+  }
+
+  return full;
 }
 
 /**

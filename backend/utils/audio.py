@@ -32,10 +32,10 @@ def convert_to_pcm(audio_bytes: bytes, source_format: str = "webm") -> bytes:
         audio = audio.set_channels(Config.AUDIO_CHANNELS)
         audio = audio.set_sample_width(Config.AUDIO_SAMPLE_WIDTH)
 
-        # Export as WAV
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_out:
+        # Export as raw PCM (no header) — Huawei SIS expects pcm16k16bit
+        with tempfile.NamedTemporaryFile(suffix=".pcm", delete=False) as tmp_out:
             tmp_out_path = tmp_out.name
-            audio.export(tmp_out_path, format="wav")
+            audio.export(tmp_out_path, format="raw")
 
         with open(tmp_out_path, "rb") as f:
             return f.read()
