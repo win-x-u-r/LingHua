@@ -103,9 +103,18 @@ echo "  nginx:  $(nginx -v 2>&1)"
 if [[ -d "$INSTALL_DIR/.git" ]]; then
   log "Repo already exists, pulling latest..."
   cd "$INSTALL_DIR"
-  git fetch --all
-  # Detect default branch (master or main) and reset to it
-  DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "master")
+  git fetch origin --prune
+  # Reset to the remote branch. This repo uses 'master'; fall back to 'main'.
+  # (Don't trust origin/HEAD — it can be a stale symbolic-ref pointing at a
+  #  branch that doesn't exist, which is what broke earlier deploys.)
+  if git rev-parse --verify --quiet origin/master >/dev/null; then
+    DEFAULT_BRANCH=master
+  elif git rev-parse --verify --quiet origin/main >/dev/null; then
+    DEFAULT_BRANCH=main
+  else
+    die "Could not find origin/master or origin/main to reset to."
+  fi
+  log "Resetting to origin/${DEFAULT_BRANCH}..."
   git reset --hard "origin/${DEFAULT_BRANCH}"
 else
   log "Cloning repository to $INSTALL_DIR..."
