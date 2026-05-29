@@ -112,9 +112,8 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       devOptions: {
-        // Enable in dev so we can verify the manifest + service worker locally.
-        // Set to false if it interferes with HMR.
-        enabled: true,
+        // Disabled in dev — service worker caches JS bundles and breaks HMR.
+        enabled: false,
         type: "module",
       },
     }),

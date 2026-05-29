@@ -64,7 +64,7 @@ def _asr_via_sdk(audio_b64: str, asr_model: str) -> str:
     )
 
     asr_config = TranscriberConfig(
-        audio_format="wav",
+        audio_format="pcm16k16bit",
         _property=asr_model,
         add_punc="yes",
     )

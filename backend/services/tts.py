@@ -11,6 +11,7 @@ Chinese TTS is NOT available in me-east-1.
 """
 
 import json
+import re
 import struct
 import threading
 from config import Config
@@ -21,25 +22,51 @@ VOICE_MAP = {
 }
 
 
+def _extract_chinese(text: str) -> str:
+    """Strip markdown and English from text, keeping only Chinese characters and punctuation."""
+    # Remove markdown: headers, bold, italic, blockquotes, horizontal rules, bullets
+    text = re.sub(r'#{1,6}\s*', '', text)
+    text = re.sub(r'\*{1,3}', '', text)
+    text = re.sub(r'^>\s*', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^-{3,}$', '', text, flags=re.MULTILINE)
+    # Remove pinyin/English in parentheses
+    text = re.sub(r'\([^)]*\)', '', text)
+    # Remove correction emoji prefix
+    text = re.sub(r'✏️\s*', '', text)
+    # Keep only Chinese characters + Chinese punctuation + whitespace
+    text = re.sub(r'[^一-鿿　-〿＀-￯ \n。，！？；：""''…—～]', ' ', text)
+    # Collapse whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
 def text_to_speech(text: str, lang: str) -> bytes:
     """Convert text to speech audio.
 
     Routing:
-      - Chinese: signals the frontend to use browser SpeechSynthesis
-        (Huawei SIS international does not offer Chinese voices).
-      - Arabic: prefers Munsit (dialect-aware, low-latency PCM streaming),
-        falls back to Huawei SIS RTTS if Munsit is unavailable.
-      - English (and any other): Huawei SIS RTTS.
+      - ElevenLabs key set: use it for ALL languages (multilingual voice).
+      - Chinese (no ElevenLabs): signals the frontend to use browser SpeechSynthesis.
+      - Arabic (no ElevenLabs): prefers Munsit, falls back to Huawei SIS RTTS.
+      - English/other (no ElevenLabs): Huawei SIS RTTS.
 
     Returns:
-        Audio bytes (WAV format).
+        Audio bytes (WAV or MP3 format).
     """
-    # Chinese TTS is not available on Huawei SIS international regions.
-    # Return a signal so the frontend uses browser speech synthesis instead.
+    # ElevenLabs handles all languages when key is available
+    if Config.ELEVENLABS_API_KEY:
+        # Strip parenthetical pinyin annotations and punctuation the voice shouldn't read
+        clean = re.sub(r'\([^)]*\)', '', text)          # remove (pinyin)
+        clean = re.sub(r'[,،،.。!！?？;；:：—–\-]+', ' ', clean)  # punctuation → space
+        clean = re.sub(r'\s+', ' ', clean).strip()
+        return _elevenlabs_tts(clean or text)
+
+    # --- Fallback routing (no ElevenLabs) ---
+
+    # Chinese: browser TTS
     if lang == "zh":
         raise ValueError("BROWSER_TTS_CHINESE")
 
-    # Arabic: prefer Munsit's dialect-aware TTS for speed + better Gulf voices
+    # Arabic: prefer Munsit's dialect-aware TTS
     if lang == "ar" and Config.MUNSIT_API_KEY:
         try:
             from services.munsit_tts import synthesize_arabic
@@ -51,6 +78,35 @@ def text_to_speech(text: str, lang: str) -> bytes:
     voice = VOICE_MAP.get(lang, "english_dh_female")
     pcm_data = _rtts_websocket(text, voice)
     return _pcm_to_wav(pcm_data, sample_rate=16000)
+
+
+def _elevenlabs_tts(text: str) -> bytes:
+    """Generate speech via ElevenLabs API (multilingual v2 — supports Chinese)."""
+    import requests as http_requests
+
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{Config.ELEVENLABS_VOICE_ID}"
+    headers = {
+        "xi-api-key": Config.ELEVENLABS_API_KEY,
+        "Content-Type": "application/json",
+        "Accept": "audio/mpeg",
+    }
+    payload = {
+        "text": text,
+        "model_id": Config.ELEVENLABS_MODEL,
+        "speed": 1.15,               # slightly faster, especially helps Chinese pacing
+        "voice_settings": {
+            "stability": 0.4,
+            "similarity_boost": 0.8,
+            "style": 0.55,
+            "use_speaker_boost": True,
+        },
+    }
+
+    response = http_requests.post(url, json=payload, headers=headers, timeout=30)
+    if not response.ok:
+        raise RuntimeError(f"ElevenLabs TTS failed: {response.status_code} {response.text}")
+
+    return response.content
 
 
 def _rtts_websocket(text: str, voice: str) -> bytes:

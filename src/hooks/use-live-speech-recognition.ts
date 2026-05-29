@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface UseLiveSpeechRecognitionOptions {
   /** BCP-47 language tag, e.g. "ar-SA", "zh-CN", "en-US" */
   lang: string;
+  /** If false (default for voice mode), browser auto-stops after silence. If true, keeps listening until stop() is called. */
+  continuous?: boolean;
 }
 
 interface UseLiveSpeechRecognitionReturn {
@@ -36,6 +38,7 @@ interface UseLiveSpeechRecognitionReturn {
  */
 export function useLiveSpeechRecognition({
   lang,
+  continuous = true,
 }: UseLiveSpeechRecognitionOptions): UseLiveSpeechRecognitionReturn {
   const [isListening, setIsListening] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState("");
@@ -89,7 +92,7 @@ export function useLiveSpeechRecognition({
 
       const recognition = new SpeechRecognitionCtor();
       recognition.lang = lang;
-      recognition.continuous = true;       // keep listening until we call stop()
+      recognition.continuous = continuous;
       recognition.interimResults = true;   // give us partial results live
       recognition.maxAlternatives = 1;
 
