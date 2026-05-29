@@ -7,6 +7,7 @@ const translations: Record<string, Record<Language, string>> = {
   "nav.flashcards": { en: "Flashcards", ar: "البطاقات" },
   "nav.practice": { en: "Practice", ar: "التدريب" },
   "nav.dashboard": { en: "Dashboard", ar: "لوحة التحكم" },
+  "nav.grammar": { en: "Grammar", ar: "القواعد" },
   "nav.about": { en: "About", ar: "حول" },
 
   // Home
@@ -111,6 +112,32 @@ const translations: Record<string, Record<Language, string>> = {
   "practice.correct": { en: "Correct", ar: "صحيح" },
   "practice.incorrect": { en: "Wrong", ar: "خطأ" },
   "practice.tap_hint": { en: "Tap any sound to hear it", ar: "اضغط على أي صوت لسماعه" },
+
+  // Grammar Mode
+  "grammar.title": { en: "Grammar Mode", ar: "وضع القواعد" },
+  "grammar.subtitle": { en: "Learn a rule, then practice by tapping — no typing", ar: "تعلّم القاعدة ثم تدرّب بالضغط — بدون كتابة" },
+  "grammar.topics": { en: "Topics", ar: "المواضيع" },
+  "grammar.no_topics": { en: "No topics for this level yet", ar: "لا توجد مواضيع لهذا المستوى بعد" },
+  "grammar.card_rule": { en: "Rule", ar: "قاعدة" },
+  "grammar.card_pattern": { en: "Pattern", ar: "النمط" },
+  "grammar.card_example": { en: "Example", ar: "مثال" },
+  "grammar.learn": { en: "Learn", ar: "تعلّم" },
+  "grammar.practice": { en: "Practice", ar: "تدرّب" },
+  "grammar.prev": { en: "Back", ar: "السابق" },
+  "grammar.next": { en: "Next", ar: "التالي" },
+  "grammar.finish": { en: "Finish", ar: "إنهاء" },
+  "grammar.check": { en: "Check", ar: "تحقق" },
+  "grammar.tap_to_build": { en: "Tap words to build the sentence", ar: "اضغط على الكلمات لبناء الجملة" },
+  "grammar.correct": { en: "Correct!", ar: "!صحيح" },
+  "grammar.incorrect": { en: "Not quite", ar: "ليس تمامًا" },
+  "grammar.correct_answer": { en: "Correct answer", ar: "الإجابة الصحيحة" },
+  "grammar.review_weak": { en: "Review weak", ar: "مراجعة الضعيف" },
+  "grammar.session_complete": { en: "Session complete!", ar: "!اكتملت الجلسة" },
+  "grammar.back_to_topics": { en: "Back to topics", ar: "العودة إلى المواضيع" },
+  "grammar.instr_mcq_blank": { en: "Choose the correct word to fill the blank", ar: "اختر الكلمة الصحيحة لملء الفراغ" },
+  "grammar.instr_word_bank": { en: "Pick the correct word from the bank", ar: "اختر الكلمة الصحيحة من البنك" },
+  "grammar.instr_tap_correct": { en: "Tap the correct word", ar: "اضغط على الكلمة الصحيحة" },
+  "grammar.instr_reorder": { en: "Arrange the words into a correct sentence", ar: "رتّب الكلمات لتكوين جملة صحيحة" },
 
   // Translator - extra
   "translator.arabic_label": { en: "Arabic | عربي", ar: "عربي | Arabic" },

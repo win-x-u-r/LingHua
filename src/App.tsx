@@ -15,6 +15,7 @@ import Flashcards from "./pages/Flashcards";
 import Practice from "./pages/Practice";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
+import Grammar from "./pages/Grammar";
 import Tutor from "./pages/Tutor";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
@@ -43,6 +44,7 @@ const AppRoutes = () => (
         <Route path="/practice" element={<ProtectedRoute><Practice /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/grammar" element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
         <Route path="/tutor" element={<ProtectedRoute><Tutor /></ProtectedRoute>} />
         <Route path="/about" element={<About />} />
         <Route path="*" element={<NotFound />} />
