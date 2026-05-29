@@ -236,7 +236,10 @@ fi
 # Force VITE_API_BASE to the production domain
 sed -i "s|^VITE_API_BASE=.*|VITE_API_BASE=\"https://${DOMAIN}/api\"|" "$INSTALL_DIR/.env"
 
-npm install --silent
+# --include=dev: Vite and its plugins (vite-plugin-pwa, basic-ssl, etc.) are
+# devDependencies; without this they're skipped when NODE_ENV=production and the
+# build fails with "Cannot find package 'vite-plugin-pwa'".
+npm install --include=dev --no-audit --no-fund
 npm run build
 
 mkdir -p "$WEB_ROOT"
