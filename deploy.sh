@@ -20,8 +20,14 @@
 # Prerequisites (you do these manually first):
 #   - DNS A record pointing <domain> to this server's public IP
 #   - Security group allows ports 22, 80, 443 inbound
-#   - You have HUAWEI_AK and HUAWEI_SK ready to paste when prompted
-#   - You have your Supabase URL and publishable key ready
+#   - A PRIVATE secrets file at /etc/linghua/backend.env (chmod 600) with all
+#     backend API keys. NEVER put keys in this public repo. Required keys:
+#       HUAWEI_AK, HUAWEI_SK, HUAWEI_SIS_REGION, HUAWEI_SIS_PROJECT_ID,
+#       HUAWEI_NLP_REGION, HUAWEI_NLP_PROJECT_ID, MUNSIT_API_KEY,
+#       ANTHROPIC_API_KEY, OPENAI_API_KEY, ELEVENLABS_API_KEY
+#     (deploy.sh appends FLASK_* and CORS_ORIGINS automatically.)
+#     Override the path with: LINGHUA_SECRETS=/path sudo bash deploy.sh ...
+#   - Frontend .env (Supabase URL + publishable key) kept on the server
 #
 
 set -euo pipefail
@@ -121,42 +127,30 @@ pip install --quiet gunicorn websocket-client \
   huaweicloudsdkcore huaweicloudsdksis huaweicloudsdknlp
 deactivate
 
-# Backend .env
-if [[ ! -f "$INSTALL_DIR/backend/.env" ]]; then
-  log "Backend .env not found — creating template..."
-  warn "You MUST edit $INSTALL_DIR/backend/.env with your Huawei credentials before continuing."
-  cat > "$INSTALL_DIR/backend/.env" <<EOF
-# Huawei Cloud Credentials — REQUIRED
-HUAWEI_AK=PASTE_YOUR_AK_HERE
-HUAWEI_SK=PASTE_YOUR_SK_HERE
+# Backend .env — generated from a PRIVATE secrets file kept OUTSIDE this repo,
+# so real API keys never live in this public repository. Create it once:
+#   sudo mkdir -p /etc/linghua && sudo nano /etc/linghua/backend.env
+#   sudo chmod 600 /etc/linghua/backend.env
+SECRETS_FILE="${LINGHUA_SECRETS:-/etc/linghua/backend.env}"
+if [[ -f "$SECRETS_FILE" ]]; then
+  log "Generating backend/.env from $SECRETS_FILE ..."
+  install -m 600 /dev/null "$INSTALL_DIR/backend/.env"
+  cat "$SECRETS_FILE" > "$INSTALL_DIR/backend/.env"
+  # Deploy-managed (domain-derived) settings — appended after your secrets.
+  cat >> "$INSTALL_DIR/backend/.env" <<EOF
 
-# SIS (Speech) — ME-Riyadh
-HUAWEI_SIS_REGION=me-east-1
-HUAWEI_SIS_PROJECT_ID=PASTE_YOUR_SIS_PROJECT_ID
-
-# NLP (Translation) — CN-North-Beijing4
-HUAWEI_NLP_REGION=cn-north-4
-HUAWEI_NLP_PROJECT_ID=PASTE_YOUR_NLP_PROJECT_ID
-
-# Legacy fallback
-HUAWEI_REGION=me-east-1
-HUAWEI_PROJECT_ID=PASTE_YOUR_SIS_PROJECT_ID
-
-# Flask
+# ---- managed by deploy.sh (edit keys in $SECRETS_FILE, not here) ----
 FLASK_DEBUG=false
 FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
-
-# CORS — your production domain
 CORS_ORIGINS=https://${DOMAIN}
 EOF
-  echo
-  read -rp "Open the file now? (y/N) " open_now
-  if [[ "$open_now" =~ ^[Yy]$ ]]; then
-    ${EDITOR:-nano} "$INSTALL_DIR/backend/.env"
-  else
-    die "Edit $INSTALL_DIR/backend/.env, then re-run this script."
-  fi
+elif [[ -f "$INSTALL_DIR/backend/.env" ]]; then
+  warn "No secrets file at $SECRETS_FILE — keeping the existing backend/.env."
+  warn "To auto-manage keys, create $SECRETS_FILE (see deploy.sh header) and re-run."
+else
+  warn "No secrets file at $SECRETS_FILE and no backend/.env exists."
+  die "Create $SECRETS_FILE with your API keys (see deploy.sh header), then re-run."
 fi
 
 # Create systemd service
@@ -194,7 +188,9 @@ touch /var/log/${SERVICE_NAME}.access.log /var/log/${SERVICE_NAME}.error.log
 chown www-data:www-data /var/log/${SERVICE_NAME}.*.log
 
 systemctl daemon-reload
-systemctl enable --now ${SERVICE_NAME}.service
+systemctl enable ${SERVICE_NAME}.service
+# Always restart so re-runs pick up new code AND the regenerated .env
+systemctl restart ${SERVICE_NAME}.service
 sleep 2
 
 if systemctl is-active --quiet ${SERVICE_NAME}; then
