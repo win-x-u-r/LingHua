@@ -22,7 +22,7 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: "student" | "teacher" }) {
+function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: "student" | "teacher" | "independent" }) {
   const { user, profile, loading } = useAuth();
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;

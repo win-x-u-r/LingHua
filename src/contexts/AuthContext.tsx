@@ -2,10 +2,12 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
+export type UserRole = "student" | "teacher" | "independent";
+
 interface Profile {
   id: string;
   full_name: string;
-  role: "student" | "teacher";
+  role: UserRole;
   avatar_url: string;
   classroom_id: string | null;
   language_pref: "ar" | "en";

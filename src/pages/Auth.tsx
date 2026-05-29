@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, type UserRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const AVATARS = ["panda", "dragon", "phoenix", "bamboo", "lotus", "star"];
@@ -16,7 +16,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"student" | "teacher">("student");
+  const [role, setRole] = useState<UserRole>("student");
   const [classroomCode, setClassroomCode] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,19 +108,27 @@ const Auth = () => {
               {/* Role Selection */}
               <div>
                 <Label>I am a</Label>
-                <div className="flex gap-2 mt-1">
+                <div className="flex flex-col gap-2 mt-1">
                   <Button
                     type="button"
                     variant={role === "student" ? "default" : "outline"}
-                    className={`flex-1 ${role === "student" ? "bg-gradient-mint" : ""}`}
+                    className={`w-full ${role === "student" ? "bg-gradient-mint" : ""}`}
                     onClick={() => setRole("student")}
                   >
-                    Student
+                    Student (in a class)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={role === "independent" ? "default" : "outline"}
+                    className={`w-full ${role === "independent" ? "bg-gradient-coral" : ""}`}
+                    onClick={() => setRole("independent")}
+                  >
+                    Independent Learner
                   </Button>
                   <Button
                     type="button"
                     variant={role === "teacher" ? "default" : "outline"}
-                    className={`flex-1 ${role === "teacher" ? "bg-gradient-lavender" : ""}`}
+                    className={`w-full ${role === "teacher" ? "bg-gradient-lavender" : ""}`}
                     onClick={() => setRole("teacher")}
                   >
                     Teacher

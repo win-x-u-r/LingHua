@@ -87,7 +87,8 @@ const Dashboard = () => {
 
   const [loading, setLoading] = useState(true);
 
-  const isStudent = profile?.role === "student";
+  // Personal-progress view for students AND independent learners; teachers get the classroom view.
+  const isStudent = profile?.role !== "teacher";
 
   useEffect(() => {
     if (user) {

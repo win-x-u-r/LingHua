@@ -143,7 +143,7 @@ const Profile = () => {
             </div>
             <div className="flex-1">
               <h1 className="text-2xl font-bold">{profile.full_name}</h1>
-              <p className="text-muted-foreground capitalize">{profile.role}</p>
+              <p className="text-muted-foreground">{t(`common.${profile.role}`)}</p>
               <div className="mt-2">
                 <StreakIndicator streak={progress.current_streak} />
               </div>
