@@ -237,9 +237,11 @@ fi
 sed -i "s|^VITE_API_BASE=.*|VITE_API_BASE=\"https://${DOMAIN}/api\"|" "$INSTALL_DIR/.env"
 
 # --include=dev: Vite and its plugins (vite-plugin-pwa, basic-ssl, etc.) are
-# devDependencies; without this they're skipped when NODE_ENV=production and the
-# build fails with "Cannot find package 'vite-plugin-pwa'".
-npm install --include=dev --no-audit --no-fund
+#   devDependencies; without this they're skipped when NODE_ENV=production.
+# --legacy-peer-deps: @vitejs/plugin-basic-ssl declares a newer vite peer range
+#   than the pinned vite@5; the combo works (it's what runs in dev), so skip the
+#   strict peer check that otherwise aborts the install with ERESOLVE.
+npm install --include=dev --legacy-peer-deps --no-audit --no-fund
 npm run build
 
 mkdir -p "$WEB_ROOT"
