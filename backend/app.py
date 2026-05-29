@@ -126,37 +126,6 @@ def asr():
         return jsonify({"error": f"ASR failed: {str(e)}"}), 500
 
 
-@app.route("/asr/munsit", methods=["POST"])
-def asr_munsit():
-    """Arabic-only speech-to-text via Munsit (dialect-aware UAE ASR).
-
-    Used by Dialogue Mode to get the high-accuracy FINAL transcript that goes
-    into translation. The browser's Web Speech API still drives the live
-    interim transcript shown to the user as they speak.
-
-    Request:
-        FormData with 'file' field containing audio file (WebM, WAV, etc.).
-
-    Response JSON:
-        { "text": str }
-    """
-    if "file" not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-
-    audio_file = request.files["file"]
-    if audio_file.filename == "":
-        return jsonify({"error": "Empty filename"}), 400
-
-    try:
-        from services.munsit_stt import transcribe_arabic
-        audio_bytes = audio_file.read()
-        recognized_text = transcribe_arabic(audio_bytes, audio_file.filename)
-        return jsonify({"text": recognized_text})
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"error": f"Munsit ASR failed: {str(e)}"}), 500
-
-
 @app.route("/pronounce", methods=["POST"])
 def pronounce():
     """Combined ASR + pronunciation scoring in a single request.

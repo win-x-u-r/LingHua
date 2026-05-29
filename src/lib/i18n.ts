@@ -118,24 +118,6 @@ const translations: Record<string, Record<Language, string>> = {
   "translator.arabic_placeholder": { en: "Type in Arabic...", ar: "...اكتب بالعربية" },
   "translator.chinese_placeholder": { en: "Chinese translation will appear here...", ar: "...الترجمة الصينية ستظهر هنا" },
 
-  // Translator - Dialogue Mode
-  "translator.dialogue.title": { en: "Dialogue Mode", ar: "وضع الحوار" },
-  "translator.dialogue.description": { en: "Live voice-to-voice Arabic ↔ Chinese conversation", ar: "محادثة صوتية فورية بين العربية والصينية" },
-  "translator.dialogue.speaker_arabic": { en: "Arabic", ar: "العربية" },
-  "translator.dialogue.speaker_chinese": { en: "Chinese", ar: "الصينية" },
-  "translator.dialogue.status_recording": { en: "Recording…", ar: "...جار التسجيل" },
-  "translator.dialogue.status_listening": { en: "Listening live", ar: "الاستماع المباشر" },
-  "translator.dialogue.listening_hint": { en: "Start speaking…", ar: "...ابدأ الحديث" },
-  "translator.dialogue.status_transcribing": { en: "Refining with Munsit…", ar: "...جار التحسين باستخدام منصة" },
-  "translator.dialogue.status_recognizing": { en: "Recognizing speech…", ar: "...جار التعرف على الكلام" },
-  "translator.dialogue.status_translating": { en: "Translating…", ar: "...جار الترجمة" },
-  "translator.dialogue.status_speaking": { en: "Speaking translation…", ar: "...جار نطق الترجمة" },
-  "translator.dialogue.clear": { en: "Clear", ar: "مسح" },
-  "translator.dialogue.empty_transcript": { en: "Press a language button below to start the conversation", ar: "اضغط على زر اللغة أدناه لبدء المحادثة" },
-  "translator.dialogue.didnt_catch": { en: "Didn't catch that — please try again", ar: "لم أفهم — يُرجى المحاولة مرة أخرى" },
-  "translator.dialogue.error_generic": { en: "Dialogue pipeline error", ar: "حدث خطأ في وضع الحوار" },
-  "translator.dialogue.tts_failed": { en: "Audio playback failed", ar: "فشل تشغيل الصوت" },
-
   // Dashboard - Student Analytics
   "dashboard.student.title": { en: "My Dashboard", ar: "لوحة التحكم" },
   "dashboard.student.subtitle": { en: "Track your Mandarin learning progress", ar: "تتبع تقدمك في تعلم الماندرين" },

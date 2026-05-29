@@ -190,26 +190,6 @@ export async function speechToText(file: File, lang: string = "zh"): Promise<str
   return data.text;
 }
 
-/**
- * Transcribe Arabic audio via Munsit (UAE dialect-aware ASR).
- * Used by Dialogue Mode to get the high-accuracy final transcript that goes
- * into translation, while Web Speech provides the live interim display.
- */
-export async function transcribeArabicMunsit(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await fetch(`${API_BASE}/asr/munsit`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) throw new Error(`Munsit ASR failed: ${response.statusText}`);
-
-  const data: ASRResponse = await response.json();
-  return data.text;
-}
-
 export interface TutorMessage {
   role: "user" | "assistant";
   content: string;
