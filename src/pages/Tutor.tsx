@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, Trash2, Volume2, VolumeX, Bot, User, Mic, MicOff, Volume1 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { tutorStream, speakText, stopSpeakText, type TutorMessage } from "@/lib/linghuaAPI";
+import { tutorStream, speakTutorText, stopSpeakText, type TutorMessage } from "@/lib/linghuaAPI";
 import { useLiveSpeechRecognition } from "@/hooks/use-live-speech-recognition";
 
 interface Message extends TutorMessage {
@@ -89,7 +89,7 @@ const Tutor = () => {
 
       if (autoPlay) {
         setVoiceStatus("speaking");
-        try { await speakText(reply, detectLang(reply)); } catch { /* ignore */ }
+        try { await speakTutorText(reply); } catch { /* ignore */ }
         setVoiceStatus("idle");
       }
     } catch {
@@ -141,7 +141,7 @@ const Tutor = () => {
       return;
     }
     setSpeakingId(msg.id);
-    try { await speakText(msg.content, detectLang(msg.content)); } catch { /* ignore */ }
+    try { await speakTutorText(msg.content); } catch { /* ignore */ }
     finally { setSpeakingId(null); }
   };
 

@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
 from services.translation import translate_text
-from services.tts import text_to_speech
+from services.tts import text_to_speech, text_to_speech_tutor
 from services.asr import speech_to_text
 from services.scoring import score_pronunciation, get_breakdown
 from services.tutor import chat as tutor_chat, chat_stream as tutor_chat_stream
@@ -304,6 +304,43 @@ def tutor_stream():
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@app.route("/tutor/tts", methods=["POST"])
+def tutor_tts():
+    """Tutor-only TTS via ElevenLabs (custom Hua voice).
+
+    Kept separate from /tts so the rest of the app (flashcards, practice,
+    clickable phonemes, translator) keeps using the original browser/Munsit/Huawei
+    routing — ElevenLabs hallucinates on very short input (single characters).
+
+    Request JSON:
+        { "text": str }
+
+    Response:
+        MP3 audio with Content-Type: audio/mpeg
+    """
+    data = request.get_json()
+    if not data or "text" not in data:
+        return jsonify({"error": "Missing 'text' field"}), 400
+
+    text = data["text"].strip()
+    if not text:
+        return jsonify({"error": "Empty text"}), 400
+
+    if not Config.ELEVENLABS_API_KEY:
+        return jsonify({"error": "ELEVENLABS_API_KEY is not configured"}), 503
+
+    try:
+        audio_bytes = text_to_speech_tutor(text)
+        return send_file(
+            BytesIO(audio_bytes),
+            mimetype="audio/mpeg",
+            as_attachment=False,
+        )
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": f"Tutor TTS failed: {str(e)}"}), 500
 
 
 @app.route("/tutor/chat", methods=["POST"])

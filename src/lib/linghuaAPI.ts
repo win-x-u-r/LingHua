@@ -149,6 +149,37 @@ export function stopSpeakText(): void {
   }
 }
 
+/**
+ * Speak text in the AI Tutor's "Hua" voice (ElevenLabs). Used ONLY by the tutor
+ * — the rest of the app uses speakText() which routes through browser/Munsit/
+ * Huawei (ElevenLabs hallucinates on single-character input).
+ */
+export async function speakTutorText(text: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/tutor/tts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) throw new Error(`Tutor TTS failed: ${response.statusText}`);
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+
+  if (_currentAudio) {
+    _currentAudio.pause();
+    _currentAudio = null;
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const audio = new Audio(url);
+    audio.volume = 1.0;
+    _currentAudio = audio;
+    audio.onended = () => { _currentAudio = null; resolve(); };
+    audio.onerror = () => { _currentAudio = null; reject(new Error("Audio playback failed")); };
+    audio.play().catch(reject);
+  });
+}
+
 function browserSpeak(text: string, langTag: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     if (!window.speechSynthesis) {

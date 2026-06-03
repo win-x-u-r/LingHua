@@ -41,28 +41,18 @@ def _extract_chinese(text: str) -> str:
 
 
 def text_to_speech(text: str, lang: str) -> bytes:
-    """Convert text to speech audio.
+    """Convert text to speech audio. Used by translator + flashcards + practice.
+    The AI tutor uses a separate path (text_to_speech_tutor / /tutor/tts) backed
+    by ElevenLabs (Hua voice); ElevenLabs hallucinates on very short input, so
+    we deliberately don't route /tts through it.
 
     Routing:
-      - ElevenLabs key set: use it for ALL languages (multilingual voice).
-      - Chinese (no ElevenLabs): signals the frontend to use browser SpeechSynthesis.
-      - Arabic (no ElevenLabs): prefers Munsit, falls back to Huawei SIS RTTS.
-      - English/other (no ElevenLabs): Huawei SIS RTTS.
-
-    Returns:
-        Audio bytes (WAV or MP3 format).
+      - Chinese: signal the frontend to use browser SpeechSynthesis (Google zh-CN).
+      - Arabic: prefer Munsit (dialect-aware); fall back to Huawei SIS RTTS.
+      - English / other: Huawei SIS RTTS.
     """
-    # ElevenLabs handles all languages when key is available
-    if Config.ELEVENLABS_API_KEY:
-        # Strip parenthetical pinyin annotations and punctuation the voice shouldn't read
-        clean = re.sub(r'\([^)]*\)', '', text)          # remove (pinyin)
-        clean = re.sub(r'[,،،.。!！?？;；:：—–\-]+', ' ', clean)  # punctuation → space
-        clean = re.sub(r'\s+', ' ', clean).strip()
-        return _elevenlabs_tts(clean or text)
-
-    # --- Fallback routing (no ElevenLabs) ---
-
-    # Chinese: browser TTS
+    # Chinese TTS via the browser's Web Speech API (the female Chinese voice
+    # the rest of the app used before the tutor migration).
     if lang == "zh":
         raise ValueError("BROWSER_TTS_CHINESE")
 
@@ -80,6 +70,18 @@ def text_to_speech(text: str, lang: str) -> bytes:
     return _pcm_to_wav(pcm_data, sample_rate=16000)
 
 
+def text_to_speech_tutor(text: str) -> bytes:
+    """ElevenLabs TTS for the AI tutor only (custom Hua voice).
+
+    Strips parenthetical pinyin annotations and surface punctuation that the
+    voice shouldn't read literally, then calls ElevenLabs.
+    """
+    clean = re.sub(r'\([^)]*\)', '', text)
+    clean = re.sub(r'[,،.。!！?？;；:：—–\-]+', ' ', clean)
+    clean = re.sub(r'\s+', ' ', clean).strip()
+    return _elevenlabs_tts(clean or text)
+
+
 def _elevenlabs_tts(text: str) -> bytes:
     """Generate speech via ElevenLabs API (multilingual v2 — supports Chinese)."""
     import requests as http_requests
@@ -93,7 +95,7 @@ def _elevenlabs_tts(text: str) -> bytes:
     payload = {
         "text": text,
         "model_id": Config.ELEVENLABS_MODEL,
-        "speed": 1.15,               # slightly faster, especially helps Chinese pacing
+        "speed": 1.15,
         "voice_settings": {
             "stability": 0.4,
             "similarity_boost": 0.8,
