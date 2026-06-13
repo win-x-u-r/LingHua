@@ -1,5 +1,9 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Languages, BookOpen, BarChart3, Info, Globe, Mic, User, LogOut, MessageCircle, GraduationCap } from "lucide-react";
+import {
+  Languages, BookOpen, BarChart3, Info, Globe, Mic, User, LogOut,
+  MessageCircle, GraduationCap, Menu, X,
+} from "lucide-react";
 import lanternLogo from "@/assets/lantern-logo.png";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -10,6 +14,12 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
   const { user, profile, signOut } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close the drawer whenever the route changes
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -30,6 +40,7 @@ const Navbar = () => {
 
   const handleSignOut = async () => {
     await signOut();
+    setMobileOpen(false);
     navigate("/");
   };
 
@@ -45,7 +56,7 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Nav Links */}
+          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -97,46 +108,76 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu */}
-          <div className="md:hidden flex gap-1">
+          {/* Mobile: just a hamburger button — drawer below holds everything */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Menu"
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-border bg-card/95 backdrop-blur-lg animate-in slide-in-from-top-2 duration-150">
+          <div className="container mx-auto px-4 py-3 flex flex-col gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
               return (
-                <Link key={item.path} to={item.path}>
+                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className={active ? "bg-primary/10 text-primary" : ""}
+                    className={`w-full justify-start gap-3 h-11 ${
+                      active ? "bg-primary/10 text-primary" : ""
+                    }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-5 h-5" />
+                    <span className="font-semibold">{t(item.labelKey)}</span>
                   </Button>
                 </Link>
               );
             })}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
-            >
-              <Globe className="w-4 h-4" />
-            </Button>
-            {user ? (
-              <Link to="/profile">
-                <Button variant="ghost" size="icon">
-                  <User className="w-4 h-4" />
-                </Button>
-              </Link>
-            ) : (
-              <Link to="/auth">
-                <Button variant="ghost" size="icon">
-                  <User className="w-4 h-4" />
-                </Button>
-              </Link>
-            )}
+
+            <div className="flex items-center gap-2 pt-2 mt-2 border-t border-border">
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
+              >
+                <Globe className="w-4 h-4" />
+                {language === "ar" ? "English" : "العربية"}
+              </Button>
+
+              {user ? (
+                <>
+                  <Link to="/profile" onClick={() => setMobileOpen(false)} className="flex-1">
+                    <Button variant="ghost" className="w-full gap-2">
+                      <User className="w-4 h-4" />
+                      <span className="truncate">{profile?.full_name ?? "Profile"}</span>
+                    </Button>
+                  </Link>
+                  <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </>
+              ) : (
+                <Link to="/auth" onClick={() => setMobileOpen(false)} className="flex-1">
+                  <Button className="w-full bg-gradient-coral font-semibold">
+                    Sign In
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 };
