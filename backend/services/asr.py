@@ -74,17 +74,19 @@ def speech_to_text(audio_bytes: bytes, filename: str = "audio.webm", lang: str =
     """Transcribe audio to text.
 
     Routing:
-      - Arabic → Munsit (UAE-based, Gulf-dialect-aware). Falls back to Whisper
-        if Munsit fails or isn't configured.
+      - Arabic → Munsit (UAE-based, Gulf-dialect-aware). NO fallback — Whisper
+        hallucinates too badly on short Arabic clips, so a failure here surfaces
+        as an error rather than a lie.
       - Chinese / English / other → Whisper (with prompt bias + hallucination filter).
     """
-    # Arabic: prefer Munsit's dialect-aware ASR
-    if lang == "ar" and Config.MUNSIT_API_KEY:
-        try:
-            from services.munsit_stt import transcribe_arabic
-            return transcribe_arabic(audio_bytes, filename)
-        except Exception as e:
-            print(f"[ASR] Munsit Arabic ASR failed, falling back to Whisper: {e}")
+    if lang == "ar":
+        if not Config.MUNSIT_API_KEY:
+            raise RuntimeError(
+                "MUNSIT_API_KEY is not configured — Arabic ASR requires Munsit "
+                "(Whisper is not a safe fallback for short Arabic input)."
+            )
+        from services.munsit_stt import transcribe_arabic
+        return transcribe_arabic(audio_bytes, filename)
 
     return _whisper_transcribe(audio_bytes, filename, lang)
 
