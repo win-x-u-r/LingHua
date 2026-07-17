@@ -39,7 +39,14 @@ DOMAIN="${1:-}"
 EMAIL="${2:-}"
 SKIP_SSL=false
 REPO_URL="https://github.com/win-x-u-r/LingHua.git"
-INSTALL_DIR="/opt/linghua"
+# INSTALL_DIR defaults to the directory containing this script — so downloading
+# just deploy.sh into a folder and running it installs the app right there.
+# Override with LINGHUA_INSTALL_DIR=/path if you want a specific location
+# (e.g. the traditional /opt/linghua). Note: nginx/gunicorn run as www-data,
+# so the chosen dir must be traversable by that user. /home/<user>/ (mode 750)
+# usually isn't; /opt, /srv, or a chmod 755'd home dir work fine.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_DIR="${LINGHUA_INSTALL_DIR:-$SCRIPT_DIR}"
 WEB_ROOT="/var/www/linghua"
 SERVICE_NAME="linghua-backend"
 
@@ -99,27 +106,36 @@ echo "  nginx:  $(nginx -v 2>&1)"
 # ─────────────────────────────────────────────
 #  Step 2 — Clone repository
 # ─────────────────────────────────────────────
+mkdir -p "$INSTALL_DIR"
+cd "$INSTALL_DIR"
+
 if [[ -d "$INSTALL_DIR/.git" ]]; then
-  log "Repo already exists, pulling latest..."
-  cd "$INSTALL_DIR"
-  git fetch origin --prune
-  # Reset to the remote branch. This repo uses 'master'; fall back to 'main'.
-  # (Don't trust origin/HEAD — it can be a stale symbolic-ref pointing at a
-  #  branch that doesn't exist, which is what broke earlier deploys.)
-  if git rev-parse --verify --quiet origin/master >/dev/null; then
-    DEFAULT_BRANCH=master
-  elif git rev-parse --verify --quiet origin/main >/dev/null; then
-    DEFAULT_BRANCH=main
-  else
-    die "Could not find origin/master or origin/main to reset to."
-  fi
-  log "Resetting to origin/${DEFAULT_BRANCH}..."
-  git reset --hard "origin/${DEFAULT_BRANCH}"
+  log "Repo already in $INSTALL_DIR — pulling latest..."
+  git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL"
 else
-  log "Cloning repository to $INSTALL_DIR..."
-  git clone "$REPO_URL" "$INSTALL_DIR"
-  cd "$INSTALL_DIR"
+  # First-time install. The dir may already contain deploy.sh (which is why
+  # `git clone` won't work — it refuses non-empty targets). git init + fetch +
+  # reset --hard handles it cleanly and just overwrites deploy.sh with the
+  # repo's version.
+  log "Initializing repo in $INSTALL_DIR..."
+  git init -q
+  git remote add origin "$REPO_URL"
 fi
+
+git fetch origin --prune
+
+# Reset to the remote branch. This repo uses 'master'; fall back to 'main'.
+# (Don't trust origin/HEAD — it can be a stale symbolic-ref pointing at a
+#  branch that doesn't exist, which is what broke earlier deploys.)
+if git rev-parse --verify --quiet origin/master >/dev/null; then
+  DEFAULT_BRANCH=master
+elif git rev-parse --verify --quiet origin/main >/dev/null; then
+  DEFAULT_BRANCH=main
+else
+  die "Could not find origin/master or origin/main to reset to."
+fi
+log "Resetting to origin/${DEFAULT_BRANCH}..."
+git reset --hard "origin/${DEFAULT_BRANCH}"
 
 # ─────────────────────────────────────────────
 #  Step 3 — Backend setup
