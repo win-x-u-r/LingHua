@@ -450,12 +450,12 @@ const Flashcards = () => {
               <div className="text-7xl font-bold mb-4 mt-2 text-foreground animate-bounce-in">
                 {currentWord.hanzi}
               </div>
-              <div className="flex gap-4 mb-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 w-full max-w-xs sm:max-w-none sm:w-auto" onClick={(e) => e.stopPropagation()}>
                 <Button
                   size="lg"
                   onClick={handleSpeak}
                   disabled={isSpeaking}
-                  className="bg-gradient-lavender hover:scale-105 transition-transform disabled:opacity-60"
+                  className="w-full sm:w-auto bg-gradient-lavender hover:scale-105 transition-transform disabled:opacity-60"
                 >
                   <Volume2 className="w-5 h-5 mr-2" />
                   {t("flashcards.listen")}
@@ -464,7 +464,7 @@ const Flashcards = () => {
                   size="lg"
                   onClick={handleMicToggle}
                   disabled={isScoring}
-                  className={`transition-transform ${
+                  className={`w-full sm:w-auto transition-transform ${
                     isRecording
                       ? "bg-red-500 hover:bg-red-600 animate-pulse"
                       : "bg-gradient-coral hover:scale-105"
@@ -521,12 +521,12 @@ const Flashcards = () => {
                 </div>
               </div>
 
-              <div className="flex gap-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full max-w-xs sm:max-w-none sm:w-auto" onClick={(e) => e.stopPropagation()}>
                 <Button
                   size="lg"
                   onClick={handleSpeak}
                   disabled={isSpeaking}
-                  className="bg-gradient-lavender hover:scale-105 transition-transform disabled:opacity-60"
+                  className="w-full sm:w-auto bg-gradient-lavender hover:scale-105 transition-transform disabled:opacity-60"
                 >
                   <Volume2 className="w-5 h-5 mr-2" />
                   {t("flashcards.listen")}
@@ -536,10 +536,10 @@ const Flashcards = () => {
                   size="lg"
                   onClick={handleMicToggle}
                   disabled={isScoring}
-                  className={`transition-transform ${
+                  className={`w-full sm:w-auto transition-transform ${
                     isRecording
                       ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                  : "bg-gradient-coral hover:scale-105"
+                      : "bg-gradient-coral hover:scale-105"
                   }`}
                 >
                   {isRecording ? (
