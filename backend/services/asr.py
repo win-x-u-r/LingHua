@@ -1,132 +1,120 @@
-"""Automatic Speech Recognition using Huawei Cloud Speech Interaction Service (SIS).
+"""Automatic Speech Recognition via OpenAI Whisper.
 
-Converts student speech recordings to text for pronunciation evaluation.
-Supports Chinese Mandarin recognition for pronunciation practice.
+Migrated off Huawei Cloud SIS ASR (no more competition-voucher backing) —
+Whisper accepts webm/mp3/wav/m4a directly, so we skip the PCM conversion
+step Huawei required.
 
-All SDK imports are deferred to function call time so the app can start
-without the Huawei SDK installed (for local development).
+Anti-hallucination measures for short clips (Whisper's famous weakness —
+"subscribe to the channel" phenomenon):
+  1. Per-language `prompt` biases decoding toward the app's real domain
+     (short Mandarin words, common Arabic greetings) instead of YouTube speak.
+  2. `temperature=0` = deterministic decoding, no random generation.
+  3. Junk-phrase filter drops known hallucinations if they still slip through.
+
+Called by /asr and /pronounce (via app.py).
 """
 
+import re
+import requests
 from config import Config
-from utils.audio import convert_to_pcm, audio_to_base64, detect_audio_format
 
-# Huawei SIS ASR language models
-ASR_MODELS = {
-    "zh": "chinese_16k_general",
-    "ar": "arabic_16k_general",
+_WHISPER_URL = "https://api.openai.com/v1/audio/transcriptions"
+_WHISPER_MODEL = "whisper-1"
+
+_LANG_HINT = {"zh": "zh", "ar": "ar", "en": "en"}
+
+# Domain-biasing prompts. Whisper conditions its next-token predictions on
+# `prompt`, so seeding it with typical app content pulls output away from
+# YouTube-style filler. Max 224 tokens per lang.
+_PROMPTS = {
+    "zh": (
+        "学生在练习普通话发音。常见词语：你好，谢谢，再见，我，好，是，不，"
+        "老师，学生，中文，学习，喜欢，吃，喝，看，说，去，来，一，二，三。"
+    ),
+    "ar": (
+        "الطالب يتدرب على نطق كلمة أو عبارة قصيرة بالعربية. أمثلة شائعة: "
+        "مرحبا، أهلا، شكرا، من فضلك، نعم، لا، كيف حالك، صباح الخير، مساء الخير."
+    ),
+    "en": (
+        "The student is practicing pronunciation of a short English word or phrase, "
+        "such as hello, thank you, how are you, good morning, yes, no."
+    ),
 }
+
+# Whisper's greatest hits of hallucinated filler on short/silent clips.
+# If the returned text is *just* one of these (or trivially matches), drop it
+# rather than lie to the scoring layer.
+_HALLUCINATION_PATTERNS = [
+    re.compile(p, re.IGNORECASE) for p in [
+        # Arabic — YouTube "subscribe/like/thanks"
+        r"^\s*اشترك.*قنا",           # "subscribe to the channel" variants
+        r"^\s*شكر.*مشاهد",           # "thanks for watching"
+        r"^\s*ترجم[ةت].*(سيد|نانسي)", # "translation by …" credits
+        r"^\s*لا تنس.*(اعجاب|إعجاب)", # "don't forget to like"
+        # Chinese — subtitle credit / subscribe filler
+        r"^\s*请订阅",                # "please subscribe"
+        r"^\s*(多谢|谢谢)观看",       # "thanks for watching"
+        r"^\s*字幕由.*(提供|制作)",   # "subtitles by …"
+        r"^\s*本[视視]频",            # "this video …" credit lines
+        # English — the classic
+        r"^\s*(thanks?|thank you) for watching\.?\s*$",
+        r"^\s*please (like and )?subscribe.*",
+        r"^\s*subscribe to (my |the )?channel.*",
+    ]
+]
+
+
+def _looks_hallucinated(text: str) -> bool:
+    if not text:
+        return False
+    return any(p.search(text) for p in _HALLUCINATION_PATTERNS)
 
 
 def speech_to_text(audio_bytes: bytes, filename: str = "audio.webm", lang: str = "zh") -> str:
-    """Convert speech audio to text using Huawei Cloud SIS ASR.
+    """Transcribe audio to text.
 
-    Tries the SDK client first, falls back to signed REST.
-
-    Args:
-        audio_bytes: Raw audio file bytes from the client.
-        filename: Original filename (used to detect format).
-        lang: Expected language ("zh" for Chinese, "ar" for Arabic).
-
-    Returns:
-        Recognized text string.
+    Routing:
+      - Arabic → Munsit (UAE-based, Gulf-dialect-aware). Falls back to Whisper
+        if Munsit fails or isn't configured.
+      - Chinese / English / other → Whisper (with prompt bias + hallucination filter).
     """
-    # Convert to PCM WAV format that Huawei SIS expects
-    source_format = detect_audio_format(filename)
-    wav_bytes = convert_to_pcm(audio_bytes, source_format)
-    audio_b64 = audio_to_base64(wav_bytes)
-    asr_model = ASR_MODELS.get(lang, ASR_MODELS["zh"])
+    # Arabic: prefer Munsit's dialect-aware ASR
+    if lang == "ar" and Config.MUNSIT_API_KEY:
+        try:
+            from services.munsit_stt import transcribe_arabic
+            return transcribe_arabic(audio_bytes, filename)
+        except Exception as e:
+            print(f"[ASR] Munsit Arabic ASR failed, falling back to Whisper: {e}")
 
-    try:
-        return _asr_via_sdk(audio_b64, asr_model)
-    except ImportError:
-        return _asr_via_rest(audio_b64, asr_model)
-
-
-def _asr_via_sdk(audio_b64: str, asr_model: str) -> str:
-    """Call ASR using the Huawei SIS SDK client."""
-    from utils.huawei_auth import get_credentials
-    from huaweicloudsdksis.v1 import SisClient
-    from huaweicloudsdksis.v1.model import (
-        RecognizeShortAudioRequest,
-        PostShortAudioReq,
-        TranscriberConfig,
-    )
-    from huaweicloudsdkcore.http.http_config import HttpConfig
-
-    credentials = get_credentials()
-    config = HttpConfig.get_default_config()
-    client = (
-        SisClient.new_builder()
-        .with_http_config(config)
-        .with_credentials(credentials)
-        .with_endpoint(Config.sis_endpoint())
-        .build()
-    )
-
-    asr_config = TranscriberConfig(
-        audio_format="pcm16k16bit",
-        _property=asr_model,
-        add_punc="yes",
-    )
-
-    request = RecognizeShortAudioRequest()
-    request.body = PostShortAudioReq(data=audio_b64, config=asr_config)
-
-    try:
-        response = client.recognize_short_audio(request)
-    except Exception as e:
-        print(f"[ASR SDK ERROR] {e}")
-        raise
-
-    if response.result and response.result.text:
-        return response.result.text
-
-    # No text recognized — return empty string instead of crashing
-    return ""
+    return _whisper_transcribe(audio_bytes, filename, lang)
 
 
-def _asr_via_rest(audio_b64: str, asr_model: str) -> str:
-    """Fallback: call ASR via direct REST with SDK signing."""
-    import requests as http_requests
-    from utils.huawei_auth import get_credentials
+def _whisper_transcribe(audio_bytes: bytes, filename: str, lang: str) -> str:
+    """OpenAI Whisper transcription. Whisper accepts webm/mp3/wav/m4a directly."""
+    if not Config.OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY is not configured")
 
-    try:
-        from huaweicloudsdkcore.signer.signer import Signer
-        from huaweicloudsdkcore.sdk_request import SdkRequest
-    except ImportError as e:
-        raise RuntimeError(f"Huawei Cloud SDK required for ASR: {e}")
-
-    credentials = get_credentials()
-    url = f"{Config.sis_endpoint()}/v1/{Config.HUAWEI_SIS_PROJECT_ID}/asr/short-audio"
-    payload = {
-        "data": audio_b64,
-        "config": {
-            "audio_format": "wav",
-            "property": asr_model,
-            "add_punc": "yes",
-        },
+    hint = _LANG_HINT.get(lang, lang)
+    files = {"file": (filename or "audio.webm", audio_bytes)}
+    data = {
+        "model": _WHISPER_MODEL,
+        "language": hint,
+        "response_format": "json",
+        "temperature": 0,
     }
+    if hint in _PROMPTS:
+        data["prompt"] = _PROMPTS[hint]
 
-    sdk_request = SdkRequest(
-        method="POST",
-        schema="https",
-        host=Config.sis_endpoint().replace("https://", ""),
-        resource_path=f"/v1/{Config.HUAWEI_SIS_PROJECT_ID}/asr/short-audio",
-        header_params={"Content-Type": "application/json"},
-        body=payload,
-    )
-    signed = Signer.sign(sdk_request, credentials)
+    headers = {"Authorization": f"Bearer {Config.OPENAI_API_KEY}"}
 
-    response = http_requests.post(
-        url,
-        json=payload,
-        headers=dict(signed.header_params),
-        timeout=60,
-    )
-    response.raise_for_status()
+    response = requests.post(_WHISPER_URL, files=files, data=data, headers=headers, timeout=60)
+    if not response.ok:
+        raise RuntimeError(f"Whisper ASR failed: {response.status_code} {response.text}")
 
-    data = response.json()
-    if "result" in data and "text" in data["result"]:
-        return data["result"]["text"]
+    text = (response.json().get("text") or "").strip()
 
-    raise ValueError("Unexpected ASR response format")
+    if _looks_hallucinated(text):
+        print(f"[ASR] Dropping Whisper hallucination: {text!r}")
+        return ""
+
+    return text

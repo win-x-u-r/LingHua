@@ -132,8 +132,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip --quiet
 pip install --quiet -r requirements.txt
-pip install --quiet gunicorn websocket-client \
-  huaweicloudsdkcore huaweicloudsdksis huaweicloudsdknlp
+pip install --quiet gunicorn
 deactivate
 
 # Backend .env — generated from a PRIVATE secrets file kept OUTSIDE this repo,
