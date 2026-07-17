@@ -14,8 +14,12 @@ Request: multipart/form-data with "file" (audio) and optional "model"
 Response: JSON { transcriptionId, transcription, duration, timestamps[] }
 """
 
+import logging
+import time
 import requests as http_requests
 from config import Config
+
+logger = logging.getLogger(__name__)
 
 
 def transcribe_arabic(audio_bytes: bytes, filename: str = "audio.webm") -> str:
@@ -48,9 +52,17 @@ def transcribe_arabic(audio_bytes: bytes, filename: str = "audio.webm") -> str:
         "x-api-key": Config.MUNSIT_API_KEY,
     }
 
+    logger.info("Munsit -> POST %s (model=%s, mime=%s, %d bytes)",
+                url, Config.MUNSIT_STT_MODEL, _infer_mime(filename), len(audio_bytes))
+    t0 = time.perf_counter()
     response = http_requests.post(
         url, files=files, data=data, headers=headers, timeout=60
     )
+    elapsed = time.perf_counter() - t0
+    if not response.ok:
+        logger.error("Munsit <- %d in %.2fs: %s", response.status_code, elapsed, response.text[:300])
+    else:
+        logger.info("Munsit <- %d in %.2fs", response.status_code, elapsed)
     response.raise_for_status()
 
     payload = response.json()

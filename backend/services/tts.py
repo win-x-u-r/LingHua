@@ -16,8 +16,12 @@ don't hallucinate.
 """
 
 import re
+import time
+import logging
 import requests as http_requests
 from config import Config
+
+logger = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -26,27 +30,41 @@ from config import Config
 
 def text_to_speech(text: str, lang: str) -> bytes:
     """TTS for the translator / flashcards / practice / clickable phonemes."""
+    logger.info("TTS request: lang=%s, %d chars: %r", lang, len(text), text[:80])
+
     if lang == "zh":
-        # Chinese still uses the browser's Web Speech API (free & reliable).
+        logger.info("TTS zh -> signalling browser Web Speech API")
         raise ValueError("BROWSER_TTS_CHINESE")
 
     if lang == "ar" and Config.MUNSIT_API_KEY:
+        logger.info("TTS ar -> trying Munsit")
+        t0 = time.perf_counter()
         try:
             from services.munsit_tts import synthesize_arabic
-            return synthesize_arabic(text)
+            audio = synthesize_arabic(text)
+            logger.info("Munsit TTS ok in %.2fs (%d bytes)", time.perf_counter() - t0, len(audio))
+            return audio
         except Exception as e:
-            print(f"[TTS] Munsit Arabic TTS failed, falling back to ElevenLabs: {e}")
+            logger.warning("Munsit TTS failed in %.2fs, falling back to ElevenLabs: %s",
+                           time.perf_counter() - t0, e)
 
-    # English / Arabic-fallback / everything else → ElevenLabs (Hua)
-    return _elevenlabs_tts_clip(text)
+    logger.info("TTS %s -> ElevenLabs Hua (clip)", lang)
+    t0 = time.perf_counter()
+    audio = _elevenlabs_tts_clip(text)
+    logger.info("ElevenLabs ok in %.2fs (%d bytes)", time.perf_counter() - t0, len(audio))
+    return audio
 
 
 def text_to_speech_tutor(text: str) -> bytes:
     """ElevenLabs TTS for the AI tutor (custom Hua voice, expressive)."""
+    logger.info("Tutor TTS: %d chars: %r", len(text), text[:80])
     clean = re.sub(r'\([^)]*\)', '', text)
     clean = re.sub(r'[,،.。!！?？;；:：—–\-]+', ' ', clean)
     clean = re.sub(r'\s+', ' ', clean).strip()
-    return _elevenlabs_tts(clean or text, expressive=True)
+    t0 = time.perf_counter()
+    audio = _elevenlabs_tts(clean or text, expressive=True)
+    logger.info("Tutor ElevenLabs ok in %.2fs (%d bytes)", time.perf_counter() - t0, len(audio))
+    return audio
 
 
 # ─────────────────────────────────────────────────────────────

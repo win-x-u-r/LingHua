@@ -15,8 +15,12 @@ Called by /asr and /pronounce (via app.py).
 """
 
 import re
+import time
+import logging
 import requests
 from config import Config
+
+logger = logging.getLogger(__name__)
 
 _WHISPER_URL = "https://api.openai.com/v1/audio/transcriptions"
 _WHISPER_MODEL = "whisper-1"
@@ -74,19 +78,30 @@ def speech_to_text(audio_bytes: bytes, filename: str = "audio.webm", lang: str =
     """Transcribe audio to text.
 
     Routing:
-      - Arabic → Munsit (UAE-based, Gulf-dialect-aware). NO fallback — Whisper
+      - Arabic -> Munsit (UAE-based, Gulf-dialect-aware). NO fallback — Whisper
         hallucinates too badly on short Arabic clips, so a failure here surfaces
         as an error rather than a lie.
-      - Chinese / English / other → Whisper (with prompt bias + hallucination filter).
+      - Chinese / English / other -> Whisper (with prompt bias + hallucination filter).
     """
+    logger.info("ASR request: lang=%s, file=%s, size=%d bytes", lang, filename, len(audio_bytes))
+
     if lang == "ar":
         if not Config.MUNSIT_API_KEY:
+            logger.error("Arabic ASR requested but MUNSIT_API_KEY is not configured")
             raise RuntimeError(
                 "MUNSIT_API_KEY is not configured — Arabic ASR requires Munsit "
                 "(Whisper is not a safe fallback for short Arabic input)."
             )
         from services.munsit_stt import transcribe_arabic
-        return transcribe_arabic(audio_bytes, filename)
+        logger.info("Munsit STT: calling transcribe_arabic ...")
+        t0 = time.perf_counter()
+        try:
+            text = transcribe_arabic(audio_bytes, filename)
+        except Exception as e:
+            logger.error("Munsit STT FAILED after %.2fs: %s", time.perf_counter() - t0, e)
+            raise
+        logger.info("Munsit STT ok in %.2fs: %r", time.perf_counter() - t0, text[:120])
+        return text
 
     return _whisper_transcribe(audio_bytes, filename, lang)
 
@@ -109,14 +124,19 @@ def _whisper_transcribe(audio_bytes: bytes, filename: str, lang: str) -> str:
 
     headers = {"Authorization": f"Bearer {Config.OPENAI_API_KEY}"}
 
+    logger.info("Whisper: calling OpenAI (lang=%s) ...", hint)
+    t0 = time.perf_counter()
     response = requests.post(_WHISPER_URL, files=files, data=data, headers=headers, timeout=60)
+    elapsed = time.perf_counter() - t0
     if not response.ok:
+        logger.error("Whisper FAILED in %.2fs: %s %s", elapsed, response.status_code, response.text[:200])
         raise RuntimeError(f"Whisper ASR failed: {response.status_code} {response.text}")
 
     text = (response.json().get("text") or "").strip()
 
     if _looks_hallucinated(text):
-        print(f"[ASR] Dropping Whisper hallucination: {text!r}")
+        logger.warning("Whisper hallucination dropped after %.2fs: %r", elapsed, text)
         return ""
 
+    logger.info("Whisper ok in %.2fs: %r", elapsed, text[:120])
     return text

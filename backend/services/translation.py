@@ -12,9 +12,13 @@ Output is validated to make sure we never return implausible/spam text.
 """
 
 import re
+import time
+import logging
 import requests as http_requests
 from anthropic import Anthropic
 from config import Config
+
+logger = logging.getLogger(__name__)
 
 # Human-readable language names for the Claude prompt.
 LANG_NAMES = {
@@ -57,36 +61,27 @@ def _is_plausible_translation(text: str, target: str) -> bool:
 
 def translate_text(text: str, source: str, target: str) -> str:
     """Translate text between languages. Raises RuntimeError if every provider fails."""
+    logger.info("Translate: %s -> %s, %d chars: %r", source, target, len(text), text[:80])
     if source == target:
         return text
 
-    # 1. Claude (primary)
-    try:
-        out = _translate_claude(text, source, target)
-        if _is_plausible_translation(out, target):
-            return out
-        print(f"[Translation] Claude returned implausible output: {out!r}")
-    except Exception as e:
-        print(f"[Translation] Claude failed: {e}")
+    for name, fn in (("Claude", _translate_claude),
+                     ("Google", _translate_google),
+                     ("MyMemory", _translate_mymemory)):
+        t0 = time.perf_counter()
+        try:
+            out = fn(text, source, target)
+            elapsed = time.perf_counter() - t0
+            if _is_plausible_translation(out, target):
+                logger.info("Translate ok via %s in %.2fs: %r", name, elapsed, out[:80])
+                return out
+            logger.warning("Translate %s returned implausible output in %.2fs: %r",
+                           name, elapsed, out[:120])
+        except Exception as e:
+            logger.warning("Translate %s failed in %.2fs: %s",
+                           name, time.perf_counter() - t0, e)
 
-    # 2. Google Translate (free, unofficial)
-    try:
-        out = _translate_google(text, source, target)
-        if _is_plausible_translation(out, target):
-            return out
-        print(f"[Translation] Google returned implausible output: {out!r}")
-    except Exception as e:
-        print(f"[Translation] Google fallback failed: {e}")
-
-    # 3. MyMemory (last resort)
-    try:
-        out = _translate_mymemory(text, source, target)
-        if _is_plausible_translation(out, target):
-            return out
-        print(f"[Translation] MyMemory returned junk: {out!r}")
-    except Exception as e:
-        print(f"[Translation] MyMemory fallback failed: {e}")
-
+    logger.error("Translate: all providers failed for %s -> %s", source, target)
     raise RuntimeError("All translation providers failed or returned invalid output")
 
 

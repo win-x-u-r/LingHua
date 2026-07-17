@@ -6,6 +6,8 @@ MindSpore-based pronunciation scoring for the Ling Hua educational platform.
 
 import os
 import sys
+import time
+import logging
 import traceback
 from flask import Flask, request, jsonify, send_file, Response, stream_with_context
 from flask_cors import CORS
@@ -14,6 +16,17 @@ import json
 
 # Ensure backend directory is in path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# ─── Logging ─────────────────────────────────────────────────────────
+# stdout goes to journalctl under gunicorn/systemd; keep the format short
+# so it's readable in `journalctl -u linghua-backend -f`.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+    stream=sys.stdout,
+)
+logger = logging.getLogger("linghua")
 
 from config import Config
 from services.translation import translate_text
@@ -24,6 +37,26 @@ from services.tutor import chat as tutor_chat, chat_stream as tutor_chat_stream
 
 app = Flask(__name__)
 CORS(app, origins=Config.CORS_ORIGINS)
+
+
+# ─── Per-request access log with duration ────────────────────────────
+@app.before_request
+def _log_request_in():
+    # Skip health checks — they'd flood the log every few seconds
+    if request.path == "/health":
+        return
+    request._t0 = time.perf_counter()
+    logger.info("-> %s %s", request.method, request.path)
+
+
+@app.after_request
+def _log_request_out(response):
+    if request.path == "/health":
+        return response
+    elapsed = time.perf_counter() - getattr(request, "_t0", time.perf_counter())
+    level = logging.INFO if response.status_code < 400 else logging.WARNING
+    logger.log(level, "<- %s %s -> %d in %.2fs", request.method, request.path, response.status_code, elapsed)
+    return response
 
 
 @app.route("/health", methods=["GET"])
