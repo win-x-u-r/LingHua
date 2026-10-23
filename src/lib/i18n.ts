@@ -82,7 +82,7 @@ const translations: Record<string, Record<Language, string>> = {
 
   // Practice
   "practice.title": { en: "Speech Practice", ar: "تدريب النطق" },
-  "practice.subtitle": { en: "Practice your Mandarin pronunciation with AI feedback", ar: "تدرب على نطق الماندرين مع ملاحظات الذكاء الاصطناعي" },
+  "practice.subtitle": { en: "Pick a phrase, hear it, then say it. The lantern tells you which sounds to fix.", ar: "اختر عبارة واستمع إليها ثم انطقها. سيخبرك الفانوس بالأصوات التي تحتاج إلى تحسين." },
   "practice.expected_label": { en: "Expected Phrase (Chinese):", ar: ":العبارة المتوقعة (صيني)" },
   "practice.expected_placeholder": { en: "Enter the Chinese phrase you'll practice...", ar: "...أدخل العبارة الصينية التي ستتدرب عليها" },
   "practice.record_label": { en: "Record Your Pronunciation:", ar: ":سجل نطقك" },
@@ -93,10 +93,10 @@ const translations: Record<string, Record<Language, string>> = {
   "practice.expected": { en: "Expected:", ar: ":المتوقع" },
   "practice.you_said": { en: "You said:", ar: ":قلت" },
   "practice.accuracy": { en: "Pronunciation Accuracy:", ar: ":دقة النطق" },
-  "practice.tips_title": { en: "Practice Tips:", ar: ":نصائح التدريب" },
-  "practice.tip1": { en: "Record in a quiet environment for best results", ar: "سجل في بيئة هادئة للحصول على أفضل النتائج" },
-  "practice.tip2": { en: "Speak clearly and at a moderate pace", ar: "تحدث بوضوح وبسرعة معتدلة" },
-  "practice.tip3": { en: "Practice tones carefully - they change the meaning!", ar: "!تدرب على النغمات بعناية - فهي تغير المعنى" },
+  "practice.tips_title": { en: "Tips", ar: "نصائح" },
+  "practice.tip1": { en: "Record somewhere quiet.", ar: "سجّل في مكان هادئ." },
+  "practice.tip2": { en: "Speak clearly at a steady pace.", ar: "تحدث بوضوح وبسرعة معتدلة." },
+  "practice.tip3": { en: "Tones change the meaning, so listen for them first.", ar: "النغمات تغيّر المعنى، فاستمع إليها أولًا." },
   "practice.tip4": { en: "Try recording multiple times to improve your score", ar: "حاول التسجيل عدة مرات لتحسين درجتك" },
 
   // Flashcards - extra
@@ -139,12 +139,15 @@ const translations: Record<string, Record<Language, string>> = {
   "flashcards.practice": { en: "Practice", ar: "تدريب" },
 
   // Practice - extra
-  "practice.example": { en: "Example: 你好 or 谢谢", ar: "مثال: 你好 أو 谢谢" },
+  "practice.example": { en: "For example 你好", ar: "مثال: 你好" },
   "practice.enter_expected": { en: "Expected Text Required", ar: "النص المتوقع مطلوب" },
   "practice.enter_expected_desc": { en: "Please enter the expected phrase first", ar: "الرجاء إدخال العبارة المتوقعة أولاً" },
   "practice.great": { en: "Great! Keep it up!", ar: "!ممتاز! واصل" },
   "practice.almost": { en: "Almost! Practice more!", ar: "!قريب! تدرب أكثر" },
   "practice.try_again": { en: "Try Again! Speak slowly and clearly.", ar: ".حاول مرة أخرى! تحدث ببطء ووضوح" },
+  "practice.choose": { en: "Choose a phrase", ar: "اختر عبارة" },
+  "practice.own": { en: "Or type your own Chinese phrase", ar: "أو اكتب عبارة صينية من عندك" },
+  "practice.use": { en: "Use", ar: "استخدم" },
   "practice.characters": { en: "Characters", ar: "الأحرف" },
   "practice.pinyin": { en: "Pinyin", ar: "بينيين" },
   "practice.tones": { en: "Tones", ar: "النغمات" },

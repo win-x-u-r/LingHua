@@ -3,26 +3,33 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Mic, MicOff, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone } from "@/hooks/use-microphone";
-import { pronounceAndScore, getBreakdown, type PronunciationSegment, type PhonemeSegment } from "@/lib/linghuaAPI";
+import { supabase } from "@/integrations/supabase/client";
+import { pronounceAndScore, getBreakdown, speakText, type PhonemeSegment, type ScoreResponse } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PronunciationFeedback from "@/components/PronunciationFeedback";
+import ScoreResult from "@/components/ScoreResult";
+import Lantern, { type LanternMood } from "@/components/lantern/Lantern";
+
+type Level = "beginner" | "intermediate" | "advanced";
+
+interface PhraseOption {
+  id: string;
+  hanzi: string;
+  arabic_translation: string;
+}
 
 const Practice = () => {
+  const [level, setLevel] = useState<Level>("beginner");
+  const [phrases, setPhrases] = useState<PhraseOption[]>([]);
   const [expectedText, setExpectedText] = useState("");
-  const [recognizedText, setRecognizedText] = useState("");
-  const [expectedPinyin, setExpectedPinyin] = useState("");
-  const [expectedArabic, setExpectedArabic] = useState("");
-  const [recognizedPinyin, setRecognizedPinyin] = useState("");
-  const [recognizedArabic, setRecognizedArabic] = useState("");
-  const [score, setScore] = useState<number | null>(null);
-  const [scoreBreakdown, setScoreBreakdown] = useState<{ character: number; pinyin: number; tone: number } | null>(null);
-  const [segments, setSegments] = useState<PronunciationSegment[]>([]);
+  const [ownText, setOwnText] = useState("");
   const [breakdownSegments, setBreakdownSegments] = useState<PhonemeSegment[]>([]);
+  const [result, setResult] = useState<ScoreResponse | null>(null);
+  const [scoreFailed, setScoreFailed] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
   const { isRecording, startRecording, stopRecording, audioBlob, error: micError } = useMicrophone();
@@ -34,7 +41,17 @@ const Practice = () => {
     }
   }, [micError, toast]);
 
-  // Fetch a clickable phoneme breakdown as the user types (debounced),
+  // Learners pick a phrase from the word list instead of having to type Chinese
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("vocab").select("id, hanzi, arabic_translation").eq("level", level);
+      const list = (data as PhraseOption[]) || [];
+      setPhrases(list);
+      if (list.length > 0) choosePhrase(list[0].hanzi);
+    })();
+  }, [level]);
+
+  // Fetch a clickable phoneme breakdown for the chosen phrase (debounced for typed phrases),
   // so they can tap each character/pinyin/tone/Arabic segment to hear it.
   useEffect(() => {
     const text = expectedText.trim();
@@ -58,32 +75,10 @@ const Practice = () => {
       setIsProcessing(true);
       try {
         const file = new File([audioBlob], "recording.webm", { type: audioBlob.type });
-        const result = await pronounceAndScore(file, expectedText);
-        setRecognizedText(result.recognized);
-        setScore(result.score);
-        setExpectedPinyin(result.expected_pinyin || "");
-        setExpectedArabic(result.expected_arabic || "");
-        setRecognizedPinyin(result.recognized_pinyin || "");
-        setRecognizedArabic(result.recognized_arabic || "");
-        setScoreBreakdown({
-          character: result.breakdown.character.score,
-          pinyin: result.breakdown.pinyin.score,
-          tone: result.breakdown.tone.score,
-        });
-        setSegments(result.segments ?? []);
-
-        const { breakdown } = result;
-        const details = `Characters: ${breakdown.character.score}% | Pinyin: ${breakdown.pinyin.score}% | Tones: ${breakdown.tone.score}%`;
-        toast({
-          title: `Score: ${result.score}/100`,
-          description: details,
-        });
+        setResult(await pronounceAndScore(file, expectedText));
       } catch {
-        toast({
-          title: "Processing Failed",
-          description: "Please make sure the backend is running on localhost:5000",
-          variant: "destructive",
-        });
+        setScoreFailed(true);
+        toast({ title: t("common.error"), description: t("flashcards.scoring_failed_desc"), variant: "destructive" });
       } finally {
         setIsProcessing(false);
       }
@@ -92,230 +87,187 @@ const Practice = () => {
     processAudio();
   }, [audioBlob]);
 
-  const handleMicToggle = async () => {
-    if (!expectedText.trim()) {
-      toast({
-        title: t("practice.enter_expected"),
-        description: t("practice.enter_expected_desc"),
-        variant: "destructive",
-      });
-      return;
-    }
+  const choosePhrase = (text: string) => {
+    setExpectedText(text);
+    setResult(null);
+    setScoreFailed(false);
+  };
 
+  const handleMicToggle = async () => {
+    if (!expectedText.trim()) return;
     if (isRecording) {
       stopRecording();
     } else {
-      setRecognizedText("");
-      setScore(null);
-      setSegments([]);
+      setResult(null);
+      setScoreFailed(false);
       await startRecording();
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 85) return "text-green-500";
-    if (score >= 60) return "text-yellow-500";
-    return "text-red-500";
+  const handleListen = async () => {
+    if (!expectedText.trim() || isSpeaking) return;
+    setIsSpeaking(true);
+    try {
+      await speakText(expectedText, "zh");
+    } catch {
+      toast({ title: t("flashcards.tts_failed"), description: t("flashcards.tts_failed_desc"), variant: "destructive" });
+    } finally {
+      setIsSpeaking(false);
+    }
   };
 
-  const getScoreFeedback = (score: number) => {
-    if (score >= 85) return t("practice.great");
-    if (score >= 60) return t("practice.almost");
-    return t("practice.try_again");
-  };
+  const lanternMood: LanternMood = isRecording
+    ? "listening"
+    : isProcessing
+      ? "thinking"
+      : result
+        ? result.score >= 85 ? "celebrate" : result.score >= 60 ? "happy" : "sad"
+        : scoreFailed
+          ? "sad"
+          : "idle";
 
-  const getScoreProgress = (score: number) => {
-    if (score >= 85) return "bg-green-500";
-    if (score >= 60) return "bg-yellow-500";
-    return "bg-red-500";
-  };
+  const coachLine = isRecording
+    ? t("flashcards.listening")
+    : isProcessing
+      ? t("flashcards.thinking")
+      : result
+        ? t(result.score >= 85 ? "flashcards.result.great" : result.score >= 60 ? "flashcards.result.almost" : "flashcards.result.again")
+        : scoreFailed
+          ? t("flashcards.scoring_failed_desc")
+          : t("flashcards.hint");
+
+  const pinyin = breakdownSegments.map((s) => s.pinyin).join(" ");
+  const arabicSounds = breakdownSegments.map((s) => s.arabic).join(" ");
+  const meaning = phrases.find((p) => p.hanzi === expectedText)?.arabic_translation;
 
   return (
-    <div className="min-h-screen py-8 px-4 bg-gradient-to-br from-background via-primary/5 to-secondary/5">
-      <div className="container mx-auto max-w-3xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-primary">
-            {t("practice.title")}
-          </h1>
-          <p className="text-muted-foreground">
-            {t("practice.subtitle")}
-          </p>
+    <div className="container mx-auto max-w-5xl px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold">{t("practice.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("practice.subtitle")}</p>
+      </div>
+
+      <div className="grid md:grid-cols-[minmax(0,1fr)_17rem] gap-6 items-start">
+        <div className="flex flex-col gap-4">
+          {/* Choose what to say */}
+          <Card className="p-5 flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-bold">{t("practice.choose")}</h2>
+              <div role="tablist" className="flex border-2 border-stroke rounded-[10px] overflow-hidden text-sm font-bold">
+                {(["beginner", "intermediate", "advanced"] as Level[]).map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    role="tab"
+                    aria-selected={level === lvl}
+                    onClick={() => setLevel(lvl)}
+                    className={`px-3 py-1.5 border-border [&:not(:last-child)]:border-e-2 ${
+                      level === lvl ? "bg-foreground text-background" : "bg-card"
+                    }`}
+                  >
+                    {t(`common.${lvl}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto p-0.5">
+              {phrases.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  aria-pressed={expectedText === p.hanzi}
+                  onClick={() => choosePhrase(p.hanzi)}
+                  className={`flex items-baseline gap-2 rounded-[10px] border-2 px-3 py-1.5 ${
+                    expectedText === p.hanzi ? "border-stroke bg-foreground text-background" : "border-border bg-card"
+                  }`}
+                >
+                  <span lang="zh" className="font-zh font-bold text-lg">{p.hanzi}</span>
+                  <span lang="ar" dir="rtl" className="text-sm opacity-80">{p.arabic_translation}</span>
+                </button>
+              ))}
+            </div>
+
+            <form
+              className="flex flex-col gap-1.5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (ownText.trim()) choosePhrase(ownText.trim());
+              }}
+            >
+              <Label htmlFor="own">{t("practice.own")}</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="own"
+                  lang="zh"
+                  value={ownText}
+                  onChange={(e) => setOwnText(e.target.value)}
+                  placeholder={t("practice.example")}
+                  className="font-zh"
+                />
+                <Button type="submit" variant="outline" disabled={!ownText.trim()}>
+                  {t("practice.use")}
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          {/* The phrase, how it sounds, and the buttons to hear and say it */}
+          {expectedText && (
+            <Card className="p-6 flex flex-col items-center text-center gap-2">
+              <span lang="zh" className="font-zh font-bold text-6xl md:text-7xl leading-tight">{expectedText}</span>
+              {pinyin && <span className="text-2xl font-bold text-primary">{pinyin}</span>}
+              {meaning && <span lang="ar" dir="rtl" className="text-xl">{meaning}</span>}
+              {arabicSounds && (
+                <span className="text-sm text-muted-foreground">
+                  {t("home.sample.sounds")} <span lang="ar" dir="rtl" className="font-bold text-foreground">{arabicSounds}</span>
+                </span>
+              )}
+
+              {breakdownSegments.length > 0 && (
+                <div className="mt-3">
+                  <PronunciationFeedback segments={breakdownSegments} compact />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 w-full mt-4">
+                <Button size="lg" variant="outline" onClick={handleListen} disabled={isSpeaking}>
+                  <span lang="zh" className="font-zh me-2">听</span>
+                  {t("flashcards.listen")}
+                </Button>
+                <Button
+                  size="lg"
+                  variant={isRecording ? "destructive" : "default"}
+                  onClick={handleMicToggle}
+                  disabled={isProcessing}
+                  aria-pressed={isRecording}
+                >
+                  <span lang="zh" className="font-zh me-2">说</span>
+                  {isRecording ? t("flashcards.stop") : isProcessing ? t("flashcards.scoring") : t("flashcards.pronounce")}
+                </Button>
+              </div>
+            </Card>
+          )}
         </div>
 
-        {/* Main Practice Card */}
-        <Card className="p-8 bg-gradient-to-br from-card to-muted/20 shadow-glow border-2 border-primary/10">
-          <div className="space-y-6">
-            {/* Expected Text Input */}
-            <div>
-              <Label htmlFor="expected" className="text-lg font-semibold mb-2 block">
-                {t("practice.expected_label")}
-              </Label>
-              <Input
-                id="expected"
-                placeholder={t("practice.expected_placeholder")}
-                value={expectedText}
-                onChange={(e) => setExpectedText(e.target.value)}
-                className="text-lg"
-              />
-              <p className="text-sm text-muted-foreground mt-2">
-                {t("practice.example")}
-              </p>
+        {/* Coach: the lantern, what to do next, and the last score */}
+        <aside className="flex flex-col gap-4" aria-live="polite">
+          <Card className="p-5 flex flex-col items-center text-center gap-3">
+            <Lantern mood={lanternMood} className="w-32 h-32 md:w-40 md:h-40" />
+            <p className="font-semibold">{coachLine}</p>
+          </Card>
 
-              {/* Clickable phoneme breakdown — tap any sound to hear it (before recording) */}
-              {breakdownSegments.length > 0 && (
-                <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border">
-                  <PronunciationFeedback segments={breakdownSegments} />
-                </div>
-              )}
-            </div>
+          {result && <ScoreResult result={result} />}
 
-            {/* Mic Recording Button */}
-            <div>
-              <Label className="text-lg font-semibold mb-2 block">
-                {t("practice.record_label")}
-              </Label>
-              <Button
-                onClick={handleMicToggle}
-                disabled={!expectedText.trim() || isProcessing}
-                className={`w-full ${
-                  isRecording
-                    ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                    : "bg-card text-foreground"
-                }`}
-                size="lg"
-              >
-                {isRecording ? (
-                  <>
-                    <MicOff className="w-5 h-5 mr-2" />
-                    {t("practice.stop_recording")}
-                  </>
-                ) : isProcessing ? (
-                  t("practice.processing")
-                ) : (
-                  <>
-                    <Mic className="w-5 h-5 mr-2" />
-                    {t("practice.start_recording")}
-                  </>
-                )}
-              </Button>
-              {isRecording && (
-                <div className="flex items-center justify-center gap-1 mt-3">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-1 bg-red-500 rounded-full animate-pulse"
-                      style={{
-                        height: `${12 + Math.random() * 20}px`,
-                        animationDelay: `${i * 0.15}s`,
-                      }}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm text-red-500 font-medium">{t("common.recording")}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Results */}
-            {recognizedText && (
-              <div className="mt-6 p-4 bg-muted/50 rounded-lg border-2 border-primary/20 animate-bounce-in">
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-primary" />
-                  {t("practice.results")}
-                </h3>
-
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t("practice.expected")}</p>
-                    <p className="text-lg font-medium">{expectedText}</p>
-                    {expectedPinyin && (
-                      <p className="text-sm text-primary font-medium">{expectedPinyin}</p>
-                    )}
-                    {expectedArabic && (
-                      <p className="text-sm text-muted-foreground font-medium" dir="rtl">{expectedArabic}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t("practice.you_said")}</p>
-                    <p className="text-lg font-medium">{recognizedText}</p>
-                    {recognizedPinyin && (
-                      <p className="text-sm text-secondary-foreground font-medium">{recognizedPinyin}</p>
-                    )}
-                    {recognizedArabic && (
-                      <p className="text-sm text-muted-foreground font-medium" dir="rtl">{recognizedArabic}</p>
-                    )}
-                  </div>
-
-                  {segments.length > 0 && (
-                    <div className="pt-4 border-t">
-                      <PronunciationFeedback segments={segments} />
-                    </div>
-                  )}
-
-                  {score !== null && (
-                    <div className="pt-4 border-t">
-                      <p className="text-sm text-muted-foreground mb-2">{t("practice.accuracy")}</p>
-
-                      {/* Animated score bar */}
-                      <div className="relative h-4 bg-muted rounded-full overflow-hidden mb-2">
-                        <div
-                          className={`h-full rounded-full transition-all duration-1000 ease-out ${getScoreProgress(score)}`}
-                          style={{ width: `${score}%` }}
-                        />
-                      </div>
-
-                      <div className={`text-4xl font-bold ${getScoreColor(score)}`}>
-                        {score}/100
-                      </div>
-                      <p className="text-lg mt-2">{getScoreFeedback(score)}</p>
-
-                      {/* Detailed breakdown */}
-                      {scoreBreakdown && (
-                        <div className="mt-4 grid grid-cols-3 gap-3">
-                          <div className="text-center p-2 bg-muted/50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">{t("practice.characters")}</p>
-                            <p className="text-lg font-bold">{scoreBreakdown.character}%</p>
-                          </div>
-                          <div className="text-center p-2 bg-muted/50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">{t("practice.pinyin")}</p>
-                            <p className="text-lg font-bold">{scoreBreakdown.pinyin}%</p>
-                          </div>
-                          <div className="text-center p-2 bg-muted/50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">{t("practice.tones")}</p>
-                            <p className="text-lg font-bold">{scoreBreakdown.tone}%</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {/* Tips Card */}
-        <Card className="mt-6 p-6 bg-muted/30">
-          <h3 className="font-bold mb-4 text-lg">{t("practice.tips_title")}</h3>
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-start gap-2">
-              <span className="text-primary">•</span>
-              <span>{t("practice.tip1")}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary">•</span>
-              <span>{t("practice.tip2")}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary">•</span>
-              <span>{t("practice.tip3")}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary">•</span>
-              <span>{t("practice.tip4")}</span>
-            </li>
-          </ul>
-        </Card>
+          <Card className="p-5">
+            <h2 className="font-bold mb-2">{t("practice.tips_title")}</h2>
+            <ul className="flex flex-col gap-1.5 text-sm list-disc ps-5 marker:text-primary">
+              <li>{t("practice.tip1")}</li>
+              <li>{t("practice.tip2")}</li>
+              <li>{t("practice.tip3")}</li>
+            </ul>
+          </Card>
+        </aside>
       </div>
     </div>
   );

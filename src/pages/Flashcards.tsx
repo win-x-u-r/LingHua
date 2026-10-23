@@ -13,6 +13,7 @@ import { updateWordReview, getDueWords } from "@/lib/spacedRepetition";
 import { shouldUpdateStreak } from "@/lib/gamification";
 import StrokeOrder from "@/components/StrokeOrder";
 import PronunciationFeedback from "@/components/PronunciationFeedback";
+import ScoreResult from "@/components/ScoreResult";
 import Lantern, { type LanternMood } from "@/components/lantern/Lantern";
 
 type Level = "beginner" | "intermediate" | "advanced";
@@ -548,45 +549,7 @@ const Flashcards = () => {
             <p className="font-semibold">{coachLine}</p>
           </Card>
 
-          {result && (
-            <Card className="p-5 flex flex-col gap-4">
-              <div className="flex items-baseline justify-between gap-2" dir="ltr">
-                <span className="text-4xl font-bold tabular-nums">
-                  {result.score}
-                  <span className="text-base text-muted-foreground">/100</span>
-                </span>
-                <span className="font-bold text-success-foreground">+{result.earnedXp} XP</span>
-              </div>
-
-              <ul className="flex flex-col gap-2 text-sm">
-                {[
-                  { label: t("practice.characters"), value: result.breakdown.character.score },
-                  { label: t("practice.pinyin"), value: result.breakdown.pinyin.score },
-                  { label: t("practice.tones"), value: result.breakdown.tone.score },
-                ].map((row) => (
-                  <li key={row.label} className="flex items-center gap-2">
-                    <span className="w-20 shrink-0">{row.label}</span>
-                    <Progress value={row.value} className="h-2 flex-1" />
-                    <span className="w-10 text-end tabular-nums font-bold" dir="ltr">{row.value}%</span>
-                  </li>
-                ))}
-              </ul>
-
-              {result.recognized && (
-                <p className="text-sm">
-                  <span className="text-muted-foreground">{t("flashcards.result.heard")}: </span>
-                  <span lang="zh" className="font-zh font-bold">{result.recognized}</span>
-                  {result.recognized_arabic && (
-                    <span lang="ar" dir="rtl" className="ms-2 font-bold">{result.recognized_arabic}</span>
-                  )}
-                </p>
-              )}
-
-              {result.segments && result.segments.length > 0 && (
-                <PronunciationFeedback segments={result.segments} compact />
-              )}
-            </Card>
-          )}
+          {result && <ScoreResult result={result} earnedXp={result.earnedXp} />}
         </aside>
       </div>
     </div>
