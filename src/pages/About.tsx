@@ -83,7 +83,7 @@ const About = () => {
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-4 flex items-center justify-center gap-3">
             <img src={lanternLogo} alt="Líng Huà logo" className="w-12 h-12" />
-            <span className="bg-gradient-rainbow bg-clip-text text-primary">
+            <span className="text-primary">
               {language === "ar" ? "حول لينغ هوا" : "About Líng Huà"}
             </span>
           </h1>
@@ -114,7 +114,7 @@ const About = () => {
         {/* Huawei Technology Section */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold text-center mb-8">
-            <span className="bg-gradient-coral bg-clip-text text-transparent">
+            <span className="text-primary">
               {language === "ar" ? "تقنيات هواوي المستخدمة" : "Huawei Technologies Used"}
             </span>
           </h2>

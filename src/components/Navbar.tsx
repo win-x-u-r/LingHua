@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  Languages, BookOpen, BarChart3, Info, Globe, Mic, User, LogOut,
-  MessageCircle, GraduationCap, Menu, X,
-} from "lucide-react";
-import lanternLogo from "@/assets/lantern-logo.png";
 import { Button } from "@/components/ui/button";
+import Lantern from "@/components/lantern/Lantern";
+import Seal from "@/components/Seal";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -23,20 +21,23 @@ const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Each section is marked by a seal with a related character instead of an icon
   const navItems = [
-    { path: "/", labelKey: "nav.home", icon: Languages },
-    { path: "/translator", labelKey: "nav.translator", icon: Languages },
-    { path: "/flashcards", labelKey: "nav.flashcards", icon: BookOpen },
-    { path: "/practice", labelKey: "nav.practice", icon: Mic },
+    { path: "/", labelKey: "nav.home", seal: "家" },
+    { path: "/translator", labelKey: "nav.translator", seal: "译" },
+    { path: "/flashcards", labelKey: "nav.flashcards", seal: "卡" },
+    { path: "/practice", labelKey: "nav.practice", seal: "说" },
     ...(user
       ? [
-          { path: "/grammar", labelKey: "nav.grammar", icon: GraduationCap },
-          { path: "/dashboard", labelKey: "nav.dashboard", icon: BarChart3 },
-          { path: "/tutor", labelKey: "nav.tutor", icon: MessageCircle },
+          { path: "/grammar", labelKey: "nav.grammar", seal: "文" },
+          { path: "/dashboard", labelKey: "nav.dashboard", seal: "进" },
+          { path: "/tutor", labelKey: "nav.tutor", seal: "师" },
         ]
       : []),
-    { path: "/about", labelKey: "nav.about", icon: Info },
+    { path: "/about", labelKey: "nav.about", seal: "关" },
   ];
+
+  const initial = (profile?.full_name ?? user?.email ?? "?").trim().charAt(0).toUpperCase();
 
   const handleSignOut = async () => {
     await signOut();
@@ -45,79 +46,82 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border shadow-soft">
+    <nav className="sticky top-0 z-50 bg-card border-b-2 border-stroke">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 border-primary-foreground">
+        <div className="flex items-center justify-between h-16 gap-3">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 hover:scale-105 transition-transform">
-            <img src={lanternLogo} alt="Líng Huà" className="w-10 h-10 rounded-full object-contain" />
-            <span className="text-xl font-bold bg-gradient-coral bg-clip-text text-transparent">
-              Líng Huà
-            </span>
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <Lantern still className="w-10 h-10" />
+            <span className="text-xl font-bold text-primary">Líng Huà</span>
           </Link>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => {
-              const Icon = item.icon;
               const active = isActive(item.path);
               return (
-                <Link key={item.path} to={item.path}>
-                  <Button
-                    variant="ghost"
-                    className={`gap-2 transition-all ${
-                      active ? "bg-primary/10 text-primary shadow-soft" : "hover:bg-muted"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="font-semibold">{t(item.labelKey)}</span>
-                  </Button>
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-2 h-10 px-2.5 rounded-[10px] border-2 font-semibold ${
+                    active ? "border-stroke bg-accent text-foreground" : "border-transparent hover:bg-muted"
+                  }`}
+                >
+                  <Seal char={item.seal} size="sm" tone={active ? "red" : "ink"} />
+                  <span>{t(item.labelKey)}</span>
                 </Link>
               );
             })}
+          </div>
 
-            {/* Language Toggle */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
               size="icon"
               onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
-              className="ms-2"
               title={language === "ar" ? "Switch to English" : "التبديل إلى العربية"}
+              aria-label={language === "ar" ? "Switch to English" : "التبديل إلى العربية"}
             >
-              <Globe className="w-4 h-4" />
+              {language === "ar" ? "EN" : "ع"}
             </Button>
+            <ThemeToggle />
 
-            {/* Auth Buttons */}
             {user ? (
-              <div className="flex items-center gap-2 ms-2">
-                <Link to="/profile">
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <User className="w-4 h-4" />
-                  </Button>
+              <>
+                <Link to="/profile" aria-label={t("nav.profile")} title={t("nav.profile")}>
+                  <span className="grid place-items-center w-10 h-10 rounded-full border-2 border-stroke bg-secondary text-secondary-foreground font-bold">
+                    {initial}
+                  </span>
                 </Link>
-                <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  {t("nav.signout")}
                 </Button>
-              </div>
+              </>
             ) : (
-              <Link to="/auth" className="ms-2">
-                <Button className="bg-gradient-coral font-semibold" size="sm">
-                  Sign In
-                </Button>
+              <Link to="/auth">
+                <Button size="sm">{t("nav.signin")}</Button>
               </Link>
             )}
           </div>
 
-          {/* Mobile: just a hamburger button — drawer below holds everything */}
-          <div className="md:hidden">
+          {/* Mobile and tablet: the menu button opens a drawer that holds everything */}
+          <div className="lg:hidden flex items-center gap-2">
+            <ThemeToggle />
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               onClick={() => setMobileOpen((v) => !v)}
-              aria-label="Menu"
+              aria-label={t("nav.menu")}
               aria-expanded={mobileOpen}
             >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                {mobileOpen ? (
+                  <path d="M6 6 L18 18 M18 6 L6 18" />
+                ) : (
+                  <path d="M4 7 H20 M4 12 H20 M4 17 H20" />
+                )}
+              </svg>
             </Button>
           </div>
         </div>
@@ -125,53 +129,49 @@ const Navbar = () => {
 
       {/* Mobile drawer */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-card/95 backdrop-blur-lg animate-in slide-in-from-top-2 duration-150">
+        <div className="lg:hidden border-t-2 border-stroke bg-card">
           <div className="container mx-auto px-4 py-3 flex flex-col gap-1">
             {navItems.map((item) => {
-              const Icon = item.icon;
               const active = isActive(item.path);
               return (
-                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start gap-3 h-11 ${
-                      active ? "bg-primary/10 text-primary" : ""
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-semibold">{t(item.labelKey)}</span>
-                  </Button>
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-3 h-12 px-2 rounded-[10px] border-2 font-semibold text-lg ${
+                    active ? "border-stroke bg-accent" : "border-transparent"
+                  }`}
+                >
+                  <Seal char={item.seal} size="sm" tone={active ? "red" : "ink"} />
+                  <span>{t(item.labelKey)}</span>
                 </Link>
               );
             })}
 
-            <div className="flex items-center gap-2 pt-2 mt-2 border-t border-border">
+            <div className="flex items-center gap-2 pt-3 mt-2 border-t-2 border-border">
               <Button
                 variant="outline"
-                className="flex-1 gap-2"
+                className="flex-1"
                 onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
               >
-                <Globe className="w-4 h-4" />
-                {language === "ar" ? "English" : "العربية"}
+                {t("nav.language")}
               </Button>
 
               {user ? (
                 <>
                   <Link to="/profile" onClick={() => setMobileOpen(false)} className="flex-1">
-                    <Button variant="ghost" className="w-full gap-2">
-                      <User className="w-4 h-4" />
-                      <span className="truncate">{profile?.full_name ?? "Profile"}</span>
+                    <Button variant="outline" className="w-full">
+                      <span className="truncate">{profile?.full_name ?? t("nav.profile")}</span>
                     </Button>
                   </Link>
-                  <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
-                    <LogOut className="w-4 h-4" />
+                  <Button variant="ghost" onClick={handleSignOut}>
+                    {t("nav.signout")}
                   </Button>
                 </>
               ) : (
                 <Link to="/auth" onClick={() => setMobileOpen(false)} className="flex-1">
-                  <Button className="w-full bg-gradient-coral font-semibold">
-                    Sign In
-                  </Button>
+                  <Button className="w-full">{t("nav.signin")}</Button>
                 </Link>
               )}
             </div>

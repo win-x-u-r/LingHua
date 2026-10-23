@@ -7,58 +7,107 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  /* Red Seal: ink outlines, solid stamp shadows, lantern red and gold. */
   :root {
-    /* Vibrant red Chinese-inspired palette */
-    --background: 0 20% 97%;
-    --foreground: 220 30% 25%;
+    --background: 30 60% 96%;
+    --foreground: 16 19% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 25%;
+    --card-foreground: 16 19% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 25%;
+    --popover-foreground: 16 19% 11%;
 
-    /* Vibrant red primary */
-    --primary: 0 85% 55%;
+    /* Lantern red */
+    --primary: 4 75% 48%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 0 90% 62%;
+    --primary-glow: 4 75% 48%;
 
-    /* Mint secondary */
-    --secondary: 140 65% 85%;
-    --secondary-foreground: 140 80% 25%;
+    /* Gold, soft */
+    --secondary: 45 100% 88%;
+    --secondary-foreground: 41 100% 21%;
 
-    /* Lavender accent */
-    --accent: 230 55% 85%;
-    --accent-foreground: 230 80% 30%;
+    /* Red, soft */
+    --accent: 10 80% 94%;
+    --accent-foreground: 4 75% 32%;
 
-    /* Gold sunshine */
-    --sunshine: 45 100% 55%;
-    --sunshine-foreground: 45 100% 20%;
+    /* Gold */
+    --sunshine: 40 82% 50%;
+    --sunshine-foreground: 41 100% 11%;
 
-    --muted: 220 20% 93%;
-    --muted-foreground: 220 20% 50%;
+    --muted: 23 39% 91%;
+    --muted-foreground: 18 12% 39%;
 
-    --destructive: 0 85% 60%;
+    --destructive: 4 75% 40%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 30% 88%;
-    --input: 220 30% 88%;
-    --ring: 0 85% 55%;
+    /* Correct answers only, so red never means "right" */
+    --success: 161 63% 33%;
+    --success-soft: 150 48% 91%;
+    --success-foreground: 161 64% 22%;
 
-    --radius: 1rem;
+    --border: 24 32% 85%;
+    --input: 16 19% 11%;
+    --ring: 40 82% 50%;
 
-    /* Gradients */
-    --gradient-coral: linear-gradient(135deg, hsl(0 85% 55%), hsl(350 90% 50%));
-    --gradient-mint: linear-gradient(135deg, hsl(140 65% 85%), hsl(160 70% 80%));
-    --gradient-lavender: linear-gradient(135deg, hsl(230 55% 85%), hsl(250 60% 80%));
-    --gradient-rainbow: linear-gradient(90deg, hsl(0 85% 55%), hsl(140 65% 85%), hsl(230 55% 85%), hsl(45 100% 55%));
+    /* Outline and offset shadow that give every card and button its stamped look */
+    --stroke: 16 19% 11%;
+    --stamp: 16 19% 11%;
 
-    /* Shadows */
-    --shadow-soft: 0 4px 20px -4px hsl(0 85% 55% / 0.3);
-    --shadow-glow: 0 0 30px hsl(0 90% 62% / 0.4);
+    --radius: 0.875rem;
 
-    /* Animations */
-    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    /* Kept for existing class names; all solid now, no rainbow */
+    --gradient-coral: linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+    --gradient-mint: linear-gradient(hsl(var(--secondary)), hsl(var(--secondary)));
+    --gradient-lavender: linear-gradient(hsl(var(--accent)), hsl(var(--accent)));
+    --gradient-rainbow: linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+
+    --shadow-soft: 3px 3px 0 hsl(var(--stamp));
+    --shadow-glow: 5px 5px 0 hsl(var(--stamp));
+
+    --font-sans: "Baloo Bhaijaan 2", "Segoe UI", "Geeza Pro", system-ui, sans-serif;
+    --font-zh: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  .dark {
+    --background: 13 19% 9%;
+    --foreground: 27 53% 93%;
+
+    --card: 14 18% 14%;
+    --card-foreground: 27 53% 93%;
+
+    --popover: 14 18% 14%;
+    --popover-foreground: 27 53% 93%;
+
+    --primary: 5 100% 64%;
+    --primary-foreground: 12 41% 7%;
+    --primary-glow: 5 100% 64%;
+
+    --secondary: 41 57% 15%;
+    --secondary-foreground: 41 89% 63%;
+
+    --accent: 7 40% 17%;
+    --accent-foreground: 6 100% 74%;
+
+    --sunshine: 41 89% 63%;
+    --sunshine-foreground: 41 100% 11%;
+
+    --muted: 16 20% 19%;
+    --muted-foreground: 21 17% 70%;
+
+    --destructive: 5 100% 64%;
+    --destructive-foreground: 12 41% 7%;
+
+    --success: 158 55% 59%;
+    --success-soft: 159 43% 16%;
+    --success-foreground: 159 64% 69%;
+
+    --border: 16 20% 19%;
+    --input: 27 40% 86%;
+    --ring: 41 89% 63%;
+
+    --stroke: 27 40% 86%;
+    --stamp: 18 21% 28%;
   }
 }
 
@@ -69,7 +118,12 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Nunito', 'Arial', sans-serif;
+    font-family: var(--font-sans);
+  }
+
+  [lang="zh"],
+  .chinese-text {
+    font-family: var(--font-zh);
   }
 
   /* RTL Support */

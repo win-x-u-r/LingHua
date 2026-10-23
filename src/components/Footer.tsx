@@ -1,19 +1,15 @@
-import footerBg from "@/assets/footer-bg.png";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Footer = () => {
+  const { t } = useLanguage();
+
   return (
-    <footer className="mt-auto w-full relative h-[150px]">
-      {/* Background image layer */}
-      <div
-        className="absolute inset-0 bg-no-repeat bg-cover"
-        style={{ backgroundImage: `url(${footerBg})`, backgroundPosition: 'center 80%' }}
-      />
-      {/* Content */}
-      <div className="relative h-full pb-3 flex items-center justify-center">
-        <div className="text-sm font-mono text-zinc-950/60 font-medium">
-          © 2026 Ling Hua - Your Mandarin Learning Companion
-        </div>
-      
+    <footer className="mt-auto w-full border-t-2 border-stroke bg-card">
+      <div className="container mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+        <span className="font-bold text-foreground">
+          Líng Huà <span lang="zh" className="text-primary">灵话</span>
+        </span>
+        <span>© 2026 · {t("footer.tagline")}</span>
       </div>
     </footer>
   );

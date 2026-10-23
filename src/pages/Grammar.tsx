@@ -128,7 +128,7 @@ const Grammar = () => {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8">
         <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-coral bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-2 text-primary">
             {t("grammar.title")}
           </h1>
           <p className="text-muted-foreground">{t("grammar.subtitle")}</p>
@@ -140,7 +140,7 @@ const Grammar = () => {
               key={lvl}
               onClick={() => setLevel(lvl)}
               variant={level === lvl ? "default" : "outline"}
-              className={level === lvl ? "bg-gradient-mint" : ""}
+              className={level === lvl ? "bg-foreground text-background" : ""}
             >
               {t(`common.${lvl}`)}
             </Button>

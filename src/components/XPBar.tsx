@@ -17,7 +17,7 @@ export function XPBar({ totalXp, compact = false }: XPBarProps) {
   if (compact) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs font-bold bg-gradient-coral bg-clip-text text-transparent">
+        <span className="text-xs font-bold text-primary">
           Lv.{current.level}
         </span>
         <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
@@ -33,7 +33,7 @@ export function XPBar({ totalXp, compact = false }: XPBarProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-bold bg-gradient-coral bg-clip-text text-transparent">
+        <span className="font-bold text-primary">
           Level {current.level} — {title}
         </span>
         <span className="text-muted-foreground">
