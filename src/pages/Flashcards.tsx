@@ -379,7 +379,7 @@ const Flashcards = () => {
 
         {/* Header with XP */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-mint bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-foreground">
             {t("flashcards.title")}
           </h1>
           <div className="flex items-center gap-2 bg-sunshine/20 px-4 py-2 rounded-full">
@@ -395,7 +395,7 @@ const Flashcards = () => {
               key={lvl}
               onClick={() => handleSelectMode(lvl)}
               variant={mode === lvl ? "default" : "outline"}
-              className={mode === lvl ? "bg-gradient-mint" : ""}
+              className={mode === lvl ? "bg-foreground text-background" : ""}
             >
               {t(`common.${lvl}`)}
             </Button>
@@ -455,7 +455,7 @@ const Flashcards = () => {
                   size="lg"
                   onClick={handleSpeak}
                   disabled={isSpeaking}
-                  className="w-full sm:w-auto bg-gradient-lavender hover:scale-105 transition-transform disabled:opacity-60"
+                  className="w-full sm:w-auto bg-card text-foreground disabled:opacity-60"
                 >
                   <Volume2 className="w-5 h-5 mr-2" />
                   {t("flashcards.listen")}
@@ -464,10 +464,10 @@ const Flashcards = () => {
                   size="lg"
                   onClick={handleMicToggle}
                   disabled={isScoring}
-                  className={`w-full sm:w-auto transition-transform ${
+                  className={`w-full sm:w-auto ${
                     isRecording
                       ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                      : "bg-gradient-coral hover:scale-105"
+                      : "bg-gradient-coral"
                   }`}
                 >
                   {isRecording ? (
@@ -526,7 +526,7 @@ const Flashcards = () => {
                   size="lg"
                   onClick={handleSpeak}
                   disabled={isSpeaking}
-                  className="w-full sm:w-auto bg-gradient-lavender hover:scale-105 transition-transform disabled:opacity-60"
+                  className="w-full sm:w-auto bg-card text-foreground disabled:opacity-60"
                 >
                   <Volume2 className="w-5 h-5 mr-2" />
                   {t("flashcards.listen")}
@@ -536,10 +536,10 @@ const Flashcards = () => {
                   size="lg"
                   onClick={handleMicToggle}
                   disabled={isScoring}
-                  className={`w-full sm:w-auto transition-transform ${
+                  className={`w-full sm:w-auto ${
                     isRecording
                       ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                      : "bg-gradient-coral hover:scale-105"
+                      : "bg-gradient-coral"
                   }`}
                 >
                   {isRecording ? (
@@ -563,7 +563,7 @@ const Flashcards = () => {
           <Button
             onClick={handleNext}
             disabled={currentIndex === vocabulary.length - 1}
-            className="bg-gradient-coral hover:scale-105 transition-transform"
+            className="bg-gradient-coral"
           >
             {t("flashcards.next")}
             <ChevronRight className="w-4 h-4 ml-2" />

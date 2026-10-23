@@ -411,7 +411,7 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-lavender bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold text-foreground">
               {t("dashboard.student.title")}
             </h1>
             <p className="text-muted-foreground">{t("dashboard.student.subtitle")}</p>
@@ -589,7 +589,7 @@ const Dashboard = () => {
               <CardContent className="flex flex-col items-center justify-center py-8 gap-4">
                 {wordsToReview > 0 ? (
                   <>
-                    <div className="text-6xl font-bold bg-gradient-coral bg-clip-text text-transparent">
+                    <div className="text-6xl font-bold text-primary">
                       {wordsToReview}
                     </div>
                     <p className="text-muted-foreground text-center">
@@ -694,7 +694,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-lavender bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold text-foreground">
               {t("dashboard.teacher.title")}
             </h1>
             <p className="text-muted-foreground">{t("dashboard.teacher.subtitle")}</p>
@@ -847,7 +847,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <div className="text-end">
-                      <p className="font-bold text-sm bg-gradient-coral bg-clip-text text-transparent">
+                      <p className="font-bold text-sm text-primary">
                         {student.total_xp} XP
                       </p>
                     </div>

@@ -67,7 +67,7 @@ const Auth = () => {
           <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-glow mx-auto mb-4">
             <img src={lanternLogo} alt="Ling Hua logo" className="w-14 h-14 object-contain" />
           </div>
-          <h1 className="text-2xl font-bold bg-gradient-coral bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold text-primary">
             {isSignUp ? "Join Líng Huà" : "Welcome Back"}
           </h1>
         </div>
@@ -112,7 +112,7 @@ const Auth = () => {
                   <Button
                     type="button"
                     variant={role === "student" ? "default" : "outline"}
-                    className={`w-full ${role === "student" ? "bg-gradient-mint" : ""}`}
+                    className={`w-full ${role === "student" ? "bg-foreground text-background" : ""}`}
                     onClick={() => setRole("student")}
                   >
                     Student (in a class)
@@ -128,7 +128,7 @@ const Auth = () => {
                   <Button
                     type="button"
                     variant={role === "teacher" ? "default" : "outline"}
-                    className={`w-full ${role === "teacher" ? "bg-gradient-lavender" : ""}`}
+                    className={`w-full ${role === "teacher" ? "bg-foreground text-background" : ""}`}
                     onClick={() => setRole("teacher")}
                   >
                     Teacher
@@ -207,7 +207,7 @@ const Auth = () => {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-coral hover:scale-105 transition-transform"
+            className="w-full bg-gradient-coral"
             size="lg"
           >
             {isSubmitting ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}

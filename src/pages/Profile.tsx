@@ -161,19 +161,19 @@ const Profile = () => {
 
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Card className="p-4 text-center">
-            <div className="text-3xl font-bold bg-gradient-coral bg-clip-text text-transparent">
+            <div className="text-3xl font-bold text-primary">
               {progress.total_xp}
             </div>
             <div className="text-xs text-muted-foreground mt-1">Total XP</div>
           </Card>
           <Card className="p-4 text-center">
-            <div className="text-3xl font-bold bg-gradient-mint bg-clip-text text-transparent">
+            <div className="text-3xl font-bold text-foreground">
               {progress.completed_words}
             </div>
             <div className="text-xs text-muted-foreground mt-1">Words Learned</div>
           </Card>
           <Card className="p-4 text-center">
-            <div className="text-3xl font-bold bg-gradient-lavender bg-clip-text text-transparent">
+            <div className="text-3xl font-bold text-foreground">
               {totalAttempts}
             </div>
             <div className="text-xs text-muted-foreground mt-1">Practice Sessions</div>
@@ -213,7 +213,6 @@ const Profile = () => {
                   <Button
                     onClick={handleJoinClassroom}
                     disabled={joiningClassroom || !classroomCode.trim()}
-                    className="bg-gradient-mint"
                   >
                     {joiningClassroom ? "..." : t("profile.join")}
                   </Button>

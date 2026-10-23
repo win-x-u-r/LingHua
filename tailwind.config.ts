@@ -52,6 +52,17 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          soft: "hsl(var(--success-soft))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        stroke: "hsl(var(--stroke))",
+        stamp: "hsl(var(--stamp))",
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)"],
+        zh: ["var(--font-zh)"],
       },
       backgroundImage: {
         'gradient-coral': 'var(--gradient-coral)',
@@ -62,6 +73,8 @@ export default {
       boxShadow: {
         'soft': 'var(--shadow-soft)',
         'glow': 'var(--shadow-glow)',
+        'stamp': '5px 5px 0 hsl(var(--stamp))',
+        'stamp-sm': '3px 3px 0 hsl(var(--stamp))',
       },
       borderRadius: {
         lg: "var(--radius)",

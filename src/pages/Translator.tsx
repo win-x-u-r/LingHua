@@ -120,9 +120,9 @@ const Translator = () => {
 
   return (
     <div className="min-h-screen py-8 px-4">
-      <div className="container mx-auto max-w-6xl bg-[#f9f5f5]">
+      <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-coral bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-4 text-primary">
             {t("translator.title")}
           </h1>
           <p className="text-muted-foreground" dir="rtl">
@@ -140,7 +140,7 @@ const Translator = () => {
                   size="icon"
                   variant={isRecording && activeMicLang === "ar" ? "destructive" : "outline"}
                   onClick={() => handleMicToggle("ar")}
-                  className={`hover:scale-110 transition-all ${isRecording && activeMicLang === "ar" ? "animate-pulse" : ""}`}
+                  className={`transition-all ${isRecording && activeMicLang === "ar" ? "animate-pulse" : ""}`}
                 >
                   {isRecording && activeMicLang === "ar" ? (
                     <MicOff className="w-4 h-4" />
@@ -153,7 +153,7 @@ const Translator = () => {
                   variant="outline"
                   onClick={() => handleSpeak(arabicText, "ar")}
                   disabled={!arabicText}
-                  className="hover:bg-primary/10 hover:scale-110 transition-all"
+                  className="hover:bg-primary/10 transition-all"
                 >
                   <Volume2 className="w-4 h-4" />
                 </Button>
@@ -171,7 +171,7 @@ const Translator = () => {
             <Button
               onClick={() => handleTranslate("ar")}
               disabled={!arabicText || isTranslating}
-              className="w-full mt-4 bg-gradient-coral hover:scale-105 transition-transform"
+              className="w-full mt-4 bg-gradient-coral"
             >
               {t("translator.to_chinese")}
             </Button>
@@ -182,7 +182,7 @@ const Translator = () => {
             <Button
               size="icon"
               onClick={handleSwap}
-              className="rounded-full w-14 h-14 bg-gradient-coral shadow-glow hover:scale-110 hover:rotate-180 transition-all"
+              className="rounded-full w-14 h-14 bg-gradient-coral shadow-glow transition-all"
             >
               <ArrowLeftRight className="w-6 h-6" />
             </Button>
@@ -197,7 +197,7 @@ const Translator = () => {
                   size="icon"
                   variant={isRecording && activeMicLang === "zh" ? "destructive" : "outline"}
                   onClick={() => handleMicToggle("zh")}
-                  className={`hover:scale-110 transition-all ${isRecording && activeMicLang === "zh" ? "animate-pulse" : ""}`}
+                  className={`transition-all ${isRecording && activeMicLang === "zh" ? "animate-pulse" : ""}`}
                 >
                   {isRecording && activeMicLang === "zh" ? (
                     <MicOff className="w-4 h-4" />
@@ -210,7 +210,7 @@ const Translator = () => {
                   variant="outline"
                   onClick={() => handleSpeak(chineseText, "zh")}
                   disabled={!chineseText}
-                  className="hover:bg-secondary/10 hover:scale-110 transition-all"
+                  className="hover:bg-secondary/10 transition-all"
                 >
                   <Volume2 className="w-4 h-4" />
                 </Button>
@@ -227,7 +227,7 @@ const Translator = () => {
             <Button
               onClick={() => handleTranslate("zh")}
               disabled={!chineseText || isTranslating}
-              className="w-full mt-4 bg-gradient-mint hover:scale-105 transition-transform"
+              className="w-full mt-4"
             >
               {t("translator.to_arabic")}
             </Button>

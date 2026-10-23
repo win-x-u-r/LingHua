@@ -134,7 +134,7 @@ const Practice = () => {
     <div className="min-h-screen py-8 px-4 bg-gradient-to-br from-background via-primary/5 to-secondary/5">
       <div className="container mx-auto max-w-3xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-coral bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-4 text-primary">
             {t("practice.title")}
           </h1>
           <p className="text-muted-foreground">
@@ -177,10 +177,10 @@ const Practice = () => {
               <Button
                 onClick={handleMicToggle}
                 disabled={!expectedText.trim() || isProcessing}
-                className={`w-full transition-transform ${
+                className={`w-full ${
                   isRecording
                     ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                    : "bg-gradient-lavender hover:scale-105"
+                    : "bg-card text-foreground"
                 }`}
                 size="lg"
               >

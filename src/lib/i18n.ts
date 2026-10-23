@@ -9,6 +9,14 @@ const translations: Record<string, Record<Language, string>> = {
   "nav.dashboard": { en: "Dashboard", ar: "لوحة التحكم" },
   "nav.grammar": { en: "Grammar", ar: "القواعد" },
   "nav.about": { en: "About", ar: "حول" },
+  "nav.profile": { en: "Profile", ar: "الملف الشخصي" },
+  "nav.signin": { en: "Sign in", ar: "تسجيل الدخول" },
+  "nav.signout": { en: "Sign out", ar: "تسجيل الخروج" },
+  "nav.menu": { en: "Menu", ar: "القائمة" },
+  "nav.language": { en: "العربية", ar: "English" },
+  "theme.light": { en: "Light mode", ar: "الوضع الفاتح" },
+  "theme.dark": { en: "Dark mode", ar: "الوضع الداكن" },
+  "footer.tagline": { en: "Mandarin for Arabic speakers", ar: "الماندرين للناطقين بالعربية" },
 
   // Home
   "home.badge": { en: "​Personalized. Intelligent. Effective.", ar: "!ابدأ رحلة تعلم الماندرين" },

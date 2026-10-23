@@ -50,7 +50,7 @@ const Home = () => {
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-bounce-in">
-            <span className="bg-gradient-rainbow bg-clip-text text-primary text-7xl">
+            <span className="text-primary text-7xl">
               {t("home.hero.line1")}
             </span>
             <br />
@@ -58,7 +58,7 @@ const Home = () => {
           </h1>
 
           <Link to="/translator" className="bg-primary-foreground">
-            <Button size="lg" className="bg-gradient-coral hover:scale-105 transition-transform shadow-glow text-lg px-8 py-6 font-semibold">
+            <Button size="lg" className="bg-gradient-coral shadow-glow text-lg px-8 py-6 font-semibold">
               {t("home.cta")}
             </Button>
           </Link>
@@ -77,7 +77,7 @@ const Home = () => {
               const Icon = feature.icon;
               return (
                 <Link key={index} to={feature.link}>
-                  <Card className="p-6 hover:shadow-glow transition-all hover:-translate-y-2 cursor-pointer h-full border-2 border-transparent hover:border-primary/20 flex flex-col items-center text-center">
+                  <Card className="p-6 hover:shadow-glow transition-all cursor-pointer h-full border-2 border-transparent hover:border-primary/20 flex flex-col items-center text-center">
                     <div
                       className={`w-16 h-16 rounded-2xl ${feature.gradient} items-center justify-center mb-4 shadow-soft flex`}
                     >
@@ -99,7 +99,7 @@ const Home = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             {stats.map((stat, index) => (
               <div key={index} className="text-center animate-float" style={{ animationDelay: `${index * 0.2}s` }}>
-                <div className="text-4xl font-bold bg-gradient-coral bg-clip-text text-transparent mb-2">
+                <div className="text-4xl font-bold text-primary mb-2">
                   {stat.number}
                 </div>
                 <div className="text-sm text-muted-foreground">{t(stat.labelKey)}</div>
