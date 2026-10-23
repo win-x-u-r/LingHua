@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, PenTool } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import HanziWriter from "hanzi-writer";
 
@@ -79,7 +78,7 @@ const StrokeOrder = ({ character, onQuizComplete }: StrokeOrderProps) => {
     <div className="flex flex-col items-center gap-2">
       <div
         ref={containerRef}
-        className="border border-border rounded-lg bg-background"
+        className="border-2 border-border rounded-[10px] bg-background"
         style={{ width: 200, height: 200 }}
       />
       {strokeCount !== null && (
@@ -94,7 +93,6 @@ const StrokeOrder = ({ character, onQuizComplete }: StrokeOrderProps) => {
           onClick={handleAnimate}
           disabled={mode === "animating"}
         >
-          <Play className="w-3 h-3 mr-1" />
           {t("flashcards.play")}
         </Button>
         <Button
@@ -103,7 +101,6 @@ const StrokeOrder = ({ character, onQuizComplete }: StrokeOrderProps) => {
           onClick={handleQuiz}
           disabled={mode === "quiz"}
         >
-          <PenTool className="w-3 h-3 mr-1" />
           {t("flashcards.practice")}
         </Button>
       </div>
