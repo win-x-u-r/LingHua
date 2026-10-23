@@ -1,15 +1,21 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import lanternLogo from "@/assets/lantern-logo.png";
+import { useRef, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Lantern, { type LanternMood } from "@/components/lantern/Lantern";
+import Seal from "@/components/Seal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, type UserRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { AVATARS } from "@/lib/avatars";
 
-const AVATARS = ["panda", "dragon", "phoenix", "bamboo", "lotus", "star"];
+const ROLES: { value: UserRole; labelKey: string }[] = [
+  { value: "student", labelKey: "auth.role.student" },
+  { value: "independent", labelKey: "auth.role.independent" },
+  { value: "teacher", labelKey: "auth.role.teacher" },
+];
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -20,14 +26,28 @@ const Auth = () => {
   const [classroomCode, setClassroomCode] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, signIn, joinClassroom } = useAuth();
+  const { user, loading, signUp, signIn, joinClassroom } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // The lantern reacts to the form: happy while an email is typed, turns its back for the password
+  const [mood, setMood] = useState<LanternMood>("idle");
+  const [bounce, setBounce] = useState(0);
+  const lastBounce = useRef(0);
+  const bumpLantern = () => {
+    const now = Date.now();
+    if (now - lastBounce.current < 420) return;
+    lastBounce.current = now;
+    setBounce((b) => b + 1);
+  };
+
+  if (!loading && user && !isSubmitting) return <Navigate to="/" replace />;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setMood("thinking");
 
     try {
       if (isSignUp) {
@@ -41,17 +61,20 @@ const Auth = () => {
           }
         }
 
-        toast({ title: "Account created!", description: "Welcome to Ling Hua!" });
-        navigate(role === "teacher" ? "/dashboard" : "/flashcards");
+        setMood("celebrate");
+        toast({ title: t("auth.created"), description: t("auth.created.desc") });
+        navigate(role === "teacher" ? "/dashboard" : "/");
       } else {
         await signIn(email, password);
-        toast({ title: "Welcome back!" });
-        navigate("/flashcards");
+        setMood("happy");
+        toast({ title: t("auth.welcomed") });
+        navigate("/");
       }
     } catch (err: any) {
+      setMood("sad");
       toast({
-        title: isSignUp ? "Sign up failed" : "Sign in failed",
-        description: err.message || "Please try again",
+        title: isSignUp ? t("auth.signup.failed") : t("auth.signin.failed"),
+        description: err.message || t("auth.try_again"),
         variant: "destructive",
       });
     } finally {
@@ -59,160 +82,143 @@ const Auth = () => {
     }
   };
 
+  const leaveField = () => setMood((m) => (m === "watch" || m === "shy" ? "idle" : m));
+
   return (
-    <div className="min-h-screen py-12 px-4 flex items-center justify-center bg-gradient-to-br from-background via-primary/5 to-secondary/5">
-      <Card className="w-full max-w-md p-8 shadow-glow border-2 border-primary/10">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-glow mx-auto mb-4">
-            <img src={lanternLogo} alt="Ling Hua logo" className="w-14 h-14 object-contain" />
+    <div className="min-h-screen py-10 px-4 flex items-start md:items-center justify-center">
+      <Card className="w-full max-w-4xl grid md:grid-cols-2 overflow-hidden p-0">
+        <div className="bg-muted border-b-2 md:border-b-0 md:border-e-2 border-stroke flex items-center justify-center min-h-[220px] md:min-h-[520px]">
+          <Lantern mood={mood} bounce={bounce} entering className="w-48 h-48 md:w-72 md:h-72" />
+        </div>
+
+        <div className="p-6 md:p-8 flex flex-col gap-5">
+          <div>
+            <h1 className="text-3xl font-bold">{isSignUp ? t("auth.join") : t("auth.welcome")}</h1>
+            <p lang="zh" className="font-zh text-muted-foreground">{isSignUp ? "欢迎加入" : "欢迎回来"}</p>
           </div>
-          <h1 className="text-2xl font-bold text-primary">
-            {isSignUp ? "Join Líng Huà" : "Welcome Back"}
-          </h1>
-        </div>
 
-        {/* Toggle */}
-        <div className="flex gap-2 mb-6">
-          <Button
-            variant={!isSignUp ? "default" : "outline"}
-            className={`flex-1 ${!isSignUp ? "bg-gradient-coral" : ""}`}
-            onClick={() => setIsSignUp(false)}
-          >
-            Sign In
-          </Button>
-          <Button
-            variant={isSignUp ? "default" : "outline"}
-            className={`flex-1 ${isSignUp ? "bg-gradient-coral" : ""}`}
-            onClick={() => setIsSignUp(true)}
-          >
-            Sign Up
-          </Button>
-        </div>
+          {/* Log in or sign up */}
+          <div className="grid grid-cols-2 border-2 border-stroke rounded-[10px] overflow-hidden font-bold" role="tablist">
+            {[false, true].map((signUpTab) => (
+              <button
+                key={String(signUpTab)}
+                type="button"
+                role="tab"
+                aria-selected={isSignUp === signUpTab}
+                onClick={() => setIsSignUp(signUpTab)}
+                className={`py-2 ${isSignUp === signUpTab ? "bg-foreground text-background" : "bg-card"}`}
+              >
+                {signUpTab ? t("auth.signup") : t("auth.signin")}
+              </button>
+            ))}
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignUp && (
-            <>
-              {/* Full Name */}
-              <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Your name"
-                  required
-                />
-              </div>
-
-              {/* Role Selection */}
-              <div>
-                <Label>I am a</Label>
-                <div className="flex flex-col gap-2 mt-1">
-                  <Button
-                    type="button"
-                    variant={role === "student" ? "default" : "outline"}
-                    className={`w-full ${role === "student" ? "bg-foreground text-background" : ""}`}
-                    onClick={() => setRole("student")}
-                  >
-                    Student (in a class)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={role === "independent" ? "default" : "outline"}
-                    className={`w-full ${role === "independent" ? "bg-gradient-coral" : ""}`}
-                    onClick={() => setRole("independent")}
-                  >
-                    Independent Learner
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={role === "teacher" ? "default" : "outline"}
-                    className={`w-full ${role === "teacher" ? "bg-foreground text-background" : ""}`}
-                    onClick={() => setRole("teacher")}
-                  >
-                    Teacher
-                  </Button>
-                </div>
-              </div>
-
-              {/* Avatar Selection */}
-              <div>
-                <Label>Choose your avatar</Label>
-                <div className="flex gap-2 mt-1 justify-center">
-                  {AVATARS.map((avatar) => (
-                    <button
-                      key={avatar}
-                      type="button"
-                      onClick={() => setSelectedAvatar(avatar)}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-lg border-2 transition-all ${
-                        selectedAvatar === avatar
-                          ? "border-primary bg-primary/10 scale-110"
-                          : "border-muted hover:border-primary/50"
-                      }`}
-                    >
-                      {avatar === "panda" && "🐼"}
-                      {avatar === "dragon" && "🐉"}
-                      {avatar === "phoenix" && "🦅"}
-                      {avatar === "bamboo" && "🎋"}
-                      {avatar === "lotus" && "🪷"}
-                      {avatar === "star" && "⭐"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Classroom Code (students only) */}
-              {role === "student" && (
-                <div>
-                  <Label htmlFor="classroom">Classroom Code (optional)</Label>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {isSignUp && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="name">{t("auth.name")}</Label>
                   <Input
-                    id="classroom"
-                    value={classroomCode}
-                    onChange={(e) => setClassroomCode(e.target.value)}
-                    placeholder="Enter your teacher's code"
+                    id="name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder={t("auth.name.placeholder")}
+                    required
                   />
                 </div>
-              )}
-            </>
-          )}
 
-          {/* Email */}
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+                <fieldset className="flex flex-col gap-1.5">
+                  <legend className="text-sm font-medium mb-1.5">{t("auth.role")}</legend>
+                  <div className="flex flex-col gap-2">
+                    {ROLES.map((r) => (
+                      <Button
+                        key={r.value}
+                        type="button"
+                        variant="outline"
+                        aria-pressed={role === r.value}
+                        className={`w-full justify-start ${role === r.value ? "bg-foreground text-background" : ""}`}
+                        onClick={() => setRole(r.value)}
+                      >
+                        {t(r.labelKey)}
+                      </Button>
+                    ))}
+                  </div>
+                </fieldset>
 
-          {/* Password */}
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              minLength={6}
-            />
-          </div>
+                <fieldset className="flex flex-col gap-1.5">
+                  <legend className="text-sm font-medium mb-1.5">{t("auth.avatar")}</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(AVATARS).map(([id, char]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        aria-label={id}
+                        aria-pressed={selectedAvatar === id}
+                        onClick={() => setSelectedAvatar(id)}
+                        className={`rounded-xl ${selectedAvatar === id ? "ring-[3px] ring-ring ring-offset-2 ring-offset-card" : ""}`}
+                      >
+                        <Seal char={char} tone={selectedAvatar === id ? "red" : "ink"} />
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
 
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-coral"
-            size="lg"
-          >
-            {isSubmitting ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
-          </Button>
-        </form>
+                {role === "student" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="classroom">{t("auth.classroom")}</Label>
+                    <Input
+                      id="classroom"
+                      value={classroomCode}
+                      onChange={(e) => setClassroomCode(e.target.value)}
+                      placeholder={t("auth.classroom.placeholder")}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">{t("auth.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                dir="ltr"
+                value={email}
+                onFocus={() => setMood("watch")}
+                onBlur={leaveField}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setMood("watch");
+                  bumpLantern();
+                }}
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password">{t("auth.password")}</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onFocus={() => setMood("shy")}
+                onBlur={leaveField}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  bumpLantern();
+                }}
+                placeholder={t("auth.password.placeholder")}
+                required
+                minLength={6}
+              />
+            </div>
+
+            <Button type="submit" disabled={isSubmitting} size="lg" className="w-full mt-2">
+              {isSubmitting ? t("auth.wait") : isSignUp ? t("auth.create") : t("auth.signin")}
+            </Button>
+          </form>
+        </div>
       </Card>
     </div>
   );
