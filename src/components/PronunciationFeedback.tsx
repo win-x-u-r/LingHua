@@ -55,7 +55,7 @@ const PronunciationFeedback = ({ segments, compact = false }: PronunciationFeedb
 
   // Green/red when we have a verdict; neutral (tappable) when just exploring.
   const colorClass = (ok: boolean | undefined) =>
-    ok === undefined ? "text-foreground" : ok ? "text-green-500" : "text-red-500";
+    ok === undefined ? "text-foreground" : ok ? "text-success" : "text-destructive";
 
   const handlePlay = async (id: string, text: string, lang: "zh" | "ar") => {
     if (!text || playing) return;
@@ -97,8 +97,8 @@ const PronunciationFeedback = ({ segments, compact = false }: PronunciationFeedb
                   onClick={() => handlePlay(id, text, lang)}
                   disabled={playing !== null && playing !== id}
                   title={t("practice.tap_hint")}
-                  className={`${cellW} shrink-0 text-center ${pad} rounded-md transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40 ${
-                    playing === id ? "bg-primary/10 animate-pulse" : ""
+                  className={`${cellW} shrink-0 text-center ${pad} rounded-md hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 ${
+                    playing === id ? "bg-accent" : ""
                   } ${fontFor[row.key]} ${colorClass(row.ok(s))}`}
                 >
                   {row.render(s)}
@@ -112,11 +112,11 @@ const PronunciationFeedback = ({ segments, compact = false }: PronunciationFeedb
         {hasScores && (
           <div className={`flex items-center gap-4 mt-2 ${labelPad} text-xs text-muted-foreground`}>
             <span className="flex items-center gap-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-success" />
               {t("practice.correct")}
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500" />
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-destructive" />
               {t("practice.incorrect")}
             </span>
           </div>

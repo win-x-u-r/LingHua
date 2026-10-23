@@ -1,19 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Mic, MicOff, Volume2, ChevronRight, Star, RotateCcw } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone } from "@/hooks/use-microphone";
 import { supabase } from "@/integrations/supabase/client";
-import { speakText, pronounceAndScore, getBreakdown, type PhonemeSegment } from "@/lib/linghuaAPI";
+import { speakText, pronounceAndScore, getBreakdown, type PhonemeSegment, type ScoreResponse } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateWordReview, getDueWords } from "@/lib/spacedRepetition";
 import { shouldUpdateStreak } from "@/lib/gamification";
 import StrokeOrder from "@/components/StrokeOrder";
 import PronunciationFeedback from "@/components/PronunciationFeedback";
+import Lantern, { type LanternMood } from "@/components/lantern/Lantern";
 
 type Level = "beginner" | "intermediate" | "advanced";
 type Mode = Level | "review";
@@ -42,6 +42,11 @@ const Flashcards = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [dueCount, setDueCount] = useState(0);
   const [cardBreakdown, setCardBreakdown] = useState<PhonemeSegment[]>([]);
+  // The last score shows beside the card instead of in a toast, so it stays readable
+  const [result, setResult] = useState<(ScoreResponse & { earnedXp: number }) | null>(null);
+  const [scoreFailed, setScoreFailed] = useState(false);
+  const [sessionXp, setSessionXp] = useState(0);
+  const [finished, setFinished] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { isRecording, startRecording, stopRecording, audioBlob, error: micError } = useMicrophone();
@@ -72,6 +77,11 @@ const Flashcards = () => {
   // Fetch the clickable phoneme breakdown for the current word so each
   // character/pinyin/tone/Arabic segment on the card back is tap-to-hear.
   useEffect(() => {
+    setResult(null);
+    setScoreFailed(false);
+  }, [vocabulary, currentIndex]);
+
+  useEffect(() => {
     const word = vocabulary[currentIndex];
     if (!word?.hanzi) {
       setCardBreakdown([]);
@@ -88,6 +98,8 @@ const Flashcards = () => {
 
     const processAudio = async () => {
       setIsScoring(true);
+      setResult(null);
+      setScoreFailed(false);
       const currentWord = vocabulary[currentIndex];
 
       try {
@@ -169,31 +181,10 @@ const Flashcards = () => {
           }
         }
 
-        // Detailed feedback with breakdown
-        const { breakdown } = result;
-        const details = [
-          `Characters: ${breakdown.character.score}%`,
-          `Pinyin: ${breakdown.pinyin.score}%`,
-          `Tones: ${breakdown.tone.score}%`,
-        ].join(" | ");
-
-        let feedback = "";
-        let variant: "default" | "destructive" = "default";
-        if (result.score >= 85) {
-          feedback = `${t("flashcards.perfect")} (${details})`;
-        } else if (result.score >= 60) {
-          feedback = `${t("flashcards.almost_there")} (${details})`;
-        } else {
-          feedback = `${t("flashcards.keep_practicing_toast")} (${details})`;
-          variant = "destructive";
-        }
-
-        if (result.recognized) {
-          feedback += ` — Heard: "${result.recognized}"`;
-        }
-
-        toast({ title: `Score: ${result.score}/100 (+${earnedXp} XP)`, description: feedback, variant });
+        setSessionXp((x) => x + earnedXp);
+        setResult({ ...result, earnedXp });
       } catch {
+        setScoreFailed(true);
         toast({
           title: t("common.error"),
           description: t("flashcards.scoring_failed_desc"),
@@ -234,6 +225,7 @@ const Flashcards = () => {
     setDueCount(mapped.length);
     setCurrentIndex(0);
     setIsFlipped(false);
+    setFinished(false);
     setLoading(false);
   };
 
@@ -250,6 +242,7 @@ const Flashcards = () => {
       setVocabulary((data as VocabWord[]) || []);
       setCurrentIndex(0);
       setIsFlipped(false);
+      setFinished(false);
     }
     setLoading(false);
   };
@@ -292,6 +285,8 @@ const Flashcards = () => {
     if (isRecording) {
       stopRecording();
     } else {
+      setResult(null);
+      setScoreFailed(false);
       await startRecording();
     }
   };
@@ -309,11 +304,16 @@ const Flashcards = () => {
     if (currentIndex < vocabulary.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setIsFlipped(false);
-    } else if (mode === "review") {
-      toast({ title: t("flashcards.review_complete"), description: t("flashcards.review_complete_desc") });
     } else {
-      toast({ title: t("flashcards.level_complete"), description: t("flashcards.level_complete_desc") });
+      setFinished(true);
     }
+  };
+
+  const handleRestart = () => {
+    setFinished(false);
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    if (mode === "review") loadReviewWords();
   };
 
   const handleSpeak = async () => {
@@ -328,266 +328,266 @@ const Flashcards = () => {
     }
   };
 
+  const modes: Mode[] = user ? ["beginner", "intermediate", "advanced", "review"] : ["beginner", "intermediate", "advanced"];
+
+  const header = (
+    <>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold">{t("flashcards.title")}</h1>
+        <span className="px-3 py-1 rounded-full border-2 border-stroke bg-secondary text-secondary-foreground font-bold tabular-nums">
+          <span dir="ltr">{xp} XP</span>
+        </span>
+      </div>
+
+      <div
+        role="tablist"
+        className={`grid grid-cols-2 ${user ? "sm:grid-cols-4" : "sm:grid-cols-3"} border-2 border-stroke rounded-[10px] overflow-hidden font-bold mb-6 bg-card`}
+      >
+        {modes.map((m, i) => (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={mode === m}
+            onClick={() => handleSelectMode(m)}
+            className={`py-2 px-3 border-border ${i % 2 === 0 ? "border-e-2" : ""} ${i >= 2 ? "border-t-2 sm:border-t-0" : ""} ${
+              i < modes.length - 1 ? "sm:border-e-2" : "sm:border-e-0"
+            } ${mode === m ? "bg-foreground text-background" : ""}`}
+          >
+            {m === "review" ? t("flashcards.review_due") : t(`common.${m}`)}
+            {m === "review" && dueCount > 0 && (
+              <span className="ms-2 inline-flex min-w-6 justify-center rounded-full bg-primary text-primary-foreground text-xs px-1.5 py-0.5 tabular-nums">
+                {dueCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <div className="w-12 h-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-        <p className="text-muted-foreground">{t("flashcards.loading")}</p>
+      <div className="container mx-auto max-w-5xl px-4 py-8">
+        {header}
+        <div className="flex flex-col items-center gap-3 py-16">
+          <Lantern mood="thinking" className="w-36 h-36" />
+          <p className="text-muted-foreground">{t("flashcards.loading")}</p>
+        </div>
       </div>
     );
   }
 
   if (vocabulary.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-xl text-muted-foreground">
-          {mode === "review" ? t("flashcards.no_reviews_due") : t("flashcards.no_vocab")}
-        </p>
-        <div className="flex gap-2 flex-wrap justify-center">
-          {(["beginner", "intermediate", "advanced"] as Level[]).map((lvl) => (
-            <Button key={lvl} onClick={() => handleSelectMode(lvl)} variant="outline">
-              {t(`common.${lvl}`)}
-            </Button>
-          ))}
-          {user && (
-            <Button
-              onClick={() => handleSelectMode("review")}
-              variant={mode === "review" ? "default" : "outline"}
-              className={mode === "review" ? "bg-gradient-coral" : ""}
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              {t("flashcards.review_due")}
-              {dueCount > 0 && (
-                <Badge className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0.5 min-w-[1.25rem] justify-center">
-                  {dueCount}
-                </Badge>
-              )}
-            </Button>
-          )}
-        </div>
+      <div className="container mx-auto max-w-5xl px-4 py-8">
+        {header}
+        <Card className="p-8 flex flex-col items-center text-center gap-4">
+          <Lantern mood={mode === "review" ? "happy" : "sleepy"} className="w-36 h-36" />
+          <p className="text-lg max-w-md">{mode === "review" ? t("flashcards.no_reviews_due") : t("flashcards.no_vocab")}</p>
+          {mode === "review" && <Button onClick={() => handleSelectMode(level)}>{t(`common.${level}`)}</Button>}
+        </Card>
+      </div>
+    );
+  }
+
+  if (finished) {
+    return (
+      <div className="container mx-auto max-w-5xl px-4 py-8">
+        {header}
+        <Card className="p-8 flex flex-col items-center text-center gap-5">
+          <Lantern mood="celebrate" className="w-44 h-44" />
+          <h2 className="text-3xl font-bold">{mode === "review" ? t("flashcards.done.review") : t("flashcards.done.title")}</h2>
+          <dl className="grid grid-cols-2 gap-3 w-full max-w-sm">
+            <div className="rounded-[10px] border-2 border-stroke p-3">
+              <dt className="text-sm text-muted-foreground">{t("flashcards.done.xp")}</dt>
+              <dd className="text-3xl font-bold tabular-nums" dir="ltr">+{sessionXp}</dd>
+            </div>
+            <div className="rounded-[10px] border-2 border-stroke p-3">
+              <dt className="text-sm text-muted-foreground">{t("flashcards.done.words")}</dt>
+              <dd className="text-3xl font-bold tabular-nums">{vocabulary.length}</dd>
+            </div>
+          </dl>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button size="lg" onClick={handleRestart}>{t("flashcards.again")}</Button>
+            <Link to="/">
+              <Button size="lg" variant="outline">{t("flashcards.back_today")}</Button>
+            </Link>
+          </div>
+        </Card>
       </div>
     );
   }
 
   const currentWord = vocabulary[currentIndex];
   const progress = ((currentIndex + 1) / vocabulary.length) * 100;
+  const isLast = currentIndex === vocabulary.length - 1;
+
+  // The lantern follows each step of saying a word
+  const lanternMood: LanternMood = isRecording
+    ? "listening"
+    : isScoring
+      ? "thinking"
+      : result
+        ? result.score >= 85 ? "celebrate" : result.score >= 60 ? "happy" : "sad"
+        : scoreFailed
+          ? "sad"
+          : "idle";
+
+  const coachLine = isRecording
+    ? t("flashcards.listening")
+    : isScoring
+      ? t("flashcards.thinking")
+      : result
+        ? t(result.score >= 85 ? "flashcards.result.great" : result.score >= 60 ? "flashcards.result.almost" : "flashcards.result.again")
+        : scoreFailed
+          ? t("flashcards.scoring_failed_desc")
+          : t("flashcards.hint");
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="container mx-auto max-w-4xl">
-        <audio ref={audioRef} className="hidden" />
+    <div className="container mx-auto max-w-5xl px-4 py-8">
+      <audio ref={audioRef} className="hidden" />
+      {header}
 
-        {/* Header with XP */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-foreground">
-            {t("flashcards.title")}
-          </h1>
-          <div className="flex items-center gap-2 bg-sunshine/20 px-4 py-2 rounded-full">
-            <Star className="w-5 h-5 text-sunshine-foreground" fill="currentColor" />
-            <span className="font-bold text-sunshine-foreground">{xp} XP</span>
-          </div>
-        </div>
+      <div className="flex items-center gap-3 mb-4">
+        <Progress value={progress} className="h-3 flex-1" aria-label={t("flashcards.progress")} />
+        <span className="text-sm font-bold tabular-nums" dir="ltr">
+          {currentIndex + 1} / {vocabulary.length}
+        </span>
+      </div>
 
-        {/* Level Selector + Review Due */}
-        <div className="flex gap-2 mb-6 justify-center flex-wrap">
-          {(["beginner", "intermediate", "advanced"] as Level[]).map((lvl) => (
-            <Button
-              key={lvl}
-              onClick={() => handleSelectMode(lvl)}
-              variant={mode === lvl ? "default" : "outline"}
-              className={mode === lvl ? "bg-foreground text-background" : ""}
-            >
-              {t(`common.${lvl}`)}
-            </Button>
-          ))}
-          {user && (
-            <Button
-              onClick={() => handleSelectMode("review")}
-              variant={mode === "review" ? "default" : "outline"}
-              className={mode === "review" ? "bg-gradient-coral" : ""}
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              {t("flashcards.review_due")}
-              {dueCount > 0 && (
-                <Badge className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0.5 min-w-[1.25rem] justify-center">
-                  {dueCount}
-                </Badge>
-              )}
-            </Button>
-          )}
-        </div>
-
-        {/* Progress Bar */}
-        <div className="mb-6">
-          <div className="flex justify-between text-sm mb-2">
-            <span>{t("flashcards.progress")}</span>
-            <span>{currentIndex + 1} / {vocabulary.length}</span>
-          </div>
-          <Progress value={progress} className="h-3" />
-        </div>
-
-        {/* 3D Flip Card */}
-        <div
-          className="flashcard-container mb-6 cursor-pointer overflow-hidden"
-          style={{ perspective: "1000px" }}
-          onClick={() => setIsFlipped(!isFlipped)}
-        >
+      <div className="grid md:grid-cols-[minmax(0,1fr)_17rem] gap-6 items-start">
+        <div className="flex flex-col gap-4">
+          {/* Flip card: the word on the front, the answer on the back */}
           <div
-            className={`flashcard-inner relative w-full min-h-[460px] transition-transform duration-500`}
-            style={{
-              transformStyle: "preserve-3d",
-              transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            role="button"
+            tabIndex={0}
+            aria-pressed={isFlipped}
+            aria-label={t("flashcards.tap_show_answer")}
+            className="cursor-pointer rounded-[14px] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
+            style={{ perspective: "1000px" }}
+            onClick={() => setIsFlipped(!isFlipped)}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsFlipped(!isFlipped);
+              }
             }}
           >
-            {/* Front: Hanzi */}
-            <Card
-              className="absolute inset-0 p-8 bg-gradient-to-br from-card to-muted/20 shadow-glow border-2 border-primary/10 flex flex-col items-center justify-center"
-              style={{ backfaceVisibility: "hidden" }}
+            <div
+              className="relative w-full min-h-[380px] md:min-h-[440px] transition-transform duration-500"
+              style={{ transformStyle: "preserve-3d", transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
             >
-              <Badge className="mb-4 bg-primary/10 text-primary">
-                {mode === "review" ? t("flashcards.review_mode") : level}
-              </Badge>
-              <div className="text-7xl font-bold mb-4 mt-2 text-foreground animate-bounce-in">
-                {currentWord.hanzi}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 w-full max-w-xs sm:max-w-none sm:w-auto" onClick={(e) => e.stopPropagation()}>
-                <Button
-                  size="lg"
-                  onClick={handleSpeak}
-                  disabled={isSpeaking}
-                  className="w-full sm:w-auto bg-card text-foreground disabled:opacity-60"
-                >
-                  <Volume2 className="w-5 h-5 mr-2" />
-                  {t("flashcards.listen")}
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={handleMicToggle}
-                  disabled={isScoring}
-                  className={`w-full sm:w-auto ${
-                    isRecording
-                      ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                      : "bg-gradient-coral"
-                  }`}
-                >
-                  {isRecording ? (
-                    <><MicOff className="w-5 h-5 mr-2" />{t("flashcards.stop")}</>
-                  ) : isScoring ? (
-                    t("flashcards.scoring")
-                  ) : (
-                    <><Mic className="w-5 h-5 mr-2" />{t("flashcards.try_pronunciation")}</>
-                  )}
-                </Button>
-              </div>
-              <p className="text-muted-foreground text-sm">{t("flashcards.tap_show_answer")}</p>
-            </Card>
+              <Card
+                className="absolute inset-0 p-8 flex flex-col items-center justify-center gap-4"
+                style={{ backfaceVisibility: "hidden" }}
+              >
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {mode === "review" ? t("flashcards.review_mode") : t(`common.${level}`)}
+                </span>
+                <span lang="zh" className="font-zh font-bold text-8xl md:text-9xl leading-none">{currentWord.hanzi}</span>
+                <span className="text-sm text-muted-foreground mt-4">{t("flashcards.tap_show_answer")}</span>
+              </Card>
 
-            {/* Back: Pinyin + Arabic + Actions */}
-            <Card
-              className="absolute inset-0 p-6 bg-gradient-to-br from-card to-muted/20 shadow-glow border-2 border-secondary/10 flex flex-col items-center justify-start overflow-y-auto"
-              style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+              <Card
+                className="absolute inset-0 p-6 flex flex-col items-center gap-3 overflow-y-auto"
+                style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+              >
+                <span lang="zh" className="font-zh font-bold text-6xl leading-tight">{currentWord.hanzi}</span>
+                <span className="text-2xl font-bold text-primary">{currentWord.pinyin}</span>
+                <span lang="ar" dir="rtl" className="text-2xl">{currentWord.arabic_translation}</span>
+
+                {cardBreakdown.length > 0 && (
+                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                    <PronunciationFeedback segments={cardBreakdown} compact />
+                  </div>
+                )}
+
+                {currentWord.image_url && (
+                  <img src={currentWord.image_url} alt={currentWord.pinyin} className="w-24 h-24 object-contain rounded-lg" />
+                )}
+
+                <div className="mt-2 flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+                  <h2 className="text-sm font-bold text-muted-foreground mb-2">{t("flashcards.stroke_order")}</h2>
+                  <div className="flex gap-4 justify-center flex-wrap">
+                    {[...currentWord.hanzi].map((char, idx) => (
+                      <StrokeOrder key={`${currentWord.id}-${char}-${idx}`} character={char} onQuizComplete={handleStrokeComplete} />
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-3">
+            <Button size="lg" variant="outline" onClick={handleSpeak} disabled={isSpeaking}>
+              <span lang="zh" className="font-zh me-2">听</span>
+              {t("flashcards.listen")}
+            </Button>
+            <Button
+              size="lg"
+              variant={isRecording ? "destructive" : "default"}
+              onClick={handleMicToggle}
+              disabled={isScoring}
+              aria-pressed={isRecording}
             >
-              <div className="text-5xl font-bold mb-3 text-foreground">{currentWord.hanzi}</div>
-              <div className="text-lg font-medium mb-3" dir="rtl">{currentWord.arabic_translation}</div>
-
-              {/* Clickable phoneme breakdown — tap any sound to hear it */}
-              {cardBreakdown.length > 0 && (
-                <div className="mb-4" onClick={(e) => e.stopPropagation()}>
-                  <PronunciationFeedback segments={cardBreakdown} compact />
-                </div>
-              )}
-
-              {currentWord.image_url && (
-                <img
-                  src={currentWord.image_url}
-                  alt={currentWord.pinyin}
-                  className="w-24 h-24 object-contain mb-4 rounded-lg"
-                />
-              )}
-
-              {/* Stroke Order */}
-              <div className="mb-4" onClick={(e) => e.stopPropagation()}>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                  {t("flashcards.stroke_order")}
-                </h4>
-                <div className="flex gap-4 justify-center flex-wrap">
-                  {[...currentWord.hanzi].map((char, idx) => (
-                    <StrokeOrder
-                      key={`${currentWord.id}-${char}-${idx}`}
-                      character={char}
-                      onQuizComplete={handleStrokeComplete}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full max-w-xs sm:max-w-none sm:w-auto" onClick={(e) => e.stopPropagation()}>
-                <Button
-                  size="lg"
-                  onClick={handleSpeak}
-                  disabled={isSpeaking}
-                  className="w-full sm:w-auto bg-card text-foreground disabled:opacity-60"
-                >
-                  <Volume2 className="w-5 h-5 mr-2" />
-                  {t("flashcards.listen")}
-                </Button>
-
-                <Button
-                  size="lg"
-                  onClick={handleMicToggle}
-                  disabled={isScoring}
-                  className={`w-full sm:w-auto ${
-                    isRecording
-                      ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                      : "bg-gradient-coral"
-                  }`}
-                >
-                  {isRecording ? (
-                    <><MicOff className="w-5 h-5 mr-2" />{t("flashcards.stop")}</>
-                  ) : isScoring ? (
-                    t("flashcards.scoring")
-                  ) : (
-                    <><Mic className="w-5 h-5 mr-2" />{t("flashcards.pronounce")}</>
-                  )}
-                </Button>
-              </div>
-            </Card>
+              <span lang="zh" className="font-zh me-2">说</span>
+              {isRecording ? t("flashcards.stop") : isScoring ? t("flashcards.scoring") : t("flashcards.pronounce")}
+            </Button>
+            <Button size="lg" variant="secondary" onClick={handleNext} className="col-span-2 sm:col-span-1">
+              {isLast ? t("flashcards.finish") : t("flashcards.next")}
+            </Button>
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-muted-foreground">
-            {t("flashcards.keep_practicing")}
-          </div>
-          <Button
-            onClick={handleNext}
-            disabled={currentIndex === vocabulary.length - 1}
-            className="bg-gradient-coral"
-          >
-            {t("flashcards.next")}
-            <ChevronRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
+        {/* Coach: the lantern, what to do next, and the last score */}
+        <aside className="flex flex-col gap-4" aria-live="polite">
+          <Card className="p-5 flex flex-col items-center text-center gap-3">
+            <Lantern mood={lanternMood} className="w-32 h-32 md:w-40 md:h-40" />
+            <p className="font-semibold">{coachLine}</p>
+          </Card>
 
-        {/* Feedback Legend */}
-        <Card className="mt-8 p-6 bg-muted/30">
-          <h3 className="font-bold mb-4">{t("flashcards.feedback_title")}</h3>
-          <div className="grid gap-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>{t("flashcards.great")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>{t("flashcards.almost")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>{t("flashcards.try_again")}</span>
-            </div>
-          </div>
-        </Card>
+          {result && (
+            <Card className="p-5 flex flex-col gap-4">
+              <div className="flex items-baseline justify-between gap-2" dir="ltr">
+                <span className="text-4xl font-bold tabular-nums">
+                  {result.score}
+                  <span className="text-base text-muted-foreground">/100</span>
+                </span>
+                <span className="font-bold text-success-foreground">+{result.earnedXp} XP</span>
+              </div>
+
+              <ul className="flex flex-col gap-2 text-sm">
+                {[
+                  { label: t("practice.characters"), value: result.breakdown.character.score },
+                  { label: t("practice.pinyin"), value: result.breakdown.pinyin.score },
+                  { label: t("practice.tones"), value: result.breakdown.tone.score },
+                ].map((row) => (
+                  <li key={row.label} className="flex items-center gap-2">
+                    <span className="w-20 shrink-0">{row.label}</span>
+                    <Progress value={row.value} className="h-2 flex-1" />
+                    <span className="w-10 text-end tabular-nums font-bold" dir="ltr">{row.value}%</span>
+                  </li>
+                ))}
+              </ul>
+
+              {result.recognized && (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">{t("flashcards.result.heard")}: </span>
+                  <span lang="zh" className="font-zh font-bold">{result.recognized}</span>
+                  {result.recognized_arabic && (
+                    <span lang="ar" dir="rtl" className="ms-2 font-bold">{result.recognized_arabic}</span>
+                  )}
+                </p>
+              )}
+
+              {result.segments && result.segments.length > 0 && (
+                <PronunciationFeedback segments={result.segments} compact />
+              )}
+            </Card>
+          )}
+        </aside>
       </div>
     </div>
   );
