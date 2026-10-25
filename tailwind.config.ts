@@ -58,6 +58,16 @@ export default {
           foreground: "hsl(var(--success-foreground))",
         },
         stroke: "hsl(var(--stroke))",
+        header: {
+          DEFAULT: "hsl(var(--header))",
+          foreground: "hsl(var(--header-foreground))",
+          hover: "hsl(var(--header-hover))",
+        },
+        footer: {
+          DEFAULT: "hsl(var(--footer))",
+          foreground: "hsl(var(--footer-foreground))",
+          muted: "hsl(var(--footer-muted))",
+        },
         stamp: "hsl(var(--stamp))",
       },
       fontFamily: {
