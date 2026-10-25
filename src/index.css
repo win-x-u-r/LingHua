@@ -9,7 +9,8 @@ All colors MUST be HSL.
 @layer base {
   /* Red Seal: ink outlines, solid stamp shadows, lantern red and gold. */
   :root {
-    --background: 30 60% 96%;
+    /* Warm parchment page so white cards stand out */
+    --background: 36 70% 90%;
     --foreground: 16 19% 11%;
 
     --card: 0 0% 100%;
@@ -53,6 +54,14 @@ All colors MUST be HSL.
     /* Outline and offset shadow that give every card and button its stamped look */
     --stroke: 16 19% 11%;
     --stamp: 16 19% 11%;
+
+    /* Lantern red header with a gold pill for the current page, ink footer */
+    --header: 4 75% 48%;
+    --header-foreground: 0 0% 100%;
+    --header-hover: 4 75% 42%;
+    --footer: 16 19% 11%;
+    --footer-foreground: 33 41% 95%;
+    --footer-muted: 30 15% 70%;
 
     --radius: 0.875rem;
 
@@ -109,6 +118,13 @@ All colors MUST be HSL.
 
     --stroke: 33 41% 95%;
     --stamp: 0 0% 0%;
+
+    --header: 2 48% 24%;
+    --header-foreground: 33 41% 95%;
+    --header-hover: 2 48% 30%;
+    --footer: 225 9% 7%;
+    --footer-foreground: 33 41% 95%;
+    --footer-muted: 33 7% 62%;
   }
 }
 

@@ -46,13 +46,13 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-card border-b-2 border-stroke">
+    <nav className="sticky top-0 z-50 bg-header text-header-foreground border-b-2 border-stroke">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 gap-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <Lantern still className="w-10 h-10" />
-            <span className="text-xl font-bold text-primary">Líng Huà</span>
+            <span className="text-xl font-bold">Líng Huà</span>
           </Link>
 
           {/* Desktop Nav Links */}
@@ -65,7 +65,9 @@ const Navbar = () => {
                   to={item.path}
                   aria-current={active ? "page" : undefined}
                   className={`flex items-center gap-2 h-10 px-2.5 rounded-[10px] border-2 font-semibold ${
-                    active ? "border-stroke bg-accent text-foreground" : "border-transparent hover:bg-muted"
+                    active
+                      ? "border-stroke bg-sunshine text-sunshine-foreground shadow-stamp-sm"
+                      : "border-transparent hover:bg-header-hover"
                   }`}
                 >
                   <Seal char={item.seal} size="sm" tone={active ? "red" : "ink"} />
@@ -94,13 +96,13 @@ const Navbar = () => {
                     {initial}
                   </span>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <Button variant="ghost" size="sm" onClick={handleSignOut} className="hover:bg-header-hover">
                   {t("nav.signout")}
                 </Button>
               </>
             ) : (
               <Link to="/auth">
-                <Button size="sm">{t("nav.signin")}</Button>
+                <Button size="sm" variant="secondary">{t("nav.signin")}</Button>
               </Link>
             )}
           </div>
@@ -129,7 +131,7 @@ const Navbar = () => {
 
       {/* Mobile drawer */}
       {mobileOpen && (
-        <div className="lg:hidden border-t-2 border-stroke bg-card">
+        <div className="lg:hidden border-t-2 border-stroke bg-card text-foreground">
           <div className="container mx-auto px-4 py-3 flex flex-col gap-1">
             {navItems.map((item) => {
               const active = isActive(item.path);
@@ -140,7 +142,7 @@ const Navbar = () => {
                   onClick={() => setMobileOpen(false)}
                   aria-current={active ? "page" : undefined}
                   className={`flex items-center gap-3 h-12 px-2 rounded-[10px] border-2 font-semibold text-lg ${
-                    active ? "border-stroke bg-accent" : "border-transparent"
+                    active ? "border-stroke bg-sunshine text-sunshine-foreground" : "border-transparent"
                   }`}
                 >
                   <Seal char={item.seal} size="sm" tone={active ? "red" : "ink"} />
