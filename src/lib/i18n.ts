@@ -19,6 +19,9 @@ const translations: Record<string, Record<Language, string>> = {
   "reminder.label": { en: "Daily reminder from Hua", ar: "تذكير يومي من هوا" },
   "reminder.at": { en: "Remind me at", ar: "ذكّرني الساعة" },
   "reminder.in_app_only": { en: "Notifications are off in this browser, so Hua will remind you when you open LingHua.", ar: "الإشعارات متوقفة في هذا المتصفح، لذا ستذكّرك هوا عند فتح لينغ هوا." },
+  "reminder.allow": { en: "Allow notifications so I can remind you on your lock screen, even when LingHua is closed.", ar: "اسمح بالإشعارات لأذكّرك على شاشة القفل، حتى عندما يكون لينغ هوا مغلقًا." },
+  "reminder.allow.yes": { en: "Allow", ar: "اسمح" },
+  "reminder.allow.no": { en: "Not now", ar: "ليس الآن" },
   "reminder.go": { en: "Let's go", ar: "هيا بنا" },
   "reminder.later": { en: "Later", ar: "لاحقًا" },
 

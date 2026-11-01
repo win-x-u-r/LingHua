@@ -70,3 +70,33 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ------------------------------------------------------------
+-- Lock-screen reminders (web push)
+-- The server sends Hua's reminder at each learner's own local time, so it needs
+-- their time zone, the day it last reminded them, and where to send (one row per
+-- browser or phone that allowed notifications).
+-- ------------------------------------------------------------
+
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS reminder_timezone TEXT NOT NULL DEFAULT 'UTC';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS reminder_last_sent DATE;
+
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);
+
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users manage own push subscriptions" ON push_subscriptions;
+CREATE POLICY "Users manage own push subscriptions"
+  ON push_subscriptions FOR ALL
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());

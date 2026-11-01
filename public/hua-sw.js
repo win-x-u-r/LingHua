@@ -15,3 +15,25 @@ self.addEventListener("notificationclick", (event) => {
     }),
   );
 });
+
+// Hua's daily reminder, sent by the server (backend/send_reminders.py) even when
+// LingHua is closed. Shows on the lock screen and in the notification shade.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Hua", {
+      body: data.body || "Ready for a little Mandarin today?",
+      icon: "/favicon-192.png",
+      badge: "/favicon-192.png",
+      tag: "hua-daily",
+      lang: data.lang || "en",
+      dir: data.lang === "ar" ? "rtl" : "ltr",
+      data: { url: data.url || "/flashcards" },
+    }),
+  );
+});
