@@ -19,9 +19,10 @@ const translations: Record<string, Record<Language, string>> = {
   "reminder.label": { en: "Daily reminder from Hua", ar: "تذكير يومي من هوا" },
   "reminder.at": { en: "Remind me at", ar: "ذكّرني الساعة" },
   "reminder.in_app_only": { en: "Notifications are off in this browser, so Hua will remind you when you open LingHua.", ar: "الإشعارات متوقفة في هذا المتصفح، لذا ستذكّرك هوا عند فتح لينغ هوا." },
-  "reminder.allow": { en: "Let me light up your lock screen! One tiny Mandarin moment a day.", ar: "دعني أضيء شاشة قفلك! لحظة ماندرين صغيرة كل يوم." },
-  "reminder.allow.yes": { en: "Yes, remind me", ar: "نعم، ذكّرني" },
-  "reminder.allow.no": { en: "Not now", ar: "ليس الآن" },
+  "reminder.allow.title": { en: "A little nudge from Hua?", ar: "تذكير لطيف من هوا؟" },
+  "reminder.allow": { en: "Big dreams start with little habits! Let me remind you when it's time for your daily Mandarin.", ar: "الأحلام الكبيرة تبدأ بعادات صغيرة! دعني أذكّرك عندما يحين وقت الماندرين اليومي." },
+  "reminder.allow.yes": { en: "Yes, please!", ar: "نعم، من فضلك!" },
+  "reminder.allow.no": { en: "Maybe later", ar: "ربما لاحقًا" },
   "reminder.go": { en: "Let's go", ar: "هيا بنا" },
   "reminder.later": { en: "Later", ar: "لاحقًا" },
 

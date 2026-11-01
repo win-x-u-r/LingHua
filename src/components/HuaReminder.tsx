@@ -133,7 +133,7 @@ const HuaReminder = () => {
 
   if (askForPermission) {
     return (
-      <HuaNote title={REMINDER_TITLE[language]} body={t("reminder.allow")}>
+      <HuaNote title={t("reminder.allow.title")} body={t("reminder.allow")}>
         <Button
           size="sm"
           onClick={async () => {
@@ -171,20 +171,22 @@ const HuaReminder = () => {
   );
 };
 
-/** The lantern's note in the corner of the screen */
+/** The lantern's note in the corner of the screen: Hua's tile, title and line, then the buttons */
 const HuaNote = ({ title, body, children }: { title: string; body: string; children: React.ReactNode }) => (
     <div
       role="status"
-      className="fixed z-[60] bottom-3 inset-x-3 sm:inset-x-auto sm:end-4 sm:bottom-4 sm:w-[380px] rounded-[14px] border-2 border-stroke bg-card text-card-foreground shadow-[4px_4px_0_hsl(var(--stamp))] p-4 flex items-start gap-3"
+      className="fixed z-[60] bottom-3 inset-x-3 sm:inset-x-auto sm:end-4 sm:bottom-4 sm:w-[420px] rounded-[14px] border-2 border-stroke bg-card text-card-foreground shadow-[4px_4px_0_hsl(var(--stamp))] p-4 flex flex-col gap-3"
     >
-      <div className="lantern-glow [--glow-size:190%] [--glow-y:55%] shrink-0">
-        <Lantern mood="happy" entering className="w-16 h-16" />
+      <div className="flex items-start gap-3">
+        <span className="shrink-0 w-16 h-16 rounded-[16px] bg-[hsl(5_75%_93%)] dark:bg-[hsl(352_40%_30%)] grid place-items-center overflow-hidden">
+          <Lantern mood="happy" entering className="w-14 h-14" />
+        </span>
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
+          <span className="font-bold text-lg leading-tight">{title}</span>
+          <p className="text-sm leading-snug">{body}</p>
+        </div>
       </div>
-      <div className="flex-1 min-w-0 flex flex-col gap-2">
-        <span className="font-bold text-primary">{title}</span>
-        <p className="text-sm leading-snug">{body}</p>
-        <div className="flex gap-2 mt-1">{children}</div>
-      </div>
+      <div className="flex gap-2">{children}</div>
     </div>
 );
 
