@@ -59,6 +59,7 @@ const translations: Record<string, Record<Language, string>> = {
   "translator.arabic": { en: "Arabic", ar: "عربي" },
   "translator.chinese": { en: "Chinese", ar: "صيني" },
   "translator.to_chinese": { en: "Translate to Chinese →", ar: "← ترجم إلى الصينية" },
+  "translator.swap": { en: "Swap languages", ar: "بدّل اللغتين" },
   "translator.to_arabic": { en: "← Translate to Arabic", ar: "ترجم إلى العربية →" },
   "translator.voice_mode": { en: "Voice-to-Voice Mode", ar: "وضع الصوت" },
   "translator.voice_desc": { en: "Speak in Arabic and hear the Mandarin translation!", ar: "!تحدث بالعربية واستمع للترجمة بالصينية" },

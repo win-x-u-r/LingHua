@@ -2,11 +2,21 @@ import { useRef, useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, MicOff, Volume2, ArrowLeftRight } from "lucide-react";
+import { Mic, MicOff, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone } from "@/hooks/use-microphone";
 import { translateText, speakText, speechToText } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+/* Two opposing arrows, drawn to match the stamped style instead of an icon set */
+const SwapIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
+    <path d="M4 8h15" />
+    <path d="M15 4l4 4-4 4" />
+    <path d="M20 16H5" />
+    <path d="M9 12l-4 4 4 4" />
+  </svg>
+);
 
 const Translator = () => {
   const [arabicText, setArabicText] = useState("");
@@ -119,23 +129,23 @@ const Translator = () => {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4">
+    <div className="py-8">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-primary">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-primary text-balance">
             {t("translator.title")}
           </h1>
-          <p className="text-muted-foreground" dir="rtl">
+          <p className="text-muted-foreground">
             {t("translator.subtitle")}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 relative">
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 md:gap-4">
           {/* Arabic Input */}
-          <Card className="p-6 bg-gradient-to-br from-primary/5 to-transparent border-2 border-primary/20">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">{t("translator.arabic_label")}</h2>
-              <div className="flex gap-2">
+          <Card className="p-4 md:p-6 h-full">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="text-xl font-bold whitespace-nowrap">{t("translator.arabic_label")}</h2>
+              <div className="flex gap-2 shrink-0">
                 <Button
                   size="icon"
                   variant={isRecording && activeMicLang === "ar" ? "destructive" : "outline"}
@@ -153,7 +163,7 @@ const Translator = () => {
                   variant="outline"
                   onClick={() => handleSpeak(arabicText, "ar")}
                   disabled={!arabicText}
-                  className="hover:bg-primary/10 transition-all"
+                  
                 >
                   <Volume2 className="w-4 h-4" />
                 </Button>
@@ -171,28 +181,29 @@ const Translator = () => {
             <Button
               onClick={() => handleTranslate("ar")}
               disabled={!arabicText || isTranslating}
-              className="w-full mt-4 bg-gradient-coral"
+              className="w-full mt-4"
             >
               {t("translator.to_chinese")}
             </Button>
           </Card>
 
-          {/* Swap Button */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 hidden md:block">
+          {/* Swap button: sits between the two panels, up/down on phones, left/right on wide screens */}
+          <div className="flex items-center justify-center">
             <Button
               size="icon"
               onClick={handleSwap}
-              className="rounded-full w-14 h-14 bg-gradient-coral shadow-glow transition-all"
+              aria-label={t("translator.swap")}
+              className="rounded-full w-14 h-14 shrink-0"
             >
-              <ArrowLeftRight className="w-6 h-6" />
+              <SwapIcon className="!size-6 rotate-90 md:rotate-0" />
             </Button>
           </div>
 
           {/* Chinese Output */}
-          <Card className="p-6 bg-gradient-to-br from-secondary/5 to-transparent border-2 border-secondary/20">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">{t("translator.chinese_label")}</h2>
-              <div className="flex gap-2">
+          <Card className="p-4 md:p-6 h-full">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="text-xl font-bold whitespace-nowrap">{t("translator.chinese_label")}</h2>
+              <div className="flex gap-2 shrink-0">
                 <Button
                   size="icon"
                   variant={isRecording && activeMicLang === "zh" ? "destructive" : "outline"}
@@ -210,7 +221,7 @@ const Translator = () => {
                   variant="outline"
                   onClick={() => handleSpeak(chineseText, "zh")}
                   disabled={!chineseText}
-                  className="hover:bg-secondary/10 transition-all"
+                  
                 >
                   <Volume2 className="w-4 h-4" />
                 </Button>
@@ -233,16 +244,6 @@ const Translator = () => {
             </Button>
           </Card>
 
-          {/* Mobile Swap Button */}
-          <div className="md:hidden col-span-full flex justify-center">
-            <Button
-              size="icon"
-              onClick={handleSwap}
-              className="rounded-full w-12 h-12 bg-gradient-coral shadow-glow"
-            >
-              <ArrowLeftRight className="w-5 h-5" />
-            </Button>
-          </div>
         </div>
 
         {/* Hidden audio element for playback */}

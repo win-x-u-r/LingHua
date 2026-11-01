@@ -74,6 +74,15 @@ const InstallPWA = () => {
     };
   }, []);
 
+  // While the pill floats over the page, give the footer extra room so the
+  // last bit of content and the footer can always scroll clear of it.
+  const pillVisible = !hidden && (!!installEvent || isIOS());
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("has-install-pill", pillVisible);
+    return () => root.classList.remove("has-install-pill");
+  }, [pillVisible]);
+
   const handleInstall = async () => {
     if (installEvent) {
       installEvent.prompt();
@@ -103,7 +112,7 @@ const InstallPWA = () => {
 
   return (
     <>
-      <div className="fixed bottom-4 end-4 z-50 flex items-center gap-2 rounded-full bg-gradient-coral text-white shadow-glow p-1 ps-3 animate-bounce-in">
+      <div className="fixed bottom-3 end-3 md:bottom-4 md:end-4 z-50 flex items-center gap-1 rounded-full border-2 border-stroke bg-primary text-primary-foreground shadow-glow p-1 ps-3">
         <Download className="w-4 h-4" />
         <Button
           variant="ghost"
