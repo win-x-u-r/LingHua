@@ -6,6 +6,8 @@ import Lantern, { type LanternMood } from "@/components/lantern/Lantern";
 import Seal from "@/components/Seal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import ClassCodeInput from "@/components/ClassCodeInput";
 
 export const WEEKLY_GOAL_DAYS = 5;
 
@@ -64,7 +66,14 @@ const TONE_PATH: Record<number, string> = {
 };
 const TONE_MARK: Record<number, string> = { 1: "mā", 2: "má", 3: "mǎ", 4: "mà" };
 
-const StudentDashboard = ({ data }: { data: StudentDashboardData }) => {
+const StudentDashboard = ({
+  data,
+  joinClass,
+}: {
+  data: StudentDashboardData;
+  /** Set for students who have not joined a class yet */
+  joinClass?: (code: string) => Promise<boolean>;
+}) => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
 
@@ -117,6 +126,8 @@ const StudentDashboard = ({ data }: { data: StudentDashboardData }) => {
           <Lantern mood={mood} className="w-32 h-32" />
         </div>
       </Card>
+
+      {joinClass && <JoinClassCard onJoin={joinClass} />}
 
       {/* Lantern path: one lantern per level, lit as words are mastered */}
       <Section seal="级" title={t("dash2.path.title")} note={t("dash2.path.note")}>
@@ -241,6 +252,34 @@ const StudentDashboard = ({ data }: { data: StudentDashboardData }) => {
 /* ──────────────────────────────────────────
    Pieces
    ────────────────────────────────────────── */
+
+const JoinClassCard = ({ onJoin }: { onJoin: (code: string) => Promise<boolean> }) => {
+  const { t } = useLanguage();
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <Card className="p-5 md:p-6 grid gap-4 md:grid-cols-[auto_minmax(0,1fr)_auto] items-center">
+      <Seal char="班" size="lg" />
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-bold">{t("class.join.title")}</h2>
+        <p className="text-sm text-muted-foreground">{t("class.join.desc")}</p>
+      </div>
+      <form
+        className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (code.length < 6) return;
+          setBusy(true);
+          await onJoin(code);
+          setBusy(false);
+        }}
+      >
+        <ClassCodeInput id="join-code" value={code} onChange={setCode} className="w-full sm:w-72" />
+        <Button type="submit" disabled={busy || code.length < 6}>{t("class.join.cta")}</Button>
+      </form>
+    </Card>
+  );
+};
 
 const Section = ({ seal, title, note, children }: { seal: string; title: string; note?: string; children: React.ReactNode }) => (
   <Card className="p-5 md:p-6 overflow-hidden flex flex-col gap-4">

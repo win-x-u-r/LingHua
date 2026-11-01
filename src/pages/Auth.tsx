@@ -10,11 +10,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth, type UserRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { AVATARS } from "@/lib/avatars";
+import ClassCodeInput from "@/components/ClassCodeInput";
 
-const ROLES: { value: UserRole; labelKey: string }[] = [
-  { value: "student", labelKey: "auth.role.student" },
-  { value: "independent", labelKey: "auth.role.independent" },
-  { value: "teacher", labelKey: "auth.role.teacher" },
+const ROLES: { value: UserRole; labelKey: string; seal: string }[] = [
+  { value: "student", labelKey: "auth.role.student", seal: "学" },
+  { value: "teacher", labelKey: "auth.role.teacher", seal: "师" },
+  { value: "independent", labelKey: "auth.role.independent", seal: "自" },
 ];
 
 const Auth = () => {
@@ -24,9 +25,10 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<UserRole>("student");
   const [classroomCode, setClassroomCode] = useState("");
+  const [className, setClassName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, loading, signUp, signIn, joinClassroom } = useAuth();
+  const { user, loading, signUp, signIn, joinClassroom, createClassroom } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -53,11 +55,19 @@ const Auth = () => {
       if (isSignUp) {
         await signUp(email, password, fullName, role);
 
+        // Joining or creating the class never blocks sign-up; the dashboard offers it again
         if (role === "student" && classroomCode.trim()) {
           try {
-            await joinClassroom(classroomCode.trim());
+            await joinClassroom(classroomCode);
           } catch {
-            // Non-blocking: classroom join can be done later
+            toast({ title: t("class.join.failed"), description: t("class.join.later") });
+          }
+        }
+        if (role === "teacher" && className.trim()) {
+          try {
+            await createClassroom(className.trim());
+          } catch {
+            // The dashboard shows "create your class" when there is none yet
           }
         }
 
@@ -131,21 +141,51 @@ const Auth = () => {
 
                 <fieldset className="flex flex-col gap-1.5">
                   <legend className="text-sm font-medium mb-1.5">{t("auth.role")}</legend>
-                  <div className="flex flex-col gap-2">
-                    {ROLES.map((r) => (
-                      <Button
-                        key={r.value}
-                        type="button"
-                        variant="outline"
-                        aria-pressed={role === r.value}
-                        className={`w-full justify-start ${role === r.value ? "bg-foreground text-background" : ""}`}
-                        onClick={() => setRole(r.value)}
-                      >
-                        {t(r.labelKey)}
-                      </Button>
-                    ))}
+                  <div className="flex flex-col border-2 border-stroke rounded-[10px] overflow-hidden" role="radiogroup">
+                    {ROLES.map((r) => {
+                      const on = role === r.value;
+                      return (
+                        <button
+                          key={r.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => setRole(r.value)}
+                          className={`flex items-center gap-3 px-3 py-2.5 text-start border-b-2 border-border last:border-b-0 ${
+                            on ? "bg-accent" : "bg-card"
+                          }`}
+                        >
+                          <Seal char={r.seal} size="sm" tone={on ? "red" : "ink"} />
+                          <span className="flex flex-col">
+                            <span className="font-bold leading-tight">{t(r.labelKey)}</span>
+                            <span className="text-xs text-muted-foreground">{t(`${r.labelKey}.desc`)}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </fieldset>
+
+                {role === "student" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="classroom">{t("auth.classroom")}</Label>
+                    <ClassCodeInput id="classroom" value={classroomCode} onChange={setClassroomCode} />
+                    <span className="text-xs text-muted-foreground">{t("auth.classroom.hint")}</span>
+                  </div>
+                )}
+
+                {role === "teacher" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="classname">{t("auth.classname")}</Label>
+                    <Input
+                      id="classname"
+                      value={className}
+                      onChange={(e) => setClassName(e.target.value)}
+                      placeholder={t("dashboard.classroom_name_placeholder")}
+                    />
+                    <span className="text-xs text-muted-foreground">{t("auth.classname.hint")}</span>
+                  </div>
+                )}
 
                 <fieldset className="flex flex-col gap-1.5">
                   <legend className="text-sm font-medium mb-1.5">{t("auth.avatar")}</legend>
@@ -165,17 +205,6 @@ const Auth = () => {
                   </div>
                 </fieldset>
 
-                {role === "student" && (
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="classroom">{t("auth.classroom")}</Label>
-                    <Input
-                      id="classroom"
-                      value={classroomCode}
-                      onChange={(e) => setClassroomCode(e.target.value)}
-                      placeholder={t("auth.classroom.placeholder")}
-                    />
-                  </div>
-                )}
               </>
             )}
 

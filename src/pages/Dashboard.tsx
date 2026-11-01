@@ -1,18 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line,
-} from "recharts";
 import Lantern from "@/components/lantern/Lantern";
-import Seal from "@/components/Seal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import TeacherDashboard, { CreateClass, type TeacherDashboardData, type ClassStudent, type ClassWord } from "@/components/dashboard/TeacherDashboard";
 import StudentDashboard, { type StudentDashboardData, type ToneScore, type MissedWord } from "@/components/dashboard/StudentDashboard";
 
 /* Tone of each syllable from its pinyin tone mark (neutral tones are skipped) */
@@ -25,29 +17,6 @@ const tonesIn = (pinyin: string): Set<1 | 2 | 3 | 4> => {
   for (const ch of (pinyin || "").normalize("NFC")) if (TONE_CHARS[ch]) found.add(TONE_CHARS[ch]);
   return found;
 };
-
-// ──────────────────────────────────────────
-//  Teacher-specific types
-// ──────────────────────────────────────────
-interface StudentInfo {
-  id: string;
-  full_name: string;
-  total_xp: number;
-  attempt_count: number;
-  avg_score: number;
-}
-
-interface WeeklyScore {
-  week: string;
-  score: number;
-}
-
-interface DifficultWord {
-  hanzi: string;
-  pinyin: string;
-  attempts: number;
-  avgScore: number;
-}
 
 // ──────────────────────────────────────────
 //  Student analytics types
@@ -67,19 +36,12 @@ interface LevelProgress {
 //  Component
 // ──────────────────────────────────────────
 const Dashboard = () => {
-  const { user, profile, createClassroom } = useAuth();
+  const { user, profile, createClassroom, joinClassroom } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   // Teacher state
-  const [classroomCode, setClassroomCode] = useState<string | null>(null);
-  const [classroomName, setClassroomName] = useState("");
-  const [students, setStudents] = useState<StudentInfo[]>([]);
-  const [weeklyScores, setWeeklyScores] = useState<WeeklyScore[]>([]);
-  const [difficultWords, setDifficultWords] = useState<DifficultWord[]>([]);
-  const [totalAttempts, setTotalAttempts] = useState(0);
-  const [avgScore, setAvgScore] = useState(0);
+  const [teacherData, setTeacherData] = useState<TeacherDashboardData | null>(null);
 
   // Student analytics state
   const [dailyScores, setDailyScores] = useState<DailyScore[]>([]);
@@ -275,121 +237,137 @@ const Dashboard = () => {
         .eq("teacher_id", user!.id)
         .limit(1);
 
-      if (classrooms && classrooms.length > 0) {
-        setClassroomCode(classrooms[0].code);
-        const classroomId = classrooms[0].id;
+      if (!classrooms || classrooms.length === 0) {
+        setTeacherData(null);
+        return;
+      }
+      const classroom = classrooms[0];
 
-        const { data: studentProfiles } = await (supabase as any)
-          .from("profiles")
-          .select("id, full_name")
-          .eq("classroom_id", classroomId)
-          .eq("role", "student");
+      const { data: studentProfiles } = await (supabase as any)
+        .from("profiles")
+        .select("id, full_name")
+        .eq("classroom_id", classroom.id)
+        .eq("role", "student");
+      const profiles: { id: string; full_name: string }[] = studentProfiles || [];
+      const studentIds = profiles.map((p) => p.id);
 
-        if (studentProfiles && studentProfiles.length > 0) {
-          const studentIds = studentProfiles.map((s: any) => s.id);
+      const [progressRes, attemptRes] = studentIds.length
+        ? await Promise.all([
+            (supabase as any).from("progress").select("user_id, total_xp").in("user_id", studentIds),
+            (supabase as any).from("attempts").select("user_id, score, vocab_id, timestamp").in("user_id", studentIds),
+          ])
+        : [{ data: [] }, { data: [] }];
+      const attempts: { user_id: string; score: number | null; vocab_id: string | null; timestamp: string | null }[] = attemptRes.data || [];
 
-          const { data: progressData } = await (supabase as any)
-            .from("progress")
-            .select("user_id, total_xp")
-            .in("user_id", studentIds);
+      const vocabIds = [...new Set(attempts.map((a) => a.vocab_id).filter(Boolean))] as string[];
+      const { data: vocabData } = vocabIds.length
+        ? await supabase.from("vocab").select("id, hanzi, pinyin, arabic_translation").in("id", vocabIds)
+        : { data: [] as any[] };
+      const vocabMap: Record<string, any> = {};
+      for (const v of vocabData || []) vocabMap[v.id] = v;
 
-          const { data: attemptData } = await (supabase as any)
-            .from("attempts")
-            .select("user_id, score, vocab_id, timestamp")
-            .in("user_id", studentIds);
+      // Last 7 days, oldest first, as YYYY-MM-DD
+      const today = new Date();
+      const weekIso = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - (6 - i));
+        return d.toISOString().slice(0, 10);
+      });
 
-          const studentMap: StudentInfo[] = studentProfiles.map((sp: any) => {
-            const attempts = (attemptData || []).filter((a: any) => a.user_id === sp.id);
-            const prog = (progressData || []).find((p: any) => p.user_id === sp.id);
-            const scores = attempts.map((a: any) => a.score).filter((s: any) => s != null);
-            return {
-              id: sp.id,
-              full_name: sp.full_name,
-              total_xp: prog?.total_xp || 0,
-              attempt_count: attempts.length,
-              avg_score: scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : 0,
-            };
-          });
-          setStudents(studentMap);
-
-          const allAttempts = attemptData || [];
-          setTotalAttempts(allAttempts.length);
-          const allScores = allAttempts.map((a: any) => a.score).filter((s: any) => s != null);
-          setAvgScore(allScores.length > 0 ? Math.round(allScores.reduce((a: number, b: number) => a + b, 0) / allScores.length) : 0);
-
-          const weekMap: Record<string, number[]> = {};
-          for (const a of allAttempts) {
-            if (a.score == null) continue;
-            const d = new Date(a.timestamp || Date.now());
-            const weekStart = new Date(d);
-            weekStart.setDate(d.getDate() - d.getDay());
-            const key = weekStart.toISOString().slice(0, 10);
-            if (!weekMap[key]) weekMap[key] = [];
-            weekMap[key].push(a.score);
-          }
-          const weekly = Object.entries(weekMap)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .slice(-6)
-            .map(([, scores], i) => ({
-              week: `Week ${i + 1}`,
-              score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
-            }));
-          setWeeklyScores(weekly);
-
-          const vocabScores: Record<string, { scores: number[]; vocab_id: string }> = {};
-          for (const a of allAttempts) {
-            if (a.score == null || !a.vocab_id) continue;
-            if (!vocabScores[a.vocab_id]) vocabScores[a.vocab_id] = { scores: [], vocab_id: a.vocab_id };
-            vocabScores[a.vocab_id].scores.push(a.score);
-          }
-
-          const vocabIds = Object.keys(vocabScores);
-          if (vocabIds.length > 0) {
-            const { data: vocabData } = await supabase
-              .from("vocab")
-              .select("id, hanzi, pinyin")
-              .in("id", vocabIds);
-
-            if (vocabData) {
-              const difficult = vocabData.map((v: any) => {
-                const entry = vocabScores[v.id];
-                return {
-                  hanzi: v.hanzi,
-                  pinyin: v.pinyin,
-                  attempts: entry.scores.length,
-                  avgScore: Math.round(entry.scores.reduce((a: number, b: number) => a + b, 0) / entry.scores.length),
-                };
-              })
-                .sort((a, b) => a.avgScore - b.avgScore)
-                .slice(0, 6);
-              setDifficultWords(difficult);
-            }
+      const classTone: Record<number, { sum: number; n: number }> = { 1: { sum: 0, n: 0 }, 2: { sum: 0, n: 0 }, 3: { sum: 0, n: 0 }, 4: { sum: 0, n: 0 } };
+      const classStudents: ClassStudent[] = profiles.map((sp) => {
+        const mine = attempts.filter((a) => a.user_id === sp.id);
+        const scores = mine.map((a) => a.score).filter((x): x is number => x != null);
+        const days = new Set(mine.map((a) => (a.timestamp ? a.timestamp.slice(0, 10) : "")));
+        const tone: Record<number, { sum: number; n: number }> = { 1: { sum: 0, n: 0 }, 2: { sum: 0, n: 0 }, 3: { sum: 0, n: 0 }, 4: { sum: 0, n: 0 } };
+        for (const a of mine) {
+          if (a.score == null || !a.vocab_id || !vocabMap[a.vocab_id]) continue;
+          for (const tn of tonesIn(vocabMap[a.vocab_id].pinyin)) {
+            tone[tn].sum += a.score;
+            tone[tn].n++;
+            classTone[tn].sum += a.score;
+            classTone[tn].n++;
           }
         }
+        const toneAvgs = ([1, 2, 3, 4] as const).filter((tn) => tone[tn].n > 0).map((tn) => ({ tn, avg: tone[tn].sum / tone[tn].n }));
+        const weakest = toneAvgs.length ? toneAvgs.reduce((x, y) => (y.avg < x.avg ? y : x)).tn : null;
+        const last = mine.map((a) => a.timestamp).filter(Boolean).sort().pop() ?? null;
+        return {
+          id: sp.id,
+          name: sp.full_name || "?",
+          xp: (progressRes.data || []).find((p: any) => p.user_id === sp.id)?.total_xp || 0,
+          avgScore: scores.length ? Math.round(scores.reduce((x, y) => x + y, 0) / scores.length) : null,
+          week: weekIso.map((d) => days.has(d)),
+          weakestTone: weakest,
+          lastActive: last,
+        };
+      });
+
+      const weekMap: Record<string, number[]> = {};
+      for (const a of attempts) {
+        if (a.score == null) continue;
+        const d = new Date(a.timestamp || Date.now());
+        const weekStart = new Date(d);
+        weekStart.setDate(d.getDate() - d.getDay());
+        const key = weekStart.toISOString().slice(0, 10);
+        (weekMap[key] ||= []).push(a.score);
       }
+      const weeklyScores = Object.entries(weekMap)
+        .sort(([x], [y]) => x.localeCompare(y))
+        .slice(-6)
+        .map(([, scores], i) => ({
+          week: `${t("teach.week_short")} ${i + 1}`,
+          score: Math.round(scores.reduce((x, y) => x + y, 0) / scores.length),
+        }));
+
+      const wordScores: Record<string, number[]> = {};
+      for (const a of attempts) {
+        if (a.score == null || !a.vocab_id || !vocabMap[a.vocab_id]) continue;
+        (wordScores[a.vocab_id] ||= []).push(a.score);
+      }
+      const hardWords: ClassWord[] = Object.entries(wordScores)
+        .map(([id, sc]) => ({
+          hanzi: vocabMap[id].hanzi,
+          pinyin: vocabMap[id].pinyin,
+          arabic: vocabMap[id].arabic_translation,
+          attempts: sc.length,
+          avgScore: Math.round(sc.reduce((x, y) => x + y, 0) / sc.length),
+        }))
+        .sort((x, y) => x.avgScore - y.avgScore)
+        .slice(0, 6);
+
+      setTeacherData({
+        className: classroom.name,
+        code: classroom.code,
+        students: classStudents,
+        tones: ([1, 2, 3, 4] as const).map((tn) => ({
+          tone: tn,
+          score: classTone[tn].n ? Math.round(classTone[tn].sum / classTone[tn].n) : null,
+          words: classTone[tn].n,
+        })),
+        hardWords,
+        weeklyScores,
+      });
     } catch (e) {
       console.error("Dashboard load error:", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // ──────────────────────────────────────────
-  //  Teacher actions
-  // ──────────────────────────────────────────
-  const handleCreateClassroom = async () => {
-    if (!classroomName.trim()) return;
+  const handleCreateClassroom = async (name: string) => {
     try {
-      const code = await createClassroom(classroomName.trim());
-      setClassroomCode(code);
+      const code = await createClassroom(name);
       toast({ title: t("dashboard.classroom_created"), description: `${t("dashboard.classroom_code")}: ${code}` });
+      await loadTeacherData();
     } catch {
       toast({ title: t("dashboard.create_failed"), variant: "destructive" });
     }
   };
 
   const copyCode = () => {
-    if (classroomCode) {
-      navigator.clipboard.writeText(classroomCode);
+    if (teacherData?.code) {
+      navigator.clipboard.writeText(teacherData.code);
       toast({ title: t("dashboard.code_copied") });
     }
   };
@@ -443,197 +421,29 @@ const Dashboard = () => {
         { seal: "满", key: "dash2.badge.level", earned: levelProgress.some((l) => l.total > 0 && l.mastered >= l.total) },
       ],
     };
-    return <StudentDashboard data={data} />;
+    const handleJoin = async (code: string) => {
+      try {
+        await joinClassroom(code);
+        toast({ title: t("class.join.done") });
+        return true;
+      } catch {
+        toast({ title: t("class.join.failed"), description: t("class.join.check"), variant: "destructive" });
+        return false;
+      }
+    };
+    return (
+      <StudentDashboard
+        data={data}
+        joinClass={profile?.role === "student" && !profile?.classroom_id ? handleJoin : undefined}
+      />
+    );
   }
 
   // ──────────────────────────────────────────
   //  TEACHER VIEW
   // ──────────────────────────────────────────
-  if (!classroomCode) {
-    return (
-      <div className="container mx-auto max-w-md px-4 py-12">
-        <Card className="p-8 flex flex-col items-center text-center gap-4">
-          <Lantern mood="idle" className="w-28 h-28" />
-          <h1 className="text-2xl font-bold">{t("dashboard.create_classroom")}</h1>
-          <p className="text-muted-foreground">{t("dashboard.create_classroom_desc")}</p>
-          <Input
-            placeholder={t("dashboard.classroom_name_placeholder")}
-            value={classroomName}
-            onChange={(e) => setClassroomName(e.target.value)}
-          />
-          <Button onClick={handleCreateClassroom} className="w-full" size="lg">
-            {t("dashboard.create_button")}
-          </Button>
-        </Card>
-      </div>
-    );
-  }
-
-  const studentChartData = students.map((s) => ({
-    name: s.full_name.split(" ")[0],
-    words: s.attempt_count,
-  }));
-
-  return (
-    <div className="container mx-auto max-w-6xl px-4 py-8 flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold">{t("dashboard.teacher.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("dashboard.teacher.subtitle")}</p>
-        </div>
-        <div className="flex items-center gap-3 rounded-[10px] border-2 border-stroke bg-card px-4 py-2">
-          <span className="text-sm text-muted-foreground">{t("dashboard.classroom_code")}</span>
-          <span className="font-bold text-lg tracking-widest" dir="ltr">{classroomCode}</span>
-          <Button variant="outline" size="sm" onClick={copyCode}>{t("dashboard.copy")}</Button>
-        </div>
-      </div>
-
-      <StatStrip
-        stats={[
-          { label: t("dashboard.active_students"), value: students.length },
-          { label: t("dashboard.avg_score"), value: `${avgScore}%` },
-          { label: t("dashboard.total_practice"), value: totalAttempts },
-        ]}
-      />
-
-      {students.length === 0 && (
-        <Card className="p-6 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-start">
-          <Lantern mood="sleepy" className="w-28 h-28 shrink-0" />
-          <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-bold">{t("dashboard.no_students")}</h2>
-            <p className="text-muted-foreground max-w-md">{t("dashboard.no_students.desc")}</p>
-          </div>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Section seal="进" title={t("dashboard.accuracy_over_time")}>
-          {weeklyScores.length > 0 ? (
-            <div dir="ltr"><ResponsiveContainer width="100%" height={250}>
-              <LineChart data={weeklyScores}>
-                <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
-                <XAxis dataKey="week" stroke={CHART.axis} fontSize={12} />
-                <YAxis stroke={CHART.axis} domain={[0, 100]} fontSize={12} />
-                <Tooltip contentStyle={CHART.tooltip} />
-                <Line type="monotone" dataKey="score" stroke={CHART.primary} strokeWidth={3} dot={{ fill: CHART.primary, r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer></div>
-          ) : (
-            <EmptyNote>{t("dashboard.no_data")}</EmptyNote>
-          )}
-        </Section>
-
-        <Section seal="练" title={t("dashboard.sessions_per_student")}>
-          {studentChartData.length > 0 ? (
-            <div dir="ltr"><ResponsiveContainer width="100%" height={250}>
-              <BarChart data={studentChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
-                <XAxis dataKey="name" stroke={CHART.axis} fontSize={12} />
-                <YAxis stroke={CHART.axis} fontSize={12} />
-                <Tooltip contentStyle={CHART.tooltip} cursor={{ fill: CHART.cursor }} />
-                <Bar dataKey="words" fill={CHART.primary} radius={[6, 6, 0, 0]} maxBarSize={56} />
-              </BarChart>
-            </ResponsiveContainer></div>
-          ) : (
-            <EmptyNote>{t("dashboard.no_students")}</EmptyNote>
-          )}
-        </Section>
-      </div>
-
-      {difficultWords.length > 0 && (
-        <Section seal="难" title={t("dashboard.most_difficult")}>
-          <ol className="flex flex-col border-2 border-border rounded-[10px] overflow-hidden">
-            {difficultWords.map((word, idx) => (
-              <li key={idx} className="flex items-center justify-between gap-4 p-4 border-b-2 border-border last:border-b-0">
-                <div className="flex items-center gap-4">
-                  <span className="w-9 h-9 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold tabular-nums">
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <p lang="zh" className="font-zh text-2xl font-bold">{word.hanzi}</p>
-                    <p className="font-pinyin text-sm text-primary font-bold">{word.pinyin}</p>
-                  </div>
-                </div>
-                <div className="text-end">
-                  <p className="text-sm text-muted-foreground">{word.attempts} {t("dashboard.attempts")}</p>
-                  <p className="text-lg font-bold">{word.avgScore}% {t("dashboard.avg_label")}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </Section>
-      )}
-
-      {students.length > 0 && (
-        <Section seal="生" title={t("dashboard.students")}>
-          <ul className="flex flex-col border-2 border-border rounded-[10px] overflow-hidden">
-            {students.map((student) => (
-              <li key={student.id} className="flex items-center justify-between gap-4 p-3 border-b-2 border-border last:border-b-0">
-                <div>
-                  <p className="font-bold">{student.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {student.attempt_count} {t("dashboard.sessions")} · {t("dashboard.avg_label")} {student.avg_score}%
-                  </p>
-                </div>
-                <span className="font-bold text-sm text-primary tabular-nums" dir="ltr">{student.total_xp} XP</span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-    </div>
-  );
+  if (!teacherData) return <CreateClass onCreate={handleCreateClassroom} />;
+  return <TeacherDashboard data={teacherData} onCopy={copyCode} />;
 };
-
-/* Chart colours come from the theme tokens so they follow light and dark mode */
-const CHART = {
-  primary: "hsl(var(--primary))",
-  success: "hsl(var(--success))",
-  grid: "hsl(var(--border))",
-  axis: "hsl(var(--muted-foreground))",
-  cursor: "hsl(var(--muted))",
-  tooltip: {
-    background: "hsl(var(--card))",
-    border: "2px solid hsl(var(--stroke))",
-    borderRadius: 10,
-    color: "hsl(var(--foreground))",
-  },
-};
-
-const Section = ({ seal, title, children }: { seal: string; title: string; children: React.ReactNode }) => (
-  <Card className="p-5 md:p-6 flex flex-col gap-4">
-    <h2 className="flex items-center gap-3 text-xl font-bold">
-      <Seal char={seal} size="sm" />
-      {title}
-    </h2>
-    {children}
-  </Card>
-);
-
-const EmptyNote = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-center text-muted-foreground py-10 max-w-sm mx-auto">{children}</p>
-);
-
-/* Headline numbers in one strip rather than a row of separate cards */
-const StatStrip = ({ stats }: { stats: { label: string; value: number | string; unit?: string }[] }) => (
-  <Card className="p-0 overflow-hidden">
-    <dl className={`grid grid-cols-2 ${stats.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
-      {stats.map((s, i) => (
-        <div
-          key={s.label}
-          className={`p-4 md:p-5 border-border ${i % 2 === 0 ? "border-e-2" : ""} ${i >= 2 ? "border-t-2 md:border-t-0" : ""} ${
-            i < stats.length - 1 ? "md:border-e-2" : "md:border-e-0"
-          } ${stats.length === 3 && i === 2 ? "col-span-2 md:col-span-1" : ""}`}
-        >
-          <dt className="text-sm text-muted-foreground">{s.label}</dt>
-          <dd className="text-3xl font-bold tabular-nums">
-            {s.value}
-            {s.unit && <span className="ms-1 text-base font-normal text-muted-foreground">{s.unit}</span>}
-          </dd>
-        </div>
-      ))}
-    </dl>
-  </Card>
-);
 
 export default Dashboard;
