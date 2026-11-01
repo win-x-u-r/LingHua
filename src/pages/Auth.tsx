@@ -87,8 +87,10 @@ const Auth = () => {
   return (
     <div className="min-h-screen py-10 px-4 flex items-start md:items-center justify-center">
       <Card className="w-full max-w-4xl grid md:grid-cols-2 overflow-hidden p-0">
-        <div className="bg-muted border-b-2 md:border-b-0 md:border-e-2 border-stroke flex items-center justify-center min-h-[220px] md:min-h-[520px]">
-          <Lantern mood={mood} bounce={bounce} entering className="w-48 h-48 md:w-72 md:h-72" />
+        <div className="bg-gradient-to-b from-card to-muted border-b-2 md:border-b-0 md:border-e-2 border-stroke flex items-center justify-center min-h-[220px] md:min-h-[520px] overflow-hidden">
+          <div className="lantern-glow [--glow-size:200%] [--glow-y:62%]">
+            <Lantern mood={mood} bounce={bounce} entering className="w-48 h-48 md:w-72 md:h-72" />
+          </div>
         </div>
 
         <div className="p-6 md:p-8 flex flex-col gap-5">

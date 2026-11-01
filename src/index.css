@@ -39,6 +39,9 @@ All colors MUST be HSL.
     --muted: 23 39% 91%;
     --muted-foreground: 18 12% 39%;
 
+    /* Warm light the lantern throws on the wall behind it (light mode only) */
+    --lantern-glow: 2 88% 74%;
+
     --destructive: 4 75% 40%;
     --destructive-foreground: 0 0% 100%;
 
@@ -202,5 +205,39 @@ All colors MUST be HSL.
 
   .animate-wiggle {
     animation: wiggle 0.5s ease-in-out;
+  }
+}
+
+/* Soft, diffuse light behind the lantern. Wrap the lantern in an element with
+   this class; tune --glow-size and --glow-y per placement. Light mode only. */
+@layer components {
+  .lantern-glow {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .lantern-glow::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    top: var(--glow-y, 50%);
+    width: var(--glow-size, 140%);
+    aspect-ratio: 1 / 1.15;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      hsl(var(--lantern-glow) / 0.6) 0%,
+      hsl(var(--lantern-glow) / 0.38) 35%,
+      hsl(var(--lantern-glow) / 0.14) 68%,
+      hsl(var(--lantern-glow) / 0) 100%
+    );
+    filter: blur(28px);
+    pointer-events: none;
+  }
+
+  .dark .lantern-glow::before {
+    display: none;
   }
 }

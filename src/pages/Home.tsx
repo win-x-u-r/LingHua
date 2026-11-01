@@ -46,7 +46,7 @@ const Landing = () => {
         </div>
 
         {/* A real flashcard, with the Arabic-letter pronunciation that sets LingHua apart */}
-        <Card className="p-6 md:p-8 w-full md:max-w-md md:justify-self-end grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+        <Card className="p-6 md:p-8 w-full md:max-w-md md:justify-self-end overflow-hidden grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("home.sample.label")}</span>
             <span lang="zh" className="font-zh font-bold text-6xl leading-tight">你好</span>
@@ -56,7 +56,9 @@ const Landing = () => {
               {t("home.sample.sounds")} <span lang="ar" dir="rtl" className="font-bold text-foreground">ني هاو</span>
             </span>
           </div>
-          <Lantern mood="idle" className="w-28 h-28 md:w-36 md:h-36" />
+          <div className="lantern-glow [--glow-size:230%] [--glow-y:58%]">
+            <Lantern mood="idle" className="w-28 h-28 md:w-36 md:h-36" />
+          </div>
         </Card>
       </section>
 
