@@ -1,5 +1,4 @@
 import type { Language } from "@/lib/i18n";
-import { daysPhrase, minutesPhrase } from "@/lib/dailyGoal";
 
 /*
  * Daily reminders from Hua.
@@ -24,35 +23,34 @@ export interface ReminderContext {
 
 type Line = { en: string; ar: string };
 
-// {name}, {goal}, {left} and {streak} are filled in
-const NOT_STARTED: Line[] = [
-  { en: "Hi {name}, it's Hua. Shall we do your {goalM} together?", ar: "مرحبًا {name}، أنا هوا. هل نقضي {goalM} معًا اليوم؟" },
-  { en: "Your lantern is waiting, {name}. Just {goalM} of Mandarin today.", ar: "فانوسك ينتظرك يا {name}. {goalM} فقط من الماندرين اليوم." },
-  { en: "A few new words before bed? Hua saved you a spot.", ar: "بعض الكلمات الجديدة قبل النوم؟ هوا حجزت لك مكانًا." },
-];
-const STREAK: Line[] = [
-  { en: "{streak} days in a row, {name}! Keep your streak glowing with {goalM} today.", ar: "سلسلتك وصلت إلى {streakD} يا {name}! حافظ على توهّجها بـ{goalM} اليوم." },
-  { en: "Don't let your {streak}-day streak go dark. Hua is ready when you are.", ar: "لا تدع سلسلتك تنطفئ بعد {streakD}. هوا مستعدة متى كنت مستعدًا." },
-];
-const PARTWAY: Line[] = [
-  { en: "Nearly there, {name}! {leftM} more and today's goal is done.", ar: "اقتربت يا {name}! {leftM} أخرى ويكتمل هدف اليوم." },
-  { en: "Nice start today. Only {leftM} left with Hua.", ar: "بداية جميلة اليوم. بقيت {leftM} فقط مع هوا." },
-];
+// Zoha's wording, one line per kind of reminder
+export const HUA_LINES = {
+  daily: { en: "Ready for a little Mandarin today?", ar: "مستعد لقليل من الماندرين اليوم؟" },
+  streak: { en: "You're building a lovely streak. Keep it going!", ar: "أنت تبني سلسلة رائعة. استمر!" },
+  vocabulary: { en: "Hua has a new word for you!", ar: "لدى هوا كلمة جديدة لك!" },
+  progress: { en: "Look how far you've come!", ar: "انظر كم تقدّمت!" },
+  nudge: { en: "A few minutes of Mandarin? Hua is here!", ar: "بضع دقائق من الماندرين؟ هوا هنا!" },
+} satisfies Record<string, Line>;
 
-export const REMINDER_TITLE: Line = { en: "Hua is here", ar: "هوا هنا" };
+export type ReminderKind = keyof typeof HUA_LINES;
 
-/** Hua's line for this moment. `seed` picks among lines so they change from day to day. */
+// Days with nothing special to say rotate through these
+const EVERYDAY: ReminderKind[] = ["daily", "vocabulary", "nudge"];
+
+export const REMINDER_TITLE: Line = { en: "Hua", ar: "هوا" };
+
+/**
+ * Which reminder fits right now: already started today = progress, a streak of two days
+ * or more = streak, otherwise the everyday lines in turn. `seed` changes the line day to day.
+ */
+export function reminderKind(ctx: ReminderContext, seed = new Date().getDate()): ReminderKind {
+  if (ctx.minutes > 0) return "progress";
+  if (ctx.streak >= 2) return "streak";
+  return EVERYDAY[seed % EVERYDAY.length];
+}
+
 export function huaMessage(ctx: ReminderContext, lang: Language, seed = new Date().getDate()): string {
-  const left = Math.max(1, ctx.goal - ctx.minutes);
-  const pool = ctx.minutes > 0 ? PARTWAY : ctx.streak >= 2 ? STREAK : NOT_STARTED;
-  const line = pool[seed % pool.length][lang];
-  const name = ctx.name || (lang === "ar" ? "صديقي" : "friend");
-  return line
-    .replace("{name}", name)
-    .replace("{goalM}", minutesPhrase(ctx.goal, lang))
-    .replace("{leftM}", minutesPhrase(left, lang))
-    .replace("{streakD}", daysPhrase(ctx.streak, lang))
-    .replace("{streak}", String(ctx.streak));
+  return HUA_LINES[reminderKind(ctx, seed)][lang];
 }
 
 /** The next moment the reminder should fire, at HH:MM local time (today if still ahead, else tomorrow). */
