@@ -207,7 +207,7 @@ const Auth = () => {
 
                 <fieldset className="flex flex-col gap-1.5">
                   <legend className="text-sm font-medium mb-1.5">{t("auth.avatar")}</legend>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-6 gap-1.5 sm:gap-2 max-w-sm">
                     {AVATAR_IDS.map((id) => (
                       <button
                         key={id}
@@ -215,11 +215,11 @@ const Auth = () => {
                         aria-label={t(`avatar.${id}`)}
                         aria-pressed={selectedAvatar === id}
                         onClick={() => setSelectedAvatar(id)}
-                        className={`rounded-full border-2 p-1 ${
+                        className={`aspect-square rounded-full border-2 p-0.5 sm:p-1 grid place-items-center ${
                           selectedAvatar === id ? "border-stroke bg-accent shadow-[2px_2px_0_hsl(var(--stamp))]" : "border-border bg-card"
                         }`}
                       >
-                        <AvatarIcon id={id} />
+                        <AvatarIcon id={id} className="w-full h-full" />
                       </button>
                     ))}
                   </div>

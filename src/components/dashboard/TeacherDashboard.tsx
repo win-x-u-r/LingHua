@@ -156,7 +156,37 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
 
           {/* Roster */}
           <Section seal="生" title={t("teach.roster.title")} note={t("teach.roster.note")}>
-            <div className="overflow-x-auto -mx-1">
+            {/* Phones: one row per student, details on a second line */}
+            <ul className="sm:hidden flex flex-col divide-y-2 divide-border">
+              {sorted.map((s) => {
+                const days = s.week.filter(Boolean).length;
+                return (
+                  <li key={s.id} className="py-3 flex flex-col gap-2">
+                    <span className="flex items-center gap-2.5">
+                      <span className="w-8 h-8 shrink-0 rounded-full border-2 border-stroke bg-secondary text-secondary-foreground grid place-items-center font-bold">
+                        {s.name.trim().charAt(0).toUpperCase()}
+                      </span>
+                      <span className="font-bold leading-tight flex-1 min-w-0 truncate">{s.name}</span>
+                      <span className={cn("font-bold tabular-nums", s.avgScore != null && s.avgScore < 60 && "text-primary")}>
+                        {s.avgScore != null ? `${s.avgScore}%` : "–"}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-1 ps-[42px]" dir="ltr">
+                      {s.week.map((on, i) => (
+                        <span key={i} className={cn("w-3 h-3 rounded-full border-2", on ? "bg-primary border-primary" : "border-border")} />
+                      ))}
+                      {days >= WEEKLY_GOAL_DAYS && <Seal char="好" size="sm" tone="gold" className="ms-1 w-5 h-5 text-xs" />}
+                    </span>
+                    <span className="ps-[42px] text-xs text-muted-foreground">
+                      {s.weakestTone ? `${t("teach.col.tone")}: ${t("teach.tone.short").replace("{n}", String(s.weakestTone))} · ` : ""}
+                      {s.lastActive ? dateFmt.format(new Date(s.lastActive)) : t("teach.never")}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="hidden sm:block overflow-x-auto -mx-1">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="text-start text-muted-foreground border-b-2 border-border">
