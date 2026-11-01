@@ -1,0 +1,52 @@
+# Render Blueprint for the LingHua backend (Flask API).
+# Render reads this file when you choose New > Blueprint and pick this repo.
+# Every merge to master redeploys the backend automatically.
+#
+# Secret keys are NOT stored here. Values marked "sync: false" are typed into
+# the Render dashboard once, when the Blueprint is first created.
+services:
+  - type: web
+    name: linghua-backend
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: master
+    rootDir: backend
+    autoDeploy: true
+    buildCommand: pip install -r requirements-cloud.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: FLASK_DEBUG
+        value: "false"
+
+      # The front-end address(es) allowed to call this API, comma-separated.
+      # Example: https://linghua.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+
+      # Huawei Cloud (speech + translation)
+      - key: HUAWEI_AK
+        sync: false
+      - key: HUAWEI_SK
+        sync: false
+      - key: HUAWEI_SIS_REGION
+        sync: false
+      - key: HUAWEI_SIS_PROJECT_ID
+        sync: false
+      - key: HUAWEI_NLP_REGION
+        sync: false
+      - key: HUAWEI_NLP_PROJECT_ID
+        sync: false
+
+      # Other services
+      - key: MUNSIT_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false

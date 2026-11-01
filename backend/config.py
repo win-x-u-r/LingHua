@@ -13,7 +13,11 @@ class Config:
     PORT = int(os.getenv("FLASK_PORT", "5000"))
 
     # CORS
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:8080").split(",")
+    CORS_ORIGINS = [
+        o.strip().rstrip("/")
+        for o in os.getenv("CORS_ORIGINS", "http://localhost:8080").split(",")
+        if o.strip()
+    ]
 
     # Huawei Cloud credentials (shared across all services)
     HUAWEI_AK = os.getenv("HUAWEI_AK", "")
