@@ -11,11 +11,12 @@ import { useAuth, type UserRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { AVATARS } from "@/lib/avatars";
 import ClassCodeInput from "@/components/ClassCodeInput";
+import RoleIcon from "@/components/RoleIcon";
 
-const ROLES: { value: UserRole; labelKey: string; seal: string }[] = [
-  { value: "student", labelKey: "auth.role.student", seal: "学" },
-  { value: "teacher", labelKey: "auth.role.teacher", seal: "师" },
-  { value: "independent", labelKey: "auth.role.independent", seal: "自" },
+const ROLES: { value: UserRole; labelKey: string }[] = [
+  { value: "student", labelKey: "auth.role.student" },
+  { value: "teacher", labelKey: "auth.role.teacher" },
+  { value: "independent", labelKey: "auth.role.independent" },
 ];
 
 const Auth = () => {
@@ -141,7 +142,7 @@ const Auth = () => {
 
                 <fieldset className="flex flex-col gap-1.5">
                   <legend className="text-sm font-medium mb-1.5">{t("auth.role")}</legend>
-                  <div className="flex flex-col border-2 border-stroke rounded-[10px] overflow-hidden" role="radiogroup">
+                  <div className="grid grid-cols-3 gap-2" role="radiogroup">
                     {ROLES.map((r) => {
                       const on = role === r.value;
                       return (
@@ -151,15 +152,12 @@ const Auth = () => {
                           role="radio"
                           aria-checked={on}
                           onClick={() => setRole(r.value)}
-                          className={`flex items-center gap-3 px-3 py-2.5 text-start border-b-2 border-border last:border-b-0 ${
-                            on ? "bg-accent" : "bg-card"
+                          className={`flex flex-col items-center gap-1.5 rounded-[12px] border-2 px-2 py-3 font-bold text-sm leading-tight text-center ${
+                            on ? "border-stroke bg-accent shadow-[3px_3px_0_hsl(var(--stamp))]" : "border-border bg-card text-muted-foreground"
                           }`}
                         >
-                          <Seal char={r.seal} size="sm" tone={on ? "red" : "ink"} />
-                          <span className="flex flex-col">
-                            <span className="font-bold leading-tight">{t(r.labelKey)}</span>
-                            <span className="text-xs text-muted-foreground">{t(`${r.labelKey}.desc`)}</span>
-                          </span>
+                          <RoleIcon role={r.value} className="w-11 h-11" />
+                          {t(r.labelKey)}
                         </button>
                       );
                     })}
