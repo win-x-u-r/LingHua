@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => ({
         "favicon-512.png",
         "apple-touch-icon.png",
         "robots.txt",
+        "hua-sw.js",
       ],
       manifest: {
         name: "Líng Huà — Learn Mandarin",
@@ -74,6 +75,8 @@ export default defineConfig(({ mode }) => ({
         // handle dynamic data with sensible network-first / stale-while-revalidate
         // strategies. Never cache the backend API or Supabase responses.
         globPatterns: ["**/*.{js,css,html,png,jpg,jpeg,svg,woff,woff2,ico}"],
+        // Opens LingHua when someone taps one of Hua's reminders
+        importScripts: ["/hua-sw.js"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/api\//,                 // backend (proxied at /api/ in prod)

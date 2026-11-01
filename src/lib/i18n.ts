@@ -1,6 +1,27 @@
 export type Language = "ar" | "en";
 
 const translations: Record<string, Record<Language, string>> = {
+  // Daily goal and Hua's reminders
+  "goal.title": { en: "How much time will you spend with Hua each day?", ar: "كم من الوقت ستقضي مع هوا كل يوم؟" },
+  "goal.sub": { en: "Little by little, every day adds up. Hua will help you stay on track.", ar: "شيئًا فشيئًا، كل يوم يُحدث فرقًا. وستساعدك هوا على الاستمرار." },
+  "goal.casual": { en: "Casual", ar: "خفيف" },
+  "goal.steady": { en: "Steady", ar: "منتظم" },
+  "goal.focused": { en: "Focused", ar: "مركّز" },
+  "goal.dedicated": { en: "Dedicated", ar: "مثابر" },
+  "goal.min": { en: "{n} min a day", ar: "{m} يوميًا" },
+  "goal.recommended": { en: "Recommended", ar: "موصى به" },
+  "goal.next": { en: "Next", ar: "التالي" },
+  "goal.back": { en: "Back", ar: "رجوع" },
+  "goal.section": { en: "Daily goal", ar: "هدفك اليومي" },
+  "goal.saved": { en: "Saved. Hua will keep you on track.", ar: "تم الحفظ. ستساعدك هوا على الاستمرار." },
+  "goal.today": { en: "Today", ar: "اليوم" },
+  "goal.progress": { en: "{m} of {g} min", ar: "{m} من {gm}" },
+  "reminder.label": { en: "Daily reminder from Hua", ar: "تذكير يومي من هوا" },
+  "reminder.at": { en: "Remind me at", ar: "ذكّرني الساعة" },
+  "reminder.in_app_only": { en: "Notifications are off in this browser, so Hua will remind you when you open LingHua.", ar: "الإشعارات متوقفة في هذا المتصفح، لذا ستذكّرك هوا عند فتح لينغ هوا." },
+  "reminder.go": { en: "Let's go", ar: "هيا بنا" },
+  "reminder.later": { en: "Later", ar: "لاحقًا" },
+
   // Navbar
   "nav.home": { en: "Home", ar: "الرئيسية" },
   "nav.translator": { en: "Translate", ar: "ترجم" },

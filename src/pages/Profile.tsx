@@ -11,6 +11,8 @@ import { XPBar } from "@/components/XPBar";
 import { StreakIndicator } from "@/components/StreakIndicator";
 import { BadgeDisplay } from "@/components/BadgeDisplay";
 import { Star, BookOpen, Target, School } from "lucide-react";
+import { GoalPicker, ReminderSetting } from "@/components/GoalPicker";
+import type { LearningPrefs } from "@/lib/dailyGoal";
 
 interface ProgressData {
   total_xp: number;
@@ -31,7 +33,7 @@ interface Badge {
 
 
 const Profile = () => {
-  const { user, profile, joinClassroom } = useAuth();
+  const { user, profile, prefs, joinClassroom, setLearningPrefs } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
   const [progress, setProgress] = useState<ProgressData | null>(null);
@@ -49,6 +51,19 @@ const Profile = () => {
     loadAttempts();
     loadClassroom();
   }, [user]);
+
+  // Changes save straight away; a short note confirms it
+  const savePrefs = async (next: LearningPrefs) => {
+    await setLearningPrefs(next);
+    toast({ title: t("goal.saved") });
+  };
+
+  // Opened from the "4 of 10 min" link on the home page
+  useEffect(() => {
+    if (window.location.hash === "#goal" && profile) {
+      document.getElementById("goal")?.scrollIntoView({ block: "start" });
+    }
+  }, [profile]);
 
   const loadClassroom = async () => {
     if (!profile?.classroom_id) {
@@ -140,6 +155,22 @@ const Profile = () => {
             </div>
           </div>
         </Card>
+
+        {prefs && profile.role !== "teacher" && (
+          <Card id="goal" className="p-6 mb-6 scroll-mt-24 flex flex-col gap-4">
+            <h2 id="goal-heading" className="font-bold text-lg">{t("goal.section")}</h2>
+            <GoalPicker
+              value={prefs.goalMinutes}
+              labelledBy="goal-heading"
+              onChange={(m) => m !== prefs.goalMinutes && savePrefs({ ...prefs, goalMinutes: m })}
+            />
+            <ReminderSetting
+              on={prefs.reminderOn}
+              time={prefs.reminderTime}
+              onChange={(on, time) => savePrefs({ ...prefs, reminderOn: on, reminderTime: time })}
+            />
+          </Card>
+        )}
 
         <Card className="p-6 mb-6">
           <h2 className="font-bold mb-4 flex items-center gap-2">

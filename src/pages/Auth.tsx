@@ -12,6 +12,16 @@ import { AVATAR_IDS } from "@/lib/avatars";
 import AvatarIcon from "@/components/AvatarIcon";
 import ClassCodeInput from "@/components/ClassCodeInput";
 import RoleIcon from "@/components/RoleIcon";
+import { GoalPicker, ReminderSetting } from "@/components/GoalPicker";
+import { DEFAULT_GOAL_MINUTES, DEFAULT_REMINDER_TIME, tierFor, type GoalTier } from "@/lib/dailyGoal";
+
+// The lantern gets a little more excited the bigger the goal
+const GOAL_MOOD: Record<GoalTier, LanternMood> = {
+  casual: "happy",
+  steady: "happy",
+  focused: "delight",
+  dedicated: "celebrate",
+};
 
 const ROLES: { value: UserRole; labelKey: string }[] = [
   { value: "student", labelKey: "auth.role.student" },
@@ -30,7 +40,12 @@ const Auth = () => {
   const [codeError, setCodeError] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, loading, signUp, signIn, joinClassroom, createClassroom, setAvatar } = useAuth();
+  // Learners get a second sign-up step for their daily goal; teachers skip it
+  const [goalStep, setGoalStep] = useState(false);
+  const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
+  const [reminderOn, setReminderOn] = useState(true);
+  const [reminderTime, setReminderTime] = useState(DEFAULT_REMINDER_TIME);
+  const { user, loading, signUp, signIn, joinClassroom, createClassroom, setAvatar, setLearningPrefs } = useAuth();
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -85,12 +100,27 @@ const Auth = () => {
       changeMood("sad");
       return;
     }
+    const asksGoal = isSignUp && role !== "teacher";
+    if (asksGoal && !goalStep) {
+      setGoalStep(true);
+      react("happy", 1400);
+      window.scrollTo({ top: 0 });
+      return;
+    }
     setIsSubmitting(true);
     changeMood("thinking");
 
     try {
       if (isSignUp) {
-        await signUp(email, password, fullName, role);
+        const prefs = asksGoal ? { goalMinutes, reminderOn, reminderTime } : undefined;
+        await signUp(email, password, fullName, role, prefs);
+        if (prefs) {
+          try {
+            await setLearningPrefs(prefs);
+          } catch {
+            // Already kept in the sign-up details and on this device
+          }
+        }
 
         try {
           await setAvatar(selectedAvatar);
@@ -159,11 +189,21 @@ const Auth = () => {
 
         <div className="p-6 md:p-8 flex flex-col gap-5">
           <div>
-            <h1 className="text-3xl font-bold">{isSignUp ? t("auth.join") : t("auth.welcome")}</h1>
-            <p lang="zh" className="font-zh text-muted-foreground">{isSignUp ? "欢迎加入" : "欢迎回来"}</p>
+            {goalStep ? (
+              <>
+                <h1 id="goal-title" className="text-2xl md:text-3xl font-bold text-balance">{t("goal.title")}</h1>
+                <p className="text-muted-foreground mt-1">{t("goal.sub")}</p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold">{isSignUp ? t("auth.join") : t("auth.welcome")}</h1>
+                <p lang="zh" className="font-zh text-muted-foreground">{isSignUp ? "欢迎加入" : "欢迎回来"}</p>
+              </>
+            )}
           </div>
 
           {/* Log in or sign up */}
+          {!goalStep && (
           <div className="grid grid-cols-2 border-2 border-stroke rounded-[10px] overflow-hidden font-bold" role="tablist">
             {[false, true].map((signUpTab) => (
               <button
@@ -174,6 +214,7 @@ const Auth = () => {
                 onClick={() => {
                   if (isSignUp !== signUpTab) react("happy", 1200);
                   setIsSignUp(signUpTab);
+                  setGoalStep(false);
                 }}
                 className={`py-2 ${isSignUp === signUpTab ? "bg-foreground text-background" : "bg-card"}`}
               >
@@ -181,9 +222,32 @@ const Auth = () => {
               </button>
             ))}
           </div>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {isSignUp && (
+            {goalStep && (
+              <>
+                <GoalPicker
+                  value={goalMinutes}
+                  labelledBy="goal-title"
+                  onChange={(m) => {
+                    if (m !== goalMinutes) react(GOAL_MOOD[tierFor(m)], 2000);
+                    setGoalMinutes(m);
+                  }}
+                />
+                <ReminderSetting
+                  on={reminderOn}
+                  time={reminderTime}
+                  onChange={(on, time) => {
+                    if (on && !reminderOn) react("happy", 1400);
+                    setReminderOn(on);
+                    setReminderTime(time);
+                  }}
+                />
+              </>
+            )}
+
+            {isSignUp && !goalStep && (
               <>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="name">{t("auth.name")}</Label>
@@ -294,6 +358,8 @@ const Auth = () => {
               </>
             )}
 
+            {!goalStep && (
+            <>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">{t("auth.email")}</Label>
               <Input
@@ -329,10 +395,25 @@ const Auth = () => {
                 minLength={6}
               />
             </div>
+            </>
+            )}
 
-            <Button type="submit" disabled={isSubmitting} size="lg" className="w-full mt-2">
-              {isSubmitting ? t("auth.wait") : isSignUp ? t("auth.create") : t("auth.signin")}
-            </Button>
+            <div className="flex gap-3 mt-2">
+              {goalStep && (
+                <Button type="button" variant="outline" size="lg" onClick={() => setGoalStep(false)}>
+                  {t("goal.back")}
+                </Button>
+              )}
+              <Button type="submit" disabled={isSubmitting} size="lg" className="flex-1">
+                {isSubmitting
+                  ? t("auth.wait")
+                  : !isSignUp
+                    ? t("auth.signin")
+                    : role !== "teacher" && !goalStep
+                      ? t("goal.next")
+                      : t("auth.create")}
+              </Button>
+            </div>
           </form>
         </div>
       </Card>

@@ -9,10 +9,10 @@ import AvatarIcon from "@/components/AvatarIcon";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateXpEarned } from "@/lib/gamification";
 import { getDueWords } from "@/lib/spacedRepetition";
-
-const DAILY_GOAL_XP = 30;
+import { useTodayMinutes } from "@/hooks/use-today-minutes";
+import GoalIcon from "@/components/GoalIcon";
+import { progressText, tierFor } from "@/lib/dailyGoal";
 
 const Home = () => {
   const { user } = useAuth();
@@ -112,24 +112,19 @@ const Today = () => {
   const { t, language } = useLanguage();
   const { user, profile } = useAuth();
   const [streak, setStreak] = useState(0);
-  const [xpToday, setXpToday] = useState(0);
+  const today = useTodayMinutes();
   const [dueCount, setDueCount] = useState(0);
   const [hasPracticed, setHasPracticed] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
     (async () => {
-      const [{ data: progress }, { data: attempts }, due] = await Promise.all([
+      const [{ data: progress }, due] = await Promise.all([
         (supabase as any).from("progress").select("current_streak, completed_words").eq("user_id", user.id).maybeSingle(),
-        (supabase as any).from("attempts").select("score").eq("user_id", user.id).gte("timestamp", startOfDay.toISOString()),
         getDueWords(supabase, user.id),
       ]);
       setStreak(progress?.current_streak ?? 0);
       setHasPracticed((progress?.completed_words ?? 0) > 0);
-      setXpToday((attempts ?? []).reduce((sum: number, a: { score: number }) => sum + calculateXpEarned(a.score), 0));
       setDueCount(due.length);
     })();
   }, [user]);
@@ -137,7 +132,7 @@ const Today = () => {
   const hour = new Date().getHours();
   const greeting = t(hour < 12 ? "today.morning" : hour < 18 ? "today.afternoon" : "today.evening");
   const firstName = (profile?.full_name ?? "").split(" ")[0];
-  const goalDone = xpToday >= DAILY_GOAL_XP;
+  const goalDone = today.done;
   const isTeacher = profile?.role === "teacher";
 
   const activities = [
@@ -171,13 +166,18 @@ const Today = () => {
       </div>
 
       <Card className="p-5 flex flex-col gap-4">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("today.goal")}</span>
-          <span dir="ltr" className="font-bold tabular-nums">
-            {Math.min(xpToday, DAILY_GOAL_XP)} / {DAILY_GOAL_XP} XP
-          </span>
-        </div>
-        <Progress value={(Math.min(xpToday, DAILY_GOAL_XP) / DAILY_GOAL_XP) * 100} />
+        {!isTeacher && (
+          <>
+            <div className="flex items-center gap-3">
+              <GoalIcon tier={tierFor(today.goal)} className="w-10 h-10 shrink-0" />
+              <span className="flex-1 text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("today.goal")}</span>
+              <Link to="/profile#goal" className="font-bold tabular-nums">
+                {progressText(t, language, today.minutes, today.goal)}
+              </Link>
+            </div>
+            <Progress value={(Math.min(today.minutes, today.goal) / today.goal) * 100} />
+          </>
+        )}
         {goalDone && <p className="font-semibold text-success-foreground">{t("today.goal.done")}</p>}
         <div>
           <p className="text-muted-foreground mb-3">{t("today.continue.desc")}</p>

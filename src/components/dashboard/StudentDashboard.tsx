@@ -8,6 +8,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import ClassCodeInput from "@/components/ClassCodeInput";
+import GoalIcon from "@/components/GoalIcon";
+import { Progress } from "@/components/ui/progress";
+import { useTodayMinutes } from "@/hooks/use-today-minutes";
+import { progressText, tierFor } from "@/lib/dailyGoal";
 
 export const WEEKLY_GOAL_DAYS = 5;
 
@@ -76,6 +80,7 @@ const StudentDashboard = ({
 }) => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const today = useTodayMinutes();
 
   const daysThisWeek = data.week.filter((d) => d.practiced).length;
   const goalMet = daysThisWeek >= WEEKLY_GOAL_DAYS;
@@ -105,6 +110,17 @@ const StudentDashboard = ({
                   ? t("dash2.week.left1")
                   : t("dash2.week.left").replace("{n}", String(WEEKLY_GOAL_DAYS - daysThisWeek))}
           </h1>
+          {/* Today's minutes toward the daily goal picked at sign-up */}
+          <div className="flex items-center gap-3 max-w-md">
+            <GoalIcon tier={tierFor(today.goal)} className="w-9 h-9 shrink-0" />
+            <div className="flex-1 flex flex-col gap-1.5">
+              <div className="flex items-baseline justify-between gap-2 text-sm">
+                <span className="text-muted-foreground">{t("goal.today")}</span>
+                <span className="font-bold tabular-nums">{progressText(t, language, today.minutes, today.goal)}</span>
+              </div>
+              <Progress value={(Math.min(today.minutes, today.goal) / today.goal) * 100} className="h-2.5" />
+            </div>
+          </div>
           <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
             <InlineStat label={t("dashboard.current_streak")} value={`${data.streak} ${t("dashboard.days")}`} />
             <InlineStat label={t("dashboard.total_xp")} value={data.totalXp} />

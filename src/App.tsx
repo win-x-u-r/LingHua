@@ -9,6 +9,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import InstallPWA from "./components/InstallPWA";
+import HuaReminder from "./components/HuaReminder";
+import { useLearningTimer } from "./hooks/use-learning-timer";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Translator from "./pages/Translator";
@@ -33,7 +35,9 @@ function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: 
   return <>{children}</>;
 }
 
-const AppRoutes = () => (
+const AppRoutes = () => {
+  useLearningTimer();
+  return (
   <div className="flex flex-col min-h-screen">
     <Navbar />
     <main className="flex-1">
@@ -53,8 +57,10 @@ const AppRoutes = () => (
     </main>
     <Footer />
     <InstallPWA />
+    <HuaReminder />
   </div>
-);
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
