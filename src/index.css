@@ -9,8 +9,8 @@ All colors MUST be HSL.
 @layer base {
   /* Red Seal: ink outlines, solid stamp shadows, lantern red and gold. */
   :root {
-    /* Warm parchment page so white cards stand out */
-    --background: 36 70% 90%;
+    /* Blush page lit by the lantern glow, so white cards stand out */
+    --background: 5 75% 96%;
     --foreground: 16 19% 11%;
 
     --card: 0 0% 100%;
@@ -36,10 +36,10 @@ All colors MUST be HSL.
     --sunshine: 40 82% 50%;
     --sunshine-foreground: 41 100% 11%;
 
-    --muted: 23 39% 91%;
+    --muted: 5 45% 93%;
     --muted-foreground: 18 12% 39%;
 
-    /* Warm light the lantern throws on the wall behind it (light mode only) */
+    /* Warm light the lantern throws on the wall behind it */
     --lantern-glow: 2 88% 74%;
 
     --destructive: 4 75% 40%;
@@ -50,7 +50,7 @@ All colors MUST be HSL.
     --success-soft: 150 48% 91%;
     --success-foreground: 161 64% 22%;
 
-    --border: 24 32% 85%;
+    --border: 5 35% 87%;
     --input: 16 19% 11%;
     --ring: 40 82% 50%;
 
@@ -106,6 +106,7 @@ All colors MUST be HSL.
     --sunshine-foreground: 41 100% 11%;
 
     --muted: 230 5% 24%;
+    --lantern-glow: 6 90% 55%;
     --muted-foreground: 33 7% 70%;
 
     --destructive: 5 100% 64%;
@@ -138,6 +139,9 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    /* Soft lantern light washing down from the top of the page (light mode) */
+    background-image: radial-gradient(130% 75% at 50% 0%, hsl(var(--lantern-glow) / 0.22), transparent 70%);
+    background-attachment: fixed;
     font-family: var(--font-sans);
   }
 
@@ -237,7 +241,19 @@ All colors MUST be HSL.
     pointer-events: none;
   }
 
+  /* At night the lantern glows dimmer and warmer, red into gold */
+  .dark body {
+    background-image: none;
+  }
+
   .dark .lantern-glow::before {
-    display: none;
+    opacity: 0.5;
+    background: radial-gradient(
+      closest-side,
+      hsl(var(--lantern-glow) / 0.55) 0%,
+      hsl(var(--lantern-glow) / 0.3) 40%,
+      hsl(28 90% 50% / 0.1) 70%,
+      hsl(28 90% 50% / 0) 100%
+    );
   }
 }
