@@ -57,7 +57,7 @@ export async function translateText(
     body: JSON.stringify({ text, source, target }),
   });
 
-  if (!response.ok) throw new Error(`Translation failed: ${response.statusText}`);
+  if (!response.ok) throw new Error(`Translation failed (server error ${response.status}).`);
 
   const data: TranslateResponse = await response.json();
   return data.translatedText;
@@ -104,7 +104,7 @@ export async function speakText(text: string, lang: string): Promise<void> {
     body: JSON.stringify({ text, lang }),
   });
 
-  if (!response.ok) throw new Error(`TTS failed: ${response.statusText}`);
+  if (!response.ok) throw new Error(`Audio failed (server error ${response.status}).`);
 
   const contentType = response.headers.get("content-type") || "";
 

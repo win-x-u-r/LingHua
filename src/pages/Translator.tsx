@@ -18,6 +18,13 @@ const SwapIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+/** Turns a failed request into a message that says what actually went wrong. */
+const describeError = (err: unknown): string => {
+  if (err instanceof TypeError) return "Can't reach the LingHua server. Check your connection and try again.";
+  if (err instanceof Error && err.message) return err.message;
+  return "Something went wrong. Please try again.";
+};
+
 const Translator = () => {
   const [arabicText, setArabicText] = useState("");
   const [chineseText, setChineseText] = useState("");
@@ -88,10 +95,10 @@ const Translator = () => {
         setArabicText(result);
         toast({ title: "Translation Complete!", description: "Chinese → Arabic translation ready" });
       }
-    } catch {
+    } catch (err) {
       toast({
         title: "Translation Failed",
-        description: "Please make sure the backend is running on localhost:5000",
+        description: describeError(err),
         variant: "destructive",
       });
     } finally {
@@ -104,10 +111,10 @@ const Translator = () => {
     try {
       await speakText(text, lang);
       toast({ title: "Playing Audio", description: "Text-to-speech generated successfully" });
-    } catch {
+    } catch (err) {
       toast({
         title: "TTS Failed",
-        description: "Please make sure the backend is running on localhost:5000",
+        description: describeError(err),
         variant: "destructive",
       });
     }
