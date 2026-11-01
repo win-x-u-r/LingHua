@@ -81,55 +81,58 @@ All colors MUST be HSL.
     --font-zh: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   }
 
-  /* Charcoal dark mode: neutral grey so the lantern and red actions carry the colour */
+  /* Lantern Night: deep crimson with gold outlines, like a lantern festival after dark */
   .dark {
-    --background: 225 8% 10%;
-    --foreground: 33 41% 95%;
+    --background: 356 55% 10%;
+    --foreground: 33 100% 94%;
 
-    --card: 228 6% 16%;
-    --card-foreground: 33 41% 95%;
+    --card: 357 49% 15%;
+    --card-foreground: 33 100% 94%;
 
-    --popover: 228 6% 16%;
-    --popover-foreground: 33 41% 95%;
+    --popover: 357 49% 15%;
+    --popover-foreground: 33 100% 94%;
 
     --primary: 5 100% 64%;
-    --primary-foreground: 10 53% 7%;
+    --primary-foreground: 0 68% 7%;
     --primary-glow: 5 100% 64%;
 
-    --secondary: 44 29% 18%;
-    --secondary-foreground: 41 89% 63%;
+    --secondary: 37 64% 18%;
+    --secondary-foreground: 43 100% 73%;
 
-    --accent: 2 29% 19%;
-    --accent-foreground: 6 100% 74%;
+    --accent: 358 50% 20%;
+    --accent-foreground: 7 100% 75%;
 
     --sunshine: 41 89% 63%;
     --sunshine-foreground: 41 100% 11%;
 
-    --muted: 230 5% 24%;
-    --lantern-glow: 6 90% 55%;
-    --muted-foreground: 33 7% 70%;
+    --muted: 1 47% 23%;
+    --muted-foreground: 17 54% 80%;
+
+    /* Amber, so the glow still reads against the crimson page */
+    --lantern-glow: 28 95% 55%;
 
     --destructive: 5 100% 64%;
-    --destructive-foreground: 10 53% 7%;
+    --destructive-foreground: 0 68% 7%;
 
     --success: 158 55% 59%;
-    --success-soft: 159 43% 16%;
-    --success-foreground: 159 64% 69%;
+    --success-soft: 162 53% 15%;
+    --success-foreground: 159 72% 72%;
 
-    --border: 230 5% 24%;
-    --input: 33 41% 95%;
+    --border: 358 50% 20%;
+    --input: 41 89% 63%;
     --ring: 41 89% 63%;
 
-    --stroke: 33 41% 95%;
-    --stamp: 0 0% 0%;
+    --stroke: 41 89% 63%;
+    --stamp: 356 64% 4%;
 
-    --header: 2 48% 24%;
-    --header-foreground: 33 41% 95%;
-    --header-hover: 2 48% 30%;
-    --footer: 225 9% 7%;
-    --footer-foreground: 33 41% 95%;
-    --footer-muted: 33 7% 62%;
+    --header: 356 60% 7%;
+    --header-foreground: 33 100% 94%;
+    --header-hover: 357 49% 15%;
+    --footer: 356 60% 6%;
+    --footer-foreground: 33 100% 94%;
+    --footer-muted: 17 30% 70%;
   }
+
 }
 
 @layer base {
