@@ -496,7 +496,7 @@ const Flashcards = () => {
                 style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
               >
                 <span lang="zh" className="font-zh font-bold text-6xl leading-tight">{currentWord.hanzi}</span>
-                <span className="text-2xl font-bold text-primary">{currentWord.pinyin}</span>
+                <span className="font-pinyin text-2xl font-bold text-primary">{currentWord.pinyin}</span>
                 <span lang="ar" dir="rtl" className="text-2xl">{currentWord.arabic_translation}</span>
 
                 {cardBreakdown.length > 0 && (

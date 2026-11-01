@@ -73,6 +73,7 @@ export default {
       fontFamily: {
         sans: ["var(--font-sans)"],
         zh: ["var(--font-zh)"],
+        pinyin: ["var(--font-pinyin)"],
       },
       backgroundImage: {
         'gradient-coral': 'var(--gradient-coral)',

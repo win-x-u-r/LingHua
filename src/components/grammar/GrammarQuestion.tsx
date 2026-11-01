@@ -183,7 +183,7 @@ const GrammarQuestion = ({ question, onAnswered }: GrammarQuestionProps) => {
           </div>
 
           <div className="text-2xl font-bold mt-2 text-center" lang="zh">{question.fullSentence}</div>
-          <div className="text-sm text-muted-foreground text-center">{question.pinyin}</div>
+          <div className="font-pinyin text-sm text-muted-foreground text-center">{question.pinyin}</div>
           <div className="text-sm text-center" dir={rtl ? "rtl" : "ltr"}>{translation}</div>
 
           {!correct && (

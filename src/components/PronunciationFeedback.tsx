@@ -48,7 +48,7 @@ const PronunciationFeedback = ({ segments, compact = false }: PronunciationFeedb
   const pad = compact ? "py-0.5" : "py-1";
   const fontFor: Record<RowKind, string> = {
     char: compact ? "text-lg font-bold" : "text-2xl font-bold",
-    pinyin: compact ? "text-xs" : "text-base",
+    pinyin: compact ? "font-pinyin text-xs" : "font-pinyin text-base",
     tone: compact ? "text-base font-bold" : "text-xl font-bold",
     arabic: compact ? "text-xs" : "text-base",
   };

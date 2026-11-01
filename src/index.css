@@ -78,6 +78,8 @@ All colors MUST be HSL.
     --shadow-glow: 5px 5px 0 hsl(var(--stamp));
 
     --font-sans: "Baloo Bhaijaan 2", "Segoe UI", "Geeza Pro", system-ui, sans-serif;
+    /* Baloo draws some pinyin tone marks (ī, ǜ) detached, so pinyin uses Nunito */
+    --font-pinyin: "Nunito", "Segoe UI", system-ui, sans-serif;
     --font-zh: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   }
 

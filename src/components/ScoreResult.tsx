@@ -46,7 +46,7 @@ const ScoreResult = ({ result, earnedXp, compact = true }: ScoreResultProps) => 
         <p className="text-sm flex flex-wrap items-baseline gap-x-2">
           <span className="text-muted-foreground">{t("flashcards.result.heard")}:</span>
           <span lang="zh" className="font-zh font-bold">{result.recognized}</span>
-          {result.recognized_pinyin && <span className="font-bold text-primary">{result.recognized_pinyin}</span>}
+          {result.recognized_pinyin && <span className="font-pinyin font-bold text-primary">{result.recognized_pinyin}</span>}
           {result.recognized_arabic && (
             <span lang="ar" dir="rtl" className="font-bold">{result.recognized_arabic}</span>
           )}

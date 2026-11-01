@@ -216,7 +216,7 @@ const Practice = () => {
           {expectedText && (
             <Card className="p-6 flex flex-col items-center text-center gap-2">
               <span lang="zh" className="font-zh font-bold text-6xl md:text-7xl leading-tight">{expectedText}</span>
-              {pinyin && <span className="text-2xl font-bold text-primary">{pinyin}</span>}
+              {pinyin && <span className="font-pinyin text-2xl font-bold text-primary">{pinyin}</span>}
               {meaning && <span lang="ar" dir="rtl" className="text-xl">{meaning}</span>}
               {arabicSounds && (
                 <span className="text-sm text-muted-foreground">

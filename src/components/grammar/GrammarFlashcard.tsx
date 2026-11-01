@@ -42,7 +42,7 @@ const GrammarFlashcard = ({ card }: GrammarFlashcardProps) => {
           {renderHanzi(card.hanzi, card.highlight)}
         </div>
       )}
-      {card.pinyin && <div className="text-lg text-muted-foreground mb-2">{card.pinyin}</div>}
+      {card.pinyin && <div className="font-pinyin text-lg text-muted-foreground mb-2">{card.pinyin}</div>}
 
       <p
         className="text-lg font-medium max-w-prose"

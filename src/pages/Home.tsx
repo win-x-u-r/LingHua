@@ -50,7 +50,7 @@ const Landing = () => {
           <div className="flex flex-col gap-1">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("home.sample.label")}</span>
             <span lang="zh" className="font-zh font-bold text-6xl leading-tight">你好</span>
-            <span className="text-xl font-bold text-primary">nǐ hǎo</span>
+            <span className="font-pinyin text-xl font-bold text-primary">nǐ hǎo</span>
             <span lang="ar" dir="rtl" className="text-2xl self-start">مرحبا</span>
             <span className="text-sm text-muted-foreground mt-2">
               {t("home.sample.sounds")} <span lang="ar" dir="rtl" className="font-bold text-foreground">ني هاو</span>
