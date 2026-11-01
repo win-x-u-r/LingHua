@@ -45,7 +45,10 @@ const About = () => {
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <h2 className="text-3xl md:text-4xl font-bold text-balance">{t("home.for.title")}</h2>
-          <p className="text-lg md:text-xl text-muted-foreground">{t("home.for.sub")}</p>
+          <p className="text-lg md:text-xl text-muted-foreground">
+            {t("home.for.sub")}{" "}
+            <Lantern mood="idle" className="inline-block align-middle w-7 h-7 -mt-1" />
+          </p>
         </div>
         <ul className={list}>
           {audiences.map((a) => (
