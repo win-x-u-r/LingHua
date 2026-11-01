@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import Seal from "@/components/Seal";
-import { avatarChar } from "@/lib/avatars";
+import AvatarIcon from "@/components/AvatarIcon";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,7 +130,7 @@ const Profile = () => {
       <div className="container mx-auto max-w-3xl">
         <Card className="p-8 mb-6">
           <div className="flex items-center gap-6">
-            <Seal char={avatarChar(profile.avatar_url)} size="lg" className="w-20 h-20 text-4xl rounded-full" />
+            <span className="w-20 h-20 rounded-full border-2 border-stroke bg-card grid place-items-center"><AvatarIcon id={profile.avatar_url} className="w-16 h-16" /></span>
             <div className="flex-1">
               <h1 className="text-2xl font-bold">{profile.full_name}</h1>
               <p className="text-muted-foreground">{t(`common.${profile.role}`)}</p>

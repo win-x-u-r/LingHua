@@ -23,6 +23,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   joinClassroom: (code: string) => Promise<void>;
   createClassroom: (name: string) => Promise<string>;
+  setAvatar: (avatarId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -102,11 +103,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const joinClassroom = async (code: string) => {
     const me = await currentUser();
+    const clean = code.trim().toUpperCase();
+
+    // Preferred: the join_classroom function (students cannot read classrooms they are not in)
+    const { error: rpcError } = await (supabase as any).rpc("join_classroom", { class_code: clean });
+    if (!rpcError) {
+      await fetchProfile(me.id);
+      return;
+    }
+    // Function not deployed yet: fall back to the direct lookup
+    if (rpcError.code !== "PGRST202" && rpcError.code !== "42883") throw rpcError;
 
     const { data: classroom } = await (supabase as any)
       .from("classrooms")
       .select("id")
-      .eq("code", code.trim().toUpperCase())
+      .eq("code", clean)
       .maybeSingle();
 
     if (!classroom) throw new Error("Classroom not found");
@@ -116,6 +127,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .update({ classroom_id: classroom.id })
       .eq("id", me.id);
 
+    if (error) throw error;
+    await fetchProfile(me.id);
+  };
+
+  const setAvatar = async (avatarId: string) => {
+    const me = await currentUser();
+    const { error } = await (supabase as any).from("profiles").update({ avatar_url: avatarId }).eq("id", me.id);
     if (error) throw error;
     await fetchProfile(me.id);
   };
@@ -137,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, session, profile, loading,
-      signUp, signIn, signOut, joinClassroom, createClassroom,
+      signUp, signIn, signOut, joinClassroom, createClassroom, setAvatar,
     }}>
       {children}
     </AuthContext.Provider>
