@@ -1,56 +1,65 @@
 # Deploying LingHua
 
-The site runs on two free services. Both redeploy by themselves every time
+The site runs on two free services. Both update by themselves every time
 something is merged into `master`, so nobody has to log in to a server.
 
 | Part | Service | Set up by |
 |------|---------|-----------|
 | Front end (the website) | [Vercel](https://vercel.com) | `vercel.json` |
-| Backend (speech, translation, tutor API) | [Render](https://render.com) | `render.yaml` |
+| Backend with MindSpore (speech, translation, tutor API) | [Hugging Face Spaces](https://huggingface.co/spaces) | `backend/Dockerfile`, `.github/workflows/deploy-backend.yml` |
 | Accounts and database | Supabase (unchanged) | |
+
+The backend runs on Hugging Face because MindSpore needs about 520 MB of
+memory just to start. Hugging Face's free CPU Space has 16 GB.
 
 `deploy.sh` is the old one-server setup for Huawei Cloud ECS. It still works
 but is no longer needed.
 
 ## One-time setup
 
-Do these in order. The whole thing takes about 20 minutes.
+You can do the website on its own first. Sign-in, flashcards and dashboards
+work without the backend; translation, speech and the tutor need it.
 
-### 1. Backend on Render
-
-1. Go to [render.com](https://render.com) and sign up with GitHub.
-2. Click **New** then **Blueprint**, and pick the `linghua` repo.
-   If the repo is not listed, click the link to give Render access. The repo
-   belongs to `win-x-u-r`, so that account may need to approve it once.
-3. Render reads `render.yaml` and asks for the secret values listed below.
-   Paste each one. Leave `CORS_ORIGINS` empty for now.
-4. Click **Apply**. The first build takes a few minutes.
-5. When it says **Live**, copy the address at the top of the page, for
-   example `https://linghua-backend.onrender.com`. Open that address with
-   `/health` on the end; it should say `"status": "ok"`.
-
-### 2. Front end on Vercel
+### 1. Website on Vercel
 
 1. Go to [vercel.com](https://vercel.com) and sign up with GitHub.
-2. Click **Add New** then **Project**, and import the `linghua` repo
-   (same access note as above).
-3. Before clicking Deploy, open **Environment Variables** and add the four
-   front-end values listed below. For `VITE_API_BASE`, paste the Render
-   address from step 1.5 (no slash at the end).
-4. Click **Deploy**. When it finishes, copy the site address, for example
+2. Click **Add New** then **Project**, and import the repo.
+3. Open **Environment Variables** and add the front-end values listed below.
+   Leave `VITE_API_BASE` out until the backend exists.
+4. Click **Deploy**. Copy the site address, for example
    `https://linghua-abc.vercel.app`.
+
+### 2. Backend on Hugging Face
+
+1. Sign up at [huggingface.co](https://huggingface.co).
+2. Click your picture, then **New Space**. Name it `linghua-backend`, pick
+   **Docker** then **Blank**, keep **CPU basic (free)**, and make it
+   **Public** (the website has to be able to reach it). Click **Create Space**.
+3. In the Space, open **Settings**, then **Variables and secrets**. Add each
+   backend value listed below with **New secret**. Set `CORS_ORIGINS` to the
+   Vercel address from step 1.4. Keys you don't have yet can be added later.
+4. Click your picture, then **Settings**, then **Access Tokens**. Create a
+   token with the **Write** role and copy it.
+5. On GitHub, open the repo, then **Settings**, then
+   **Secrets and variables**, then **Actions**.
+   - Under **Secrets**, add `HF_TOKEN` with the token from step 4.
+   - Under **Variables**, add `HF_SPACE` with your Space name, for example
+     `your-name/linghua-backend`.
+6. Open the **Actions** tab. On a fork, click the button to enable workflows.
+   Pick **Deploy backend**, then **Run workflow**. The first build takes about
+   10 minutes; you can watch it under **Logs** in the Space.
+7. The backend address is `https://your-name-linghua-backend.hf.space`.
+   Open it with `/health` on the end; it should say `"status": "ok"`.
 
 ### 3. Connect the two
 
-1. In Render, open `linghua-backend`, then **Environment**, and set
-   `CORS_ORIGINS` to the Vercel address from step 2.4. Save; Render restarts
-   the backend.
+1. In Vercel, open the project, then **Settings**, then **Environment
+   Variables**, and add `VITE_API_BASE` with the backend address (no slash at
+   the end). Then go to **Deployments** and click **Redeploy** on the latest
+   one.
 2. In Supabase, open **Authentication** then **URL Configuration**. Set
    **Site URL** to the Vercel address and add it under **Redirect URLs** too,
    so sign-up and password emails link to the new site.
-
-Open the Vercel address and try signing in, translating, and a pronunciation
-practice to check everything works.
 
 ## Environment variables
 
@@ -61,11 +70,11 @@ practice to check everything works.
 | `VITE_SUPABASE_URL` | Supabase project address | Supabase > Project Settings > API |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase public (anon) key | Supabase > Project Settings > API |
 | `VITE_SUPABASE_PROJECT_ID` | Supabase project id | Supabase > Project Settings > General |
-| `VITE_API_BASE` | The Render backend address | Render dashboard |
+| `VITE_API_BASE` | The backend address | Hugging Face Space |
 
 These end up in the website itself, so they must never be secret keys.
 
-### Backend (Render)
+### Backend (Hugging Face Space secrets)
 
 | Name | What it is |
 |------|------------|
@@ -83,14 +92,11 @@ server. Never commit any of these to the repo.
 
 ## Good to know
 
-- **Free plan sleep.** Render's free backend goes to sleep after 15 minutes
-  with no visitors. The next request wakes it, which takes up to a minute.
-  The paid Starter plan stays awake.
-- **MindSpore.** The hosted backend installs `backend/requirements-cloud.txt`,
-  which leaves out MindSpore because it needs more memory than the free plan
-  has. Pronunciation scoring uses the built-in NumPy fallback and gives the
-  same kind of score. To use MindSpore, switch `render.yaml` to
-  `requirements.txt` and a plan with 2 GB of memory.
-- **Preview links.** Vercel also builds every pull request and posts a
-  preview link on it. Previews use the same backend, so add a preview's
+- **Sleep.** A free Space goes to sleep after 48 hours with no visitors. The
+  next visit wakes it, which takes a minute or two.
+- **Updates.** The backend redeploys only when files in `backend/` change.
+  To force it, run **Deploy backend** from the Actions tab.
+- **Forks.** A fork doesn't follow the main repo by itself. Click **Sync fork**
+  on GitHub to pull in new changes; Vercel and the backend then update.
+- **Preview links.** Vercel also builds every pull request. Add a preview's
   address to `CORS_ORIGINS` if you want speech features to work there.
