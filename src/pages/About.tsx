@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import Lantern from "@/components/lantern/Lantern";
-import Seal from "@/components/Seal";
+import AvatarIcon from "@/components/AvatarIcon";
+import RoleIcon from "@/components/RoleIcon";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const About = () => {
@@ -9,28 +10,32 @@ const About = () => {
 
   const features = [
     {
-      seal: "童",
+      icon: <AvatarIcon id="panda" className="w-12 h-12 shrink-0" />,
+      key: "kids",
       title: ar ? "تصميم مناسب للأطفال" : "Kid-Friendly Design",
       description: ar
         ? "كل عنصر مصمم مع مراعاة الأطفال: ممتع وسهل الاستخدام مع دعم كامل للغة العربية."
         : "Every element is designed with children in mind: playful, easy to use, with full Arabic RTL support.",
     },
     {
-      seal: "智",
+      icon: <AvatarIcon id="dragon" className="w-12 h-12 shrink-0" />,
+      key: "ai",
       title: ar ? "تعلم بالذكاء الاصطناعي" : "AI-Powered Learning",
       description: ar
         ? "مدعوم بتقنيات هواوي السحابية للترجمة الدقيقة والتعرف على الكلام وتقييم النطق."
         : "Powered by Huawei Cloud AI for accurate translation, speech recognition, and pronunciation scoring.",
     },
     {
-      seal: "双",
+      icon: <AvatarIcon id="dumpling" className="w-12 h-12 shrink-0" />,
+      key: "bilingual",
       title: ar ? "دعم ثنائي اللغة" : "Bilingual Support",
       description: ar
         ? "دعم كامل للعربية والصينية مع التبديل السلس بين اللغات والاتجاهات."
         : "Full support for Arabic (RTL) and Chinese (LTR) with seamless language switching.",
     },
     {
-      seal: "赏",
+      icon: <AvatarIcon id="cat" className="w-12 h-12 shrink-0" />,
+      key: "game",
       title: ar ? "تجربة تعلم ممتعة" : "Gamified Experience",
       description: ar
         ? "اكسب نقاط الخبرة والشارات والمستويات مع نظام مكافآت يحفز التعلم المستمر."
@@ -40,7 +45,8 @@ const About = () => {
 
   const huaweiTech = [
     {
-      seal: "译",
+      icon: <RoleIcon role="independent" className="w-12 h-12 shrink-0" />,
+      key: "mt",
       name: ar ? "خدمة الترجمة الآلية" : "Machine Translation API",
       service: "Huawei Cloud NLP",
       description: ar
@@ -48,7 +54,8 @@ const About = () => {
         : "Arabic ↔ Chinese translation using intelligent pivot chaining through English for an underserved language pair.",
     },
     {
-      seal: "说",
+      icon: <AvatarIcon id="lotus" className="w-12 h-12 shrink-0" />,
+      key: "sis",
       name: ar ? "التعرف على الكلام والتحويل إلى نص" : "Speech Recognition & TTS",
       service: "Huawei Cloud SIS",
       description: ar
@@ -56,7 +63,8 @@ const About = () => {
         : "Convert student speech to text and generate native pronunciation audio using the Speech Interaction Service.",
     },
     {
-      seal: "声",
+      icon: <AvatarIcon id="bamboo" className="w-12 h-12 shrink-0" />,
+      key: "score",
       name: ar ? "نموذج تقييم النطق" : "Pronunciation Scoring Model",
       service: "MindSpore",
       description: ar
@@ -64,7 +72,8 @@ const About = () => {
         : "Custom neural network evaluating character accuracy, pinyin similarity, and tone correctness, designed for Arabic speakers' common Mandarin mistakes.",
     },
     {
-      seal: "师",
+      icon: <RoleIcon role="teacher" className="w-12 h-12 shrink-0" />,
+      key: "teacher",
       name: ar ? "لوحة تحكم المعلم" : "Teacher Analytics Dashboard",
       service: "Huawei Cloud + Supabase",
       description: ar
@@ -93,8 +102,8 @@ const About = () => {
         {/* Platform features */}
         <ul className="flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden">
           {features.map((f) => (
-            <li key={f.seal} className="flex items-start gap-4 p-4 md:p-5 border-b-2 border-border last:border-b-0">
-              <Seal char={f.seal} />
+            <li key={f.key} className="flex items-start gap-4 p-4 md:p-5 border-b-2 border-border last:border-b-0">
+              {f.icon}
               <div className="min-w-0">
                 <h2 className="text-lg md:text-xl font-bold leading-tight">{f.title}</h2>
                 <p className="text-muted-foreground mt-1">{f.description}</p>
@@ -111,9 +120,9 @@ const About = () => {
 
           <div className="flex flex-col gap-4">
             {huaweiTech.map((tech) => (
-              <Card key={tech.seal} className="p-4 md:p-6">
+              <Card key={tech.key} className="p-4 md:p-6">
                 <div className="flex items-start gap-4">
-                  <Seal char={tech.seal} tone="gold" />
+                  {tech.icon}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <h3 className="text-lg font-bold leading-tight">{tech.name}</h3>
