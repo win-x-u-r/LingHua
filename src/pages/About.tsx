@@ -36,7 +36,10 @@ const About = () => {
           <h1 className="text-4xl md:text-5xl font-bold">{t("story.title")}</h1>
         </div>
         <Card className="p-6 md:p-8 flex flex-col gap-4">
-          <span lang="zh" className="font-zh font-bold text-primary text-3xl self-start">灵话</span>
+          <p dir="ltr" className="self-start flex items-baseline gap-3 text-primary font-bold text-3xl">
+            <span lang="zh" className="font-zh">灵话</span>
+            <span>LingHua</span>
+          </p>
           <p className="text-2xl md:text-3xl font-bold text-primary text-balance leading-snug">{t("story.lead")}</p>
           <p className="text-lg md:text-xl leading-relaxed">{t("story.p1")}</p>
           <p className="text-lg md:text-xl leading-relaxed">{t("story.p2")}</p>
