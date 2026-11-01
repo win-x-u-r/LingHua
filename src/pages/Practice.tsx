@@ -230,6 +230,12 @@ const Practice = () => {
                 </div>
               )}
 
+              {/* On phones the lantern sits right above the buttons, so it stays in view while recording */}
+              <div className="md:hidden flex flex-col items-center gap-1 mt-3" aria-live="polite">
+                <Lantern mood={lanternMood} className="w-24 h-24" />
+                <p className="font-semibold">{coachLine}</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3 w-full mt-4">
                 <Button size="lg" variant="outline" onClick={handleListen} disabled={isSpeaking}>
                   <span lang="zh" className="font-zh me-2">听</span>
@@ -251,10 +257,10 @@ const Practice = () => {
         </div>
 
         {/* Coach: the lantern, what to do next, and the last score */}
-        <aside className="flex flex-col gap-4" aria-live="polite">
-          <Card className="p-5 flex flex-col items-center text-center gap-3">
+        <aside className="flex flex-col gap-4">
+          <Card className={`p-5 flex-col items-center text-center gap-3 ${expectedText ? "hidden md:flex" : "flex"}`}>
             <Lantern mood={lanternMood} className="w-32 h-32 md:w-40 md:h-40" />
-            <p className="font-semibold">{coachLine}</p>
+            <p className="font-semibold" aria-live="polite">{coachLine}</p>
           </Card>
 
           {result && <ScoreResult result={result} />}
