@@ -1,0 +1,61 @@
+# Updates the Huawei Cloud server on every merge to master.
+# It logs in over SSH and runs update.sh, which pulls the code, rebuilds the
+# website and restarts the backend. Nobody has to log in by hand.
+#
+# One-time setup (repo Settings > Secrets and variables > Actions):
+#   Secrets:   DEPLOY_HOST     server public IP or hostname
+#              DEPLOY_USER     SSH user with sudo (often root)
+#              DEPLOY_SSH_KEY  private SSH key that can log in as that user
+#   Variables: DEPLOY_DOMAIN   site domain, e.g. linghua.example.com
+#              DEPLOY_DIR      folder deploy.sh installed into, e.g. /opt/linghua
+# Until these are set the workflow does nothing.
+name: Deploy to Huawei Cloud
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-huawei
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_DOMAIN: ${{ vars.DEPLOY_DOMAIN }}
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+    steps:
+      - name: Check setup
+        id: check
+        run: |
+          for v in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_DOMAIN DEPLOY_DIR; do
+            if [ -z "${!v}" ]; then
+              echo "$v is not set, skipping deploy."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+
+      - name: Update the server
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=accept-new \
+              -o ServerAliveInterval=30 \
+              "$DEPLOY_USER@$DEPLOY_HOST" \
+              "cd '$DEPLOY_DIR' && sudo git fetch origin master && sudo git reset --hard FETCH_HEAD && sudo bash update.sh '$DEPLOY_DOMAIN'"
+
+      - name: Check the site
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          sleep 5
+          curl -fsS --retry 5 --retry-delay 5 "https://$DEPLOY_DOMAIN/api/health"

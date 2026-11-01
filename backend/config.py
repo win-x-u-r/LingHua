@@ -13,9 +13,15 @@ class Config:
     PORT = int(os.getenv("FLASK_PORT", "5000"))
 
     # CORS
+    # EXTRA_CORS_ORIGINS adds more sites (e.g. a Vercel copy) without
+    # replacing the main one that deploy.sh sets.
     CORS_ORIGINS = [
         o.strip().rstrip("/")
-        for o in os.getenv("CORS_ORIGINS", "http://localhost:8080").split(",")
+        for o in (
+            os.getenv("CORS_ORIGINS", "http://localhost:8080")
+            + ","
+            + os.getenv("EXTRA_CORS_ORIGINS", "")
+        ).split(",")
         if o.strip()
     ]
 
