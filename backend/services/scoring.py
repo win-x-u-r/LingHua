@@ -175,10 +175,12 @@ def _build_segments(expected_clean: str, actual_clean: str) -> list[dict]:
     result = []
     for i, seg in enumerate(expected):
         j = mapping.get(i)
+        heard = ""
         if j is None:
             char_ok = pinyin_ok = tone_ok = False
         else:
             rec = recognized[j]
+            heard = rec["pinyin"]
             pinyin_ok = seg["base"] == rec["base"]
             tone_ok = seg["tone"] == rec["tone"]
             char_ok = seg["char"] == rec["char"]
@@ -190,6 +192,7 @@ def _build_segments(expected_clean: str, actual_clean: str) -> list[dict]:
             "char_correct": char_ok,
             "pinyin_correct": pinyin_ok,
             "tone_correct": tone_ok,
+            "heard_pinyin": heard,
         })
     return result
 
@@ -258,3 +261,8 @@ def score_pronunciation(expected: str, actual: str) -> dict:
             "tone": {"score": int(round(tone_score)), "weight": 25, "label": "Tone Accuracy"},
         },
     }
+
+
+# Public names for app.py.
+get_pinyin_display = _get_pinyin_display
+pinyin_to_arabic = _pinyin_to_arabic

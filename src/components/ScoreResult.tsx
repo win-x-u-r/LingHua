@@ -14,6 +14,24 @@ interface ScoreResultProps {
 const ScoreResult = ({ result, earnedXp, compact = true }: ScoreResultProps) => {
   const { t } = useLanguage();
 
+  // One concrete next step: the first sound that went wrong, in Hua's words.
+  const slip = result.segments?.find((seg) => !seg.pinyin_correct || !seg.tone_correct);
+  const tip = slip
+    ? (slip.heard_pinyin ? t("hua.tip.heard") : t("hua.tip.missing"))
+        .split(/(\{char\}|\{heard\}|\{target\})/)
+        .map((piece, i) =>
+          piece === "{char}" ? (
+            <span key={i} lang="zh" className="font-zh">{slip.char}</span>
+          ) : piece === "{heard}" ? (
+            <span key={i} className="font-pinyin text-destructive">{slip.heard_pinyin}</span>
+          ) : piece === "{target}" ? (
+            <span key={i} className="font-pinyin text-success">{slip.pinyin}</span>
+          ) : (
+            piece
+          ),
+        )
+    : null;
+
   const parts = [
     { label: t("practice.characters"), value: result.breakdown.character.score },
     { label: t("practice.pinyin"), value: result.breakdown.pinyin.score },
@@ -50,6 +68,12 @@ const ScoreResult = ({ result, earnedXp, compact = true }: ScoreResultProps) => 
           {result.recognized_arabic && (
             <span lang="ar" dir="rtl" className="font-bold">{result.recognized_arabic}</span>
           )}
+        </p>
+      )}
+
+      {tip && (
+        <p className="text-sm font-semibold">
+          {tip}
         </p>
       )}
 

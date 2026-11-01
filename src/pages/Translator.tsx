@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMicrophone } from "@/hooks/use-microphone";
+import { useMicrophone, recordingFile } from "@/hooks/use-microphone";
+import { missLineKey } from "@/lib/missedSpeech";
 import { translateText, speakText, speechToText } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -33,7 +34,7 @@ const Translator = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { t } = useLanguage();
-  const { isRecording, startRecording, stopRecording, audioBlob, error: micError } = useMicrophone();
+  const { isRecording, startRecording, stopRecording, audioBlob, missed, error: micError } = useMicrophone();
 
   // Handle mic errors
   useEffect(() => {
@@ -48,8 +49,12 @@ const Translator = () => {
 
     const processAudio = async () => {
       try {
-        const file = new File([audioBlob], "recording.webm", { type: audioBlob.type });
-        const text = await speechToText(file, activeMicLang);
+        const text = await speechToText(recordingFile(audioBlob), activeMicLang);
+        if (!text) {
+          toast({ title: t("translator.miss.title"), description: t("hua.miss.unclear") });
+          setActiveMicLang(null);
+          return;
+        }
 
         if (activeMicLang === "ar") {
           setArabicText(text);
@@ -73,6 +78,13 @@ const Translator = () => {
 
     processAudio();
   }, [audioBlob, activeMicLang, toast]);
+
+  // Silent or very short clip: say so instead of sending it.
+  useEffect(() => {
+    if (!missed) return;
+    toast({ title: t("translator.miss.title"), description: t(missLineKey(missed)) });
+    setActiveMicLang(null);
+  }, [missed, t, toast]);
 
   // Cancel any in-flight browser speech (Chinese TTS) on unmount
   useEffect(() => {

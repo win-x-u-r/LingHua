@@ -5,8 +5,12 @@ export interface TranslateResponse {
   translatedText: string;
 }
 
+/** Why the recogniser could not be trusted: nothing heard, a guess, or known filler. */
+export type UnclearReason = "no_speech" | "low_confidence" | "hallucination";
+
 export interface ASRResponse {
   text: string;
+  unclear?: UnclearReason | null;
 }
 
 export interface ScoreBreakdown {
@@ -26,9 +30,23 @@ export interface PronunciationSegment extends PhonemeSegment {
   char_correct: boolean;
   pinyin_correct: boolean;
   tone_correct: boolean;
+  /** The syllable we actually heard in this spot, "" if it was missing. */
+  heard_pinyin?: string;
+}
+
+/** The recording could not be understood, so there is no score. */
+export interface UnclearResponse {
+  unclear: UnclearReason;
+  expected_pinyin: string;
+  expected_arabic: string;
+}
+
+export function isUnclear(r: ScoreResponse | UnclearResponse): r is UnclearResponse {
+  return !!r.unclear;
 }
 
 export interface ScoreResponse {
+  unclear?: null;
   score: number;
   recognized: string;
   expected_pinyin: string;
@@ -214,7 +232,7 @@ export async function pronounceAndScore(
   file: File,
   expected: string,
   lang: string = "zh"
-): Promise<ScoreResponse> {
+): Promise<ScoreResponse | UnclearResponse> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("expected", expected);

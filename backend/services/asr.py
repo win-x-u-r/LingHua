@@ -6,14 +6,19 @@ step Huawei required.
 
 Anti-hallucination measures for short clips (Whisper's famous weakness —
 "subscribe to the channel" phenomenon):
-  1. Per-language `prompt` biases decoding toward the app's real domain
-     (short Mandarin words, common Arabic greetings) instead of YouTube speak.
+  1. A style-only `prompt` (script and punctuation, no vocabulary), because
+     Whisper copies its prompt back when the audio is unclear.
   2. `temperature=0` = deterministic decoding, no random generation.
-  3. Junk-phrase filter drops known hallucinations if they still slip through.
+  3. Per-segment confidence (no_speech_prob, avg_logprob, compression_ratio)
+     marks a result as unclear instead of passing a guess on for grading.
+  4. Junk-phrase and prompt-echo filter for anything that still slips through.
 
 Called by /asr and /pronounce (via app.py).
 """
 
+from __future__ import annotations
+
+import os
 import re
 import time
 import logging
@@ -27,23 +32,26 @@ _WHISPER_MODEL = "whisper-1"
 
 _LANG_HINT = {"zh": "zh", "ar": "ar", "en": "en"}
 
-# Domain-biasing prompts. Whisper conditions its next-token predictions on
-# `prompt`, so seeding it with typical app content pulls output away from
-# YouTube-style filler. Max 224 tokens per lang.
+# Style-only prompts. Whisper conditions its output on `prompt`, and when the
+# audio is unclear it tends to copy the prompt back word for word. The old
+# prompts listed sample vocabulary (你好，谢谢，再见 …), so a mumbled or quiet
+# 对不起 came back as "好，谢谢，再见" and was graded as if the learner said it.
+# These prompts only set the script and punctuation style and contain no
+# practice words, and anything that still echoes them is dropped below.
 _PROMPTS = {
-    "zh": (
-        "学生在练习普通话发音。常见词语：你好，谢谢，再见，我，好，是，不，"
-        "老师，学生，中文，学习，喜欢，吃，喝，看，说，去，来，一，二，三。"
-    ),
-    "ar": (
-        "الطالب يتدرب على نطق كلمة أو عبارة قصيرة بالعربية. أمثلة شائعة: "
-        "مرحبا، أهلا، شكرا، من فضلك، نعم، لا، كيف حالك، صباح الخير، مساء الخير."
-    ),
-    "en": (
-        "The student is practicing pronunciation of a short English word or phrase, "
-        "such as hello, thank you, how are you, good morning, yes, no."
-    ),
+    "zh": "以下是普通话的句子。",
+    "ar": "جملة قصيرة باللغة العربية.",
+    "en": "A short sentence in English.",
 }
+
+# Confidence thresholds, from Whisper's own decoding defaults.
+# no_speech_prob: chance the segment had no speech at all.
+# avg_logprob: how sure the model was of the words it wrote (0 = certain).
+# compression_ratio: very repetitive output ("谢谢谢谢谢谢…") is a loop, not speech.
+# Each can be tuned on the server through .env without a code change.
+_NO_SPEECH_PROB = float(os.getenv("ASR_NO_SPEECH_PROB", "0.6"))
+_MIN_AVG_LOGPROB = float(os.getenv("ASR_MIN_AVG_LOGPROB", "-1.0"))
+_MAX_COMPRESSION_RATIO = float(os.getenv("ASR_MAX_COMPRESSION_RATIO", "2.4"))
 
 # Whisper's greatest hits of hallucinated filler on short/silent clips.
 # If the returned text is *just* one of these (or trivially matches), drop it
@@ -68,14 +76,39 @@ _HALLUCINATION_PATTERNS = [
 ]
 
 
-def _looks_hallucinated(text: str) -> bool:
+def _looks_hallucinated(text: str, lang: str = "") -> bool:
     if not text:
         return False
-    return any(p.search(text) for p in _HALLUCINATION_PATTERNS)
+    if any(p.search(text) for p in _HALLUCINATION_PATTERNS):
+        return True
+    # Prompt echo: the answer is a long piece of the prompt we sent. Short
+    # matches are allowed so a learner can still practise 是 or 普通话.
+    prompt = _PROMPTS.get(lang, "")
+    core = re.sub(r"[\s。，,.!！?？]", "", text)
+    return len(core) >= 4 and core in re.sub(r"[\s。，,.!！?？]", "", prompt)
+
+
+class Transcript:
+    """What the recogniser heard, plus whether we can trust it.
+
+    `unclear` is None when the text is usable, or a short reason code:
+      "no_speech"      - nothing that sounded like speech
+      "low_confidence" - speech, but the model was guessing
+      "hallucination"  - known filler / prompt echo / repetition loop
+    """
+
+    def __init__(self, text: str, unclear: str | None = None):
+        self.text = text if unclear is None else ""
+        self.unclear = unclear
 
 
 def speech_to_text(audio_bytes: bytes, filename: str = "audio.webm", lang: str = "zh") -> str:
-    """Transcribe audio to text.
+    """Transcribe audio to text. Returns "" when the audio was unclear."""
+    return transcribe(audio_bytes, filename, lang).text
+
+
+def transcribe(audio_bytes: bytes, filename: str = "audio.webm", lang: str = "zh") -> Transcript:
+    """Transcribe audio and say whether the result can be trusted.
 
     Routing:
       - Arabic -> Munsit (UAE-based, Gulf-dialect-aware). NO fallback — Whisper
@@ -101,22 +134,26 @@ def speech_to_text(audio_bytes: bytes, filename: str = "audio.webm", lang: str =
             logger.error("Munsit STT FAILED after %.2fs: %s", time.perf_counter() - t0, e)
             raise
         logger.info("Munsit STT ok in %.2fs: %r", time.perf_counter() - t0, text[:120])
-        return text
+        return Transcript(text, None if text.strip() else "no_speech")
 
     return _whisper_transcribe(audio_bytes, filename, lang)
 
 
-def _whisper_transcribe(audio_bytes: bytes, filename: str, lang: str) -> str:
-    """OpenAI Whisper transcription. Whisper accepts webm/mp3/wav/m4a directly."""
+def _whisper_transcribe(audio_bytes: bytes, filename: str, lang: str) -> Transcript:
+    """OpenAI Whisper transcription. Whisper accepts webm/mp3/wav/m4a directly.
+
+    Uses verbose_json so we get per-segment confidence and can say
+    "I didn't catch that" instead of grading a guess.
+    """
     if not Config.OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY is not configured")
 
     hint = _LANG_HINT.get(lang, lang)
-    files = {"file": (filename or "audio.webm", audio_bytes)}
+    files = {"file": (_safe_filename(filename), audio_bytes)}
     data = {
         "model": _WHISPER_MODEL,
         "language": hint,
-        "response_format": "json",
+        "response_format": "verbose_json",
         "temperature": 0,
     }
     if hint in _PROMPTS:
@@ -132,11 +169,49 @@ def _whisper_transcribe(audio_bytes: bytes, filename: str, lang: str) -> str:
         logger.error("Whisper FAILED in %.2fs: %s %s", elapsed, response.status_code, response.text[:200])
         raise RuntimeError(f"Whisper ASR failed: {response.status_code} {response.text}")
 
-    text = (response.json().get("text") or "").strip()
+    body = response.json()
+    text = (body.get("text") or "").strip()
+    unclear = judge_whisper(text, body.get("segments") or [], hint)
+    if unclear:
+        logger.warning("Whisper result unclear (%s) after %.2fs: %r", unclear, elapsed, text[:120])
+    else:
+        logger.info("Whisper ok in %.2fs: %r", elapsed, text[:120])
+    return Transcript(text, unclear)
 
-    if _looks_hallucinated(text):
-        logger.warning("Whisper hallucination dropped after %.2fs: %r", elapsed, text)
-        return ""
 
-    logger.info("Whisper ok in %.2fs: %r", elapsed, text[:120])
-    return text
+def judge_whisper(text: str, segments: list, lang: str) -> str | None:
+    """Decide whether a Whisper result is trustworthy. Returns a reason code or None."""
+    if not text:
+        return "no_speech"
+    if _looks_hallucinated(text, lang):
+        return "hallucination"
+    if not segments:
+        return None
+
+    # Weight each segment by its length so one shaky word in a long
+    # sentence doesn't sink the whole result.
+    total = sum(max(len(s.get("text") or ""), 1) for s in segments)
+
+    def avg(key: str, default: float) -> float:
+        return sum(
+            float(s.get(key, default)) * max(len(s.get("text") or ""), 1) for s in segments
+        ) / total
+
+    no_speech = avg("no_speech_prob", 0.0)
+    logprob = avg("avg_logprob", 0.0)
+    compression = max(float(s.get("compression_ratio", 0.0)) for s in segments)
+
+    if no_speech > _NO_SPEECH_PROB and logprob < _MIN_AVG_LOGPROB:
+        return "no_speech"
+    if compression > _MAX_COMPRESSION_RATIO:
+        return "hallucination"
+    if logprob < _MIN_AVG_LOGPROB:
+        return "low_confidence"
+    return None
+
+
+# Whisper picks the decoder from the file extension, so the browser must name
+# the file after its real format (iPhones record audio/mp4, not webm).
+def _safe_filename(filename: str | None) -> str:
+    name = (filename or "audio.webm").strip() or "audio.webm"
+    return name if "." in name else f"{name}.webm"

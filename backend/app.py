@@ -31,8 +31,8 @@ logger = logging.getLogger("linghua")
 from config import Config
 from services.translation import translate_text
 from services.tts import text_to_speech, text_to_speech_tutor
-from services.asr import speech_to_text
-from services.scoring import score_pronunciation, get_breakdown
+from services.asr import transcribe
+from services.scoring import score_pronunciation, get_breakdown, get_pinyin_display, pinyin_to_arabic
 from services.tutor import chat as tutor_chat, chat_stream as tutor_chat_stream
 
 app = Flask(__name__)
@@ -152,7 +152,8 @@ def asr():
         Optional 'lang' field ("zh" or "ar", defaults to "zh").
 
     Response JSON:
-        { "text": str }
+        { "text": str, "unclear": null | "no_speech" | "low_confidence" | "hallucination" }
+        When "unclear" is set, "text" is empty: the audio could not be trusted.
     """
     if "file" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -165,8 +166,8 @@ def asr():
 
     try:
         audio_bytes = audio_file.read()
-        recognized_text = speech_to_text(audio_bytes, audio_file.filename, lang)
-        return jsonify({"text": recognized_text})
+        heard = transcribe(audio_bytes, audio_file.filename, lang)
+        return jsonify({"text": heard.text, "unclear": heard.unclear})
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": f"ASR failed: {str(e)}"}), 500
@@ -181,7 +182,11 @@ def pronounce():
 
     Response JSON:
         { "score": int, "recognized": str, "expected_pinyin": str,
-          "recognized_pinyin": str, "breakdown": {...} }
+          "recognized_pinyin": str, "breakdown": {...}, "unclear": null }
+        or, when the recording could not be understood (silence, guessing,
+        known hallucination), no score at all:
+        { "unclear": "no_speech" | "low_confidence" | "hallucination",
+          "expected_pinyin": str, "expected_arabic": str }
     """
     if "file" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -195,8 +200,16 @@ def pronounce():
 
     try:
         audio_bytes = audio_file.read()
-        recognized_text = speech_to_text(audio_bytes, audio_file.filename, lang)
-        result = score_pronunciation(expected, recognized_text)
+        heard = transcribe(audio_bytes, audio_file.filename, lang)
+        if heard.unclear:
+            # Never grade a guess: tell the learner we didn't catch it.
+            return jsonify({
+                "unclear": heard.unclear,
+                "expected_pinyin": get_pinyin_display(expected),
+                "expected_arabic": pinyin_to_arabic(expected),
+            })
+        result = score_pronunciation(expected, heard.text)
+        result["unclear"] = None
         return jsonify(result)
     except Exception as e:
         traceback.print_exc()

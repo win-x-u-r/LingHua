@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useMicrophone } from "@/hooks/use-microphone";
+import { useMicrophone, recordingFile } from "@/hooks/use-microphone";
+import { missLineKey, type Miss } from "@/lib/missedSpeech";
 import { supabase } from "@/integrations/supabase/client";
-import { speakText, pronounceAndScore, getBreakdown, type PhonemeSegment, type ScoreResponse } from "@/lib/linghuaAPI";
+import { speakText, pronounceAndScore, isUnclear, getBreakdown, type PhonemeSegment, type ScoreResponse } from "@/lib/linghuaAPI";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateWordReview, getDueWords } from "@/lib/spacedRepetition";
@@ -46,11 +47,13 @@ const Flashcards = () => {
   // The last score shows beside the card instead of in a toast, so it stays readable
   const [result, setResult] = useState<(ScoreResponse & { earnedXp: number }) | null>(null);
   const [scoreFailed, setScoreFailed] = useState(false);
+  // Set when Hua could not hear the recording well enough to score it.
+  const [miss, setMiss] = useState<Miss | null>(null);
   const [sessionXp, setSessionXp] = useState(0);
   const [finished, setFinished] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
-  const { isRecording, startRecording, stopRecording, audioBlob, error: micError } = useMicrophone();
+  const { isRecording, startRecording, stopRecording, audioBlob, missed, error: micError } = useMicrophone();
 
   // Load due word count on mount and when user changes
   useEffect(() => {
@@ -80,6 +83,7 @@ const Flashcards = () => {
   useEffect(() => {
     setResult(null);
     setScoreFailed(false);
+    setMiss(null);
   }, [vocabulary, currentIndex]);
 
   useEffect(() => {
@@ -104,8 +108,13 @@ const Flashcards = () => {
       const currentWord = vocabulary[currentIndex];
 
       try {
-        const file = new File([audioBlob], "recording.webm", { type: audioBlob.type });
-        const result = await pronounceAndScore(file, currentWord.hanzi);
+        const scored = await pronounceAndScore(recordingFile(audioBlob), currentWord.hanzi);
+        // Hua couldn't hear it: no score, no saved attempt, no XP change.
+        if (isUnclear(scored)) {
+          setMiss(scored.unclear);
+          return;
+        }
+        const result = scored;
 
         // Save attempt (linked to user)
         await (supabase as any).from("attempts").insert({
@@ -199,6 +208,11 @@ const Flashcards = () => {
     processAudio();
   }, [audioBlob]);
 
+  // A silent or very short clip never leaves the phone.
+  useEffect(() => {
+    if (missed) setMiss(missed);
+  }, [missed]);
+
   const loadDueCount = async () => {
     if (!user) return;
     const dueWords = await getDueWords(supabase, user.id);
@@ -288,6 +302,7 @@ const Flashcards = () => {
     } else {
       setResult(null);
       setScoreFailed(false);
+      setMiss(null);
       await startRecording();
     }
   };
@@ -431,6 +446,8 @@ const Flashcards = () => {
       ? "thinking"
       : result
         ? result.score >= 85 ? "celebrate" : result.score >= 60 ? "happy" : "sad"
+        : miss
+          ? "idle"
         : scoreFailed
           ? "sad"
           : "idle";
@@ -441,6 +458,8 @@ const Flashcards = () => {
       ? t("flashcards.thinking")
       : result
         ? t(result.score >= 85 ? "flashcards.result.great" : result.score >= 60 ? "flashcards.result.almost" : "flashcards.result.again")
+        : miss
+          ? t(missLineKey(miss))
         : scoreFailed
           ? t("flashcards.scoring_failed_desc")
           : t("flashcards.hint");
