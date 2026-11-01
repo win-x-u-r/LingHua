@@ -58,7 +58,7 @@ const AppRoutes = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="linghua-theme" disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="linghua-theme" disableTransitionOnChange>
     <LanguageProvider>
       <AuthProvider>
         <TooltipProvider>
