@@ -5,15 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  LineChart, Line,
 } from "recharts";
-import { Progress } from "@/components/ui/progress";
 import Lantern from "@/components/lantern/Lantern";
 import Seal from "@/components/Seal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import StudentDashboard, { type StudentDashboardData, type ToneScore, type MissedWord } from "@/components/dashboard/StudentDashboard";
+
+/* Tone of each syllable from its pinyin tone mark (neutral tones are skipped) */
+const TONE_CHARS: Record<string, 1 | 2 | 3 | 4> = {};
+["āēīōūǖ", "áéíóúǘ", "ǎěǐǒǔǚ", "àèìòùǜ"].forEach((chars, i) => {
+  for (const ch of chars) TONE_CHARS[ch] = (i + 1) as 1 | 2 | 3 | 4;
+});
+const tonesIn = (pinyin: string): Set<1 | 2 | 3 | 4> => {
+  const found = new Set<1 | 2 | 3 | 4>();
+  for (const ch of (pinyin || "").normalize("NFC")) if (TONE_CHARS[ch]) found.add(TONE_CHARS[ch]);
+  return found;
+};
 
 // ──────────────────────────────────────────
 //  Teacher-specific types
@@ -46,12 +57,6 @@ interface DailyScore {
   avgScore: number;
 }
 
-interface CategoryScore {
-  category: string;
-  score: number;
-  fullMark: number;
-}
-
 interface LevelProgress {
   level: string;
   mastered: number;
@@ -78,7 +83,6 @@ const Dashboard = () => {
 
   // Student analytics state
   const [dailyScores, setDailyScores] = useState<DailyScore[]>([]);
-  const [categoryScores, setCategoryScores] = useState<CategoryScore[]>([]);
   const [practiceDays, setPracticeDays] = useState<Set<string>>(new Set());
   const [wordsToReview, setWordsToReview] = useState(0);
   const [levelProgress, setLevelProgress] = useState<LevelProgress[]>([]);
@@ -86,6 +90,9 @@ const Dashboard = () => {
   const [studentStreak, setStudentStreak] = useState(0);
   const [studentWordsLearned, setStudentWordsLearned] = useState(0);
   const [studentAvgScore, setStudentAvgScore] = useState(0);
+  const [toneScores, setToneScores] = useState<ToneScore[]>([]);
+  const [missedWords, setMissedWords] = useState<MissedWord[]>([]);
+  const [hasAnyAttempt, setHasAnyAttempt] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -128,7 +135,7 @@ const Dashboard = () => {
           .maybeSingle(),
         supabase
           .from("vocab")
-          .select("id, hanzi, pinyin, arabic_translation, level, category"),
+          .select("id, hanzi, pinyin, arabic_translation, level"),
         (supabase as any)
           .from("word_reviews" as any)
           .select("id, vocab_id, next_review_date, total_attempts, best_score")
@@ -167,34 +174,19 @@ const Dashboard = () => {
       setDailyScores(dailyData);
       setPracticeDays(practiceDaySet);
 
-      // 2. Category mastery — join attempts with vocab by vocab_id
+      // 2. Look up vocab by id
       const vocabMap: Record<string, any> = {};
       for (const v of vocab) {
         vocabMap[v.id] = v;
       }
-      const categoryMap: Record<string, number[]> = {};
-      // Use ALL attempts for category mastery (not just last 30 days)
+      // All attempts (not just the last 30 days) for mastery, tones and missed words
       const allAttemptsRes = await (supabase as any)
         .from("attempts")
         .select("vocab_id, score")
         .eq("user_id", userId);
       const allAttempts = allAttemptsRes.data || [];
-      for (const a of allAttempts) {
-        if (a.score == null || !a.vocab_id) continue;
-        const v = vocabMap[a.vocab_id];
-        if (!v) continue;
-        const cat = v.category || "other";
-        if (!categoryMap[cat]) categoryMap[cat] = [];
-        categoryMap[cat].push(a.score);
-      }
-      const catData: CategoryScore[] = Object.entries(categoryMap).map(([category, scores]) => ({
-        category: category.charAt(0).toUpperCase() + category.slice(1),
-        score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
-        fullMark: 100,
-      }));
-      setCategoryScores(catData);
 
-      // 3. Streak calendar — practiceDaySet already built above
+      // 3. Practice days for the weekly ring are in practiceDaySet above
 
       // 4. Words to review — count where next_review_date <= today
       const todayStr = new Date().toISOString().slice(0, 10);
@@ -232,6 +224,39 @@ const Dashboard = () => {
           total: levelMap[lvl].total,
         }));
       setLevelProgress(lvlData);
+      setHasAnyAttempt(allAttempts.length > 0);
+
+      // 6. Tone accuracy: average score of practised words containing each tone
+      const toneMap: Record<number, { sum: number; n: number }> = { 1: { sum: 0, n: 0 }, 2: { sum: 0, n: 0 }, 3: { sum: 0, n: 0 }, 4: { sum: 0, n: 0 } };
+      for (const a of allAttempts) {
+        if (a.score == null || !a.vocab_id || !vocabMap[a.vocab_id]) continue;
+        for (const tone of tonesIn(vocabMap[a.vocab_id].pinyin)) {
+          toneMap[tone].sum += a.score;
+          toneMap[tone].n++;
+        }
+      }
+      setToneScores(
+        ([1, 2, 3, 4] as const).map((tone) => ({
+          tone,
+          score: toneMap[tone].n ? Math.round(toneMap[tone].sum / toneMap[tone].n) : null,
+          words: toneMap[tone].n,
+        })),
+      );
+
+      // 7. Missed words: practised but best score still under 70, weakest first
+      setMissedWords(
+        Object.entries(vocabBestScore)
+          .filter(([id, best]) => best < 70 && vocabMap[id])
+          .sort(([, a], [, b]) => a - b)
+          .slice(0, 6)
+          .map(([id, best]) => ({
+            id,
+            hanzi: vocabMap[id].hanzi,
+            pinyin: vocabMap[id].pinyin,
+            arabic: vocabMap[id].arabic_translation,
+            best: Math.round(best),
+          })),
+      );
     } catch (e) {
       console.error("Student dashboard load error:", e);
     }
@@ -372,23 +397,6 @@ const Dashboard = () => {
   // ──────────────────────────────────────────
   //  Streak calendar helper — last 30 days
   // ──────────────────────────────────────────
-  const buildCalendarDays = () => {
-    const days: { date: string; label: string; practiced: boolean; isToday: boolean }[] = [];
-    const today = new Date();
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const iso = d.toISOString().slice(0, 10);
-      const dayNum = d.getDate();
-      days.push({
-        date: iso,
-        label: String(dayNum),
-        practiced: practiceDays.has(iso),
-        isToday: i === 0,
-      });
-    }
-    return days;
-  };
 
   // ──────────────────────────────────────────
   //  Loading state
@@ -406,150 +414,36 @@ const Dashboard = () => {
   //  STUDENT VIEW
   // ──────────────────────────────────────────
   if (isStudent) {
-    const calendarDays = buildCalendarDays();
-    const hasPractised = dailyScores.length > 0 || studentWordsLearned > 0;
-
-    return (
-      <div className="container mx-auto max-w-6xl px-4 py-8 flex flex-col gap-6">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold">{t("dashboard.student.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("dashboard.student.subtitle")}</p>
-        </div>
-
-        <StatStrip
-          stats={[
-            { label: t("dashboard.total_xp"), value: studentTotalXp },
-            { label: t("dashboard.current_streak"), value: studentStreak, unit: t("dashboard.days") },
-            { label: t("dashboard.words_learned"), value: studentWordsLearned },
-            { label: t("dashboard.avg_score"), value: `${studentAvgScore}%` },
-          ]}
-        />
-
-        {!hasPractised && (
-          <Card className="p-6 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-start">
-            <Lantern mood="sleepy" className="w-32 h-32 shrink-0" />
-            <div className="flex flex-col gap-3 items-center sm:items-start">
-              <h2 className="text-2xl font-bold">{t("dashboard.empty.title")}</h2>
-              <p className="text-muted-foreground max-w-md">{t("dashboard.empty.desc")}</p>
-              <Button size="lg" onClick={() => navigate("/flashcards")}>{t("dashboard.empty.cta")}</Button>
-            </div>
-          </Card>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 1. Score progress chart */}
-          <Section seal="进" title={t("dashboard.score_progress")}>
-            {dailyScores.length > 0 ? (
-              <div dir="ltr"><ResponsiveContainer width="100%" height={250}>
-                <LineChart data={dailyScores}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
-                  <XAxis dataKey="date" stroke={CHART.axis} fontSize={12} />
-                  <YAxis stroke={CHART.axis} domain={[0, 100]} fontSize={12} />
-                  <Tooltip
-                    contentStyle={CHART.tooltip}
-                    formatter={(value: number) => [`${value}%`, t("dashboard.avg_score_label")]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="avgScore"
-                    stroke={CHART.primary}
-                    strokeWidth={3}
-                    dot={{ fill: CHART.primary, r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer></div>
-            ) : (
-              <EmptyNote>{t("dashboard.score_progress.empty")}</EmptyNote>
-            )}
-          </Section>
-
-          {/* 2. Category mastery */}
-          <Section seal="类" title={t("dashboard.category_mastery")}>
-            {categoryScores.length > 0 ? (
-              <div dir="ltr"><ResponsiveContainer width="100%" height={250}>
-                <RadarChart data={categoryScores} cx="50%" cy="50%" outerRadius="70%">
-                  <PolarGrid stroke={CHART.grid} />
-                  <PolarAngleAxis dataKey="category" stroke={CHART.axis} fontSize={12} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} stroke={CHART.axis} fontSize={10} />
-                  <Radar name="Score" dataKey="score" stroke={CHART.success} fill={CHART.success} fillOpacity={0.3} />
-                  <Tooltip contentStyle={CHART.tooltip} formatter={(value: number) => [`${value}%`, t("dashboard.avg_score_label")]} />
-                </RadarChart>
-              </ResponsiveContainer></div>
-            ) : (
-              <EmptyNote>{t("dashboard.category_mastery.empty")}</EmptyNote>
-            )}
-          </Section>
-
-          {/* 3. Streak calendar */}
-          <Section seal="日" title={t("dashboard.streak_calendar")}>
-            <div className="grid grid-cols-10 gap-1.5 sm:gap-2" dir="ltr">
-              {calendarDays.map((day) => (
-                <div
-                  key={day.date}
-                  className={`w-full aspect-square rounded-md flex items-center justify-center text-xs font-bold ${
-                    day.practiced ? "bg-success text-white dark:text-background" : "bg-muted text-muted-foreground"
-                  } ${day.isToday ? "ring-2 ring-ring ring-offset-2 ring-offset-card" : ""}`}
-                  title={`${day.date}: ${day.practiced ? t("dashboard.streak.practiced") : t("dashboard.streak.missed")}`}
-                >
-                  {day.label}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-success inline-block" /> {t("dashboard.streak.practiced")}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-muted inline-block border border-border" /> {t("dashboard.streak.missed")}
-              </span>
-            </div>
-          </Section>
-
-          {/* 4. Words to review */}
-          <Section seal="复" title={t("dashboard.words_to_review")}>
-            <div className="flex flex-col items-center justify-center py-4 gap-3 text-center">
-              {wordsToReview > 0 ? (
-                <>
-                  <span className="text-6xl font-bold text-primary tabular-nums">{wordsToReview}</span>
-                  <p className="text-muted-foreground">{t("dashboard.words_due_today")}</p>
-                  <Button size="lg" onClick={() => navigate("/flashcards")}>{t("dashboard.start_review")}</Button>
-                </>
-              ) : (
-                <>
-                  <Lantern mood={hasPractised ? "happy" : "idle"} className="w-24 h-24" />
-                  <p className="text-muted-foreground">{t("dashboard.no_reviews_due")}</p>
-                </>
-              )}
-            </div>
-          </Section>
-        </div>
-
-        {/* 5. Level progress */}
-        <Section seal="级" title={t("dashboard.level_progress")}>
-          {levelProgress.length > 0 ? (
-            <div className="flex flex-col gap-4">
-              {levelProgress.map((lp) => {
-                const pct = lp.total > 0 ? Math.round((lp.mastered / lp.total) * 100) : 0;
-                return (
-                  <div key={lp.level} className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-bold">{t(`common.${lp.level}`)}</span>
-                      <span className="text-muted-foreground tabular-nums">
-                        <span dir="ltr">{lp.mastered}/{lp.total}</span> {t("dashboard.mastered")}
-                      </span>
-                    </div>
-                    <Progress value={pct} className="h-3" />
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <EmptyNote>{t("dashboard.level_progress.empty")}</EmptyNote>
-          )}
-        </Section>
-      </div>
-    );
+    const today = new Date();
+    const week = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (6 - i));
+      const iso = d.toISOString().slice(0, 10);
+      return { date: iso, practiced: practiceDays.has(iso), isToday: i === 6 };
+    });
+    const totalMastered = levelProgress.reduce((n, l) => n + l.mastered, 0);
+    const scoredTones = toneScores.filter((x) => x.score != null);
+    const data: StudentDashboardData = {
+      name: profile?.full_name ?? "",
+      totalXp: studentTotalXp,
+      streak: studentStreak,
+      wordsLearned: studentWordsLearned,
+      week,
+      tones: toneScores,
+      missed: missedWords,
+      levels: levelProgress,
+      dailyScores,
+      wordsToReview,
+      badges: [
+        { seal: "始", key: "dash2.badge.first", earned: hasAnyAttempt },
+        { seal: "七", key: "dash2.badge.streak7", earned: studentStreak >= 7 },
+        { seal: "百", key: "dash2.badge.xp100", earned: studentTotalXp >= 100 },
+        { seal: "十", key: "dash2.badge.master10", earned: totalMastered >= 10 },
+        { seal: "声", key: "dash2.badge.tones", earned: scoredTones.length === 4 && scoredTones.every((x) => (x.score ?? 0) >= 80) },
+        { seal: "满", key: "dash2.badge.level", earned: levelProgress.some((l) => l.total > 0 && l.mastered >= l.total) },
+      ],
+    };
+    return <StudentDashboard data={data} />;
   }
 
   // ──────────────────────────────────────────
@@ -657,7 +551,7 @@ const Dashboard = () => {
                   </span>
                   <div>
                     <p lang="zh" className="font-zh text-2xl font-bold">{word.hanzi}</p>
-                    <p className="text-sm text-primary font-bold">{word.pinyin}</p>
+                    <p className="font-pinyin text-sm text-primary font-bold">{word.pinyin}</p>
                   </div>
                 </div>
                 <div className="text-end">
