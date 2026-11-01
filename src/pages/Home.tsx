@@ -19,15 +19,10 @@ const Home = () => {
   return user ? <Today /> : <Landing />;
 };
 
-/* Logged out: who LingHua is for, one real word to show how it works, and Hua */
+/* Logged out: one real word to show how it works, what you can do, and Hua */
 const Landing = () => {
   const { t } = useLanguage();
 
-  const audiences = [
-    { seal: "童", titleKey: "home.for.kids", tagKey: "home.for.kids.tag", descKey: "home.for.kids.desc" },
-    { seal: "学", titleKey: "home.for.students", tagKey: "home.for.students.tag", descKey: "home.for.students.desc" },
-    { seal: "旅", titleKey: "home.for.travellers", tagKey: "home.for.travellers.tag", descKey: "home.for.travellers.desc" },
-  ];
 
   const features = [
     { icon: "lotus", titleKey: "home.features.bridge", descKey: "home.features.bridge.desc" },
@@ -71,30 +66,11 @@ const Landing = () => {
         </Card>
       </section>
 
-      <section className="flex flex-col gap-6 max-w-3xl">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-bold text-balance">{t("home.for.title")}</h2>
-          <p className="text-lg text-muted-foreground">{t("home.for.sub")}</p>
-        </div>
-        <ul className="flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden">
-          {audiences.map((a) => (
-            <li key={a.titleKey} className="flex items-start gap-4 p-5 border-b-2 border-border last:border-b-0">
-              <Seal char={a.seal} />
-              <div className="flex flex-col gap-1">
-                <h3 className="text-xl font-bold">{t(a.titleKey)}</h3>
-                <p className="font-bold text-primary">{t(a.tagKey)}</p>
-                <p className="text-muted-foreground">{t(a.descKey)}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="grid md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-6 md:gap-10 items-start">
-        <h2 className="text-3xl md:text-4xl font-bold text-balance md:sticky md:top-24">{t("home.features.title")}</h2>
+      <section className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
+        <h2 className="text-3xl md:text-4xl font-bold text-balance">{t("home.features.title")}</h2>
         <ul className="flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden">
           {features.map((f) => (
-            <li key={f.titleKey} className="flex items-start gap-4 p-5 border-b-2 border-border last:border-b-0">
+            <li key={f.titleKey} className="flex items-center gap-4 p-5 border-b-2 border-border last:border-b-0">
               <AvatarIcon id={f.icon} className="w-12 h-12 shrink-0" />
               <div className="flex flex-col gap-1">
                 <h3 className="text-xl font-bold">{t(f.titleKey)}</h3>
@@ -105,21 +81,18 @@ const Landing = () => {
         </ul>
       </section>
 
-      {/* Hua gets her own section so she reads as a character, not a feature line */}
-      <section className="grid md:grid-cols-[auto_minmax(0,1fr)] gap-6 md:gap-10 items-center rounded-[14px] border-2 border-stroke bg-secondary dark:bg-card p-6 md:p-10">
-        <div className="lantern-glow [--glow-size:200%] [--glow-y:55%] justify-self-center">
-          <Lantern mood="happy" className="w-32 h-32 md:w-44 md:h-44" />
+      {/* Hua gets her own block so she reads as a character, not a feature line */}
+      <section className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center gap-6 rounded-[14px] border-2 border-stroke bg-secondary dark:bg-card p-6 md:p-8">
+        <div className="lantern-glow [--glow-size:200%] [--glow-y:55%] shrink-0">
+          <Lantern mood="happy" className="w-28 h-28 md:w-32 md:h-32" />
         </div>
-        <div className="flex flex-col gap-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-balance">{t("home.hua.title")}</h2>
-          <p className="text-lg font-bold">{t("home.hua.ask")}</p>
-          <p className="text-muted-foreground max-w-2xl">{t("home.hua.desc")}</p>
+        <div className="flex flex-col gap-3 text-center sm:text-start items-center sm:items-start">
+          <h2 className="text-2xl md:text-3xl font-bold text-balance">{t("home.hua.title")}</h2>
+          <p className="text-muted-foreground">{t("home.hua.ask")}</p>
           <p className="font-bold text-primary">{t("home.hua.tagline")}</p>
-          <div>
-            <Link to="/tutor">
-              <Button size="lg">{t("home.hua.cta")}</Button>
-            </Link>
-          </div>
+          <Link to="/tutor">
+            <Button size="lg">{t("home.hua.cta")}</Button>
+          </Link>
         </div>
       </section>
 

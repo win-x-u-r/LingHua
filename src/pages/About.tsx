@@ -1,159 +1,82 @@
-import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import Lantern from "@/components/lantern/Lantern";
 import AvatarIcon from "@/components/AvatarIcon";
 import RoleIcon from "@/components/RoleIcon";
+import Seal from "@/components/Seal";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+/* Our Story: why LingHua exists, who it is for, and what we care about */
 const About = () => {
-  const { language } = useLanguage();
-  const ar = language === "ar";
+  const { t } = useLanguage();
 
-  const features = [
-    {
-      icon: <AvatarIcon id="panda" className="w-12 h-12 shrink-0" />,
-      key: "kids",
-      title: ar ? "تصميم مناسب للأطفال" : "Kid-Friendly Design",
-      description: ar
-        ? "كل عنصر مصمم مع مراعاة الأطفال: ممتع وسهل الاستخدام مع دعم كامل للغة العربية."
-        : "Every element is designed with children in mind: playful, easy to use, with full Arabic RTL support.",
-    },
-    {
-      icon: <AvatarIcon id="dragon" className="w-12 h-12 shrink-0" />,
-      key: "ai",
-      title: ar ? "تعلم بالذكاء الاصطناعي" : "AI-Powered Learning",
-      description: ar
-        ? "مدعوم بتقنيات هواوي السحابية للترجمة الدقيقة والتعرف على الكلام وتقييم النطق."
-        : "Powered by Huawei Cloud AI for accurate translation, speech recognition, and pronunciation scoring.",
-    },
-    {
-      icon: <AvatarIcon id="dumpling" className="w-12 h-12 shrink-0" />,
-      key: "bilingual",
-      title: ar ? "دعم ثنائي اللغة" : "Bilingual Support",
-      description: ar
-        ? "دعم كامل للعربية والصينية مع التبديل السلس بين اللغات والاتجاهات."
-        : "Full support for Arabic (RTL) and Chinese (LTR) with seamless language switching.",
-    },
-    {
-      icon: <AvatarIcon id="cat" className="w-12 h-12 shrink-0" />,
-      key: "game",
-      title: ar ? "تجربة تعلم ممتعة" : "Gamified Experience",
-      description: ar
-        ? "اكسب نقاط الخبرة والشارات والمستويات مع نظام مكافآت يحفز التعلم المستمر."
-        : "Earn XP, badges, and levels with a reward system that motivates consistent learning.",
-    },
+  const audiences = [
+    { seal: "童", titleKey: "home.for.kids", tagKey: "home.for.kids.tag", descKey: "home.for.kids.desc" },
+    { seal: "学", titleKey: "home.for.students", tagKey: "home.for.students.tag", descKey: "home.for.students.desc" },
+    { seal: "旅", titleKey: "home.for.travellers", tagKey: "home.for.travellers.tag", descKey: "home.for.travellers.desc" },
   ];
 
-  const huaweiTech = [
-    {
-      icon: <RoleIcon role="independent" className="w-12 h-12 shrink-0" />,
-      key: "mt",
-      name: ar ? "خدمة الترجمة الآلية" : "Machine Translation API",
-      service: "Huawei Cloud NLP",
-      description: ar
-        ? "ترجمة عربي ↔ صيني باستخدام سلسلة ترجمة ذكية عبر اللغة الإنجليزية كلغة وسيطة."
-        : "Arabic ↔ Chinese translation using intelligent pivot chaining through English for an underserved language pair.",
-    },
-    {
-      icon: <AvatarIcon id="lotus" className="w-12 h-12 shrink-0" />,
-      key: "sis",
-      name: ar ? "التعرف على الكلام والتحويل إلى نص" : "Speech Recognition & TTS",
-      service: "Huawei Cloud SIS",
-      description: ar
-        ? "تحويل كلام الطلاب إلى نص وتوليد نطق صحيح باستخدام خدمة التفاعل الصوتي."
-        : "Convert student speech to text and generate native pronunciation audio using the Speech Interaction Service.",
-    },
-    {
-      icon: <AvatarIcon id="bamboo" className="w-12 h-12 shrink-0" />,
-      key: "score",
-      name: ar ? "نموذج تقييم النطق" : "Pronunciation Scoring Model",
-      service: "MindSpore",
-      description: ar
-        ? "نموذج شبكة عصبية مخصص يقيّم دقة الأحرف وتشابه البينيين ودقة النغمات، مصمم خصيصاً للمتحدثين بالعربية."
-        : "Custom neural network evaluating character accuracy, pinyin similarity, and tone correctness, designed for Arabic speakers' common Mandarin mistakes.",
-    },
-    {
-      icon: <RoleIcon role="teacher" className="w-12 h-12 shrink-0" />,
-      key: "teacher",
-      name: ar ? "لوحة تحكم المعلم" : "Teacher Analytics Dashboard",
-      service: "Huawei Cloud + Supabase",
-      description: ar
-        ? "تحليلات الأداء في الوقت الفعلي مع اتجاهات النطق ومستوى إتقان المفردات لكل طالب."
-        : "Real-time performance analytics with pronunciation accuracy trends and per-student vocabulary mastery.",
-    },
+  const values = [
+    { icon: <AvatarIcon id="lotus" className="w-12 h-12 shrink-0" />, titleKey: "story.v.arabic", descKey: "story.v.arabic.desc" },
+    { icon: <AvatarIcon id="cat" className="w-12 h-12 shrink-0" />, titleKey: "story.v.play", descKey: "story.v.play.desc" },
+    { icon: <RoleIcon role="teacher" className="w-12 h-12 shrink-0" />, titleKey: "story.v.teachers", descKey: "story.v.teachers.desc" },
   ];
 
-  const pill = "inline-block px-3 py-1 rounded-full border-2 border-stroke text-sm font-bold";
+  const list = "flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden";
+  const row = "flex items-start gap-4 p-4 md:p-5 border-b-2 border-border last:border-b-0";
 
   return (
-    <div className="py-8 md:py-12">
-      <div className="container mx-auto max-w-4xl flex flex-col gap-12">
-        {/* Header */}
-        <header className="flex flex-col items-center text-center gap-3">
-          <Lantern mood="idle" className="w-20 h-20" />
-          <h1 className="text-4xl md:text-5xl font-bold text-primary text-balance">
-            {ar ? "حول لينغ هوا" : "About Líng Huà"}
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground font-bold text-balance">
-            <span lang="zh" className="font-zh">灵话</span>{" "}
-            {ar ? "منصة ذكية لتعلم اللغة الصينية" : "Smart Mandarin Learning Platform"}
-          </p>
-        </header>
+    <div className="container mx-auto px-4 py-10 md:py-14 max-w-3xl flex flex-col gap-14">
+      <header className="flex flex-col items-center text-center gap-4">
+        <div className="lantern-glow [--glow-size:220%] [--glow-y:55%]">
+          <Lantern mood="idle" className="w-24 h-24" />
+        </div>
+        <h1 className="text-4xl md:text-5xl font-bold text-balance">{t("story.title")}</h1>
+        <p className="text-xl font-bold text-primary text-balance">{t("story.lead")}</p>
+        <p className="text-lg text-muted-foreground">{t("story.p1")}</p>
+        <p className="text-lg text-muted-foreground">{t("story.p2")}</p>
+      </header>
 
-        {/* Platform features */}
-        <ul className="flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden">
-          {features.map((f) => (
-            <li key={f.key} className="flex items-start gap-4 p-4 md:p-5 border-b-2 border-border last:border-b-0">
-              {f.icon}
-              <div className="min-w-0">
-                <h2 className="text-lg md:text-xl font-bold leading-tight">{f.title}</h2>
-                <p className="text-muted-foreground mt-1">{f.description}</p>
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-3xl font-bold text-balance">{t("home.for.title")}</h2>
+          <p className="text-lg text-muted-foreground">{t("home.for.sub")}</p>
+        </div>
+        <ul className={list}>
+          {audiences.map((a) => (
+            <li key={a.titleKey} className={row}>
+              <Seal char={a.seal} />
+              <div className="flex flex-col gap-1 min-w-0">
+                <h3 className="text-xl font-bold">{t(a.titleKey)}</h3>
+                <p className="font-bold text-primary">{t(a.tagKey)}</p>
+                <p className="text-muted-foreground">{t(a.descKey)}</p>
               </div>
             </li>
           ))}
         </ul>
+      </section>
 
-        {/* Huawei technology */}
-        <section className="flex flex-col gap-6">
-          <h2 className="text-3xl font-bold text-center text-primary text-balance">
-            {ar ? "تقنيات هواوي المستخدمة" : "Huawei Technologies Used"}
-          </h2>
+      <section className="flex flex-col gap-6">
+        <h2 className="text-3xl font-bold text-balance">{t("story.values")}</h2>
+        <ul className={list}>
+          {values.map((v) => (
+            <li key={v.titleKey} className={`${row} items-center`}>
+              {v.icon}
+              <div className="flex flex-col gap-1 min-w-0">
+                <h3 className="text-xl font-bold">{t(v.titleKey)}</h3>
+                <p className="text-muted-foreground">{t(v.descKey)}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-          <div className="flex flex-col gap-4">
-            {huaweiTech.map((tech) => (
-              <Card key={tech.key} className="p-4 md:p-6">
-                <div className="flex items-start gap-4">
-                  {tech.icon}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <h3 className="text-lg font-bold leading-tight">{tech.name}</h3>
-                      <span dir="ltr" className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full whitespace-nowrap">
-                        {tech.service}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">{tech.description}</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* Architecture */}
-        <Card className="p-4 md:p-6 flex flex-col items-center gap-3 text-center">
-          <h3 className="font-bold">{ar ? "البنية التقنية" : "Technical Architecture"}</h3>
-          <div dir="ltr" className="flex flex-wrap justify-center gap-2">
-            <span className={`${pill} bg-card`}>React + TypeScript</span>
-            <span className={`${pill} bg-card`}>Flask Backend</span>
-            <span className={`${pill} bg-card`}>Supabase</span>
-          </div>
-          <span aria-hidden="true" className="text-xl font-bold text-muted-foreground">↕</span>
-          <div dir="ltr" className="flex flex-wrap justify-center gap-2">
-            <span className={`${pill} bg-primary text-primary-foreground`}>Huawei Cloud SIS</span>
-            <span className={`${pill} bg-primary text-primary-foreground`}>Huawei Cloud NLP</span>
-            <span className={`${pill} bg-primary text-primary-foreground`}>MindSpore</span>
-          </div>
-        </Card>
-      </div>
+      <section className="flex flex-col items-center text-center gap-4">
+        <h2 className="text-3xl font-bold text-balance">{t("home.closing.title")}</h2>
+        <Link to="/auth">
+          <Button size="lg">{t("home.closing.cta")}</Button>
+        </Link>
+      </section>
     </div>
   );
 };
