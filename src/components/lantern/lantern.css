@@ -22,6 +22,7 @@
 .lh[data-mood="thinking"] .lh-f-thinking,
 .lh[data-mood="watch"] .lh-f-watch,
 .lh[data-mood="shy"] .lh-f-shy,
+.lh[data-mood="delight"] .lh-f-delight,
 .lh[data-mood="listening"] .lh-waves,
 .lh[data-mood="thinking"] .lh-dots { display: inline; }
 
@@ -80,6 +81,14 @@
 .lh.lh-bop[data-mood="shy"] .lh-lantern { animation: lh-spin-around .55s ease-in-out forwards !important; }
 .lh.lh-bop[data-mood="shy"] .lh-rig { animation: lh-bop .7s ease-in-out !important; }
 .lh.lh-bop[data-mood="shy"] .lh-tassel { animation: lh-tassel-swing .7s ease-in-out !important; }
+
+/* delight (sign-up avatar): blushes, twirls once all the way round, then hops */
+.lh .lh-face > ellipse { transition: fill .3s; }
+.lh[data-mood="delight"] .lh-face > ellipse { fill: #FFB3A6; }
+.lh[data-mood="delight"] .lh-rig { animation: lh-sway 3s ease-in-out infinite alternate; }
+.lh[data-mood="delight"] .lh-lantern { animation: lh-twirl 1s ease-in-out, lh-hop 1.7s cubic-bezier(.3,.7,.4,1) 1s infinite; }
+.lh[data-mood="delight"] .lh-face { animation: lh-twirl-face 1s linear; }
+.lh[data-mood="delight"] .lh-tassel { animation: lh-whip 1s ease-in-out, lh-flick 1.7s ease-in-out 1s infinite; }
 
 /* entrance */
 .lh.lh-entering .lh-rig { animation: lh-drop 1.4s cubic-bezier(.2,.8,.3,1) both !important; }
@@ -166,6 +175,14 @@
   50%  { transform: scaleX(.04); }
   100% { transform: scaleX(1); }
 }
+@keyframes lh-twirl {
+  0%   { transform: scaleX(1); }
+  25%  { transform: scaleX(.04); }
+  50%  { transform: scaleX(1) translateY(-18px); }
+  75%  { transform: scaleX(.04); }
+  100% { transform: scaleX(1); }
+}
+@keyframes lh-twirl-face { 0%, 24% { opacity: 1; } 25%, 74% { opacity: 0; } 75%, 100% { opacity: 1; } }
 @keyframes lh-hide-face { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
 @keyframes lh-peek { 0%, 56% { opacity: 0; } 62%, 80% { opacity: 1; } 85%, 100% { opacity: 0; } }
 @keyframes lh-peek-sway {

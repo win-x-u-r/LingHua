@@ -11,7 +11,8 @@ export type LanternMood =
   | "listening" // microphone is recording
   | "thinking" // score or translation is loading
   | "watch" // login: someone is typing their email
-  | "shy"; // login: password field, turns its back and peeks
+  | "shy" // login: password field, turns its back and peeks
+  | "delight"; // sign-up: picked an avatar, blushes and twirls once
 
 interface LanternProps {
   mood?: LanternMood;
@@ -188,6 +189,13 @@ const Lantern = ({ mood = "idle", label, className, entering = false, bounce = 0
               <path d="M374 434 Q400 462 426 434" strokeWidth="15" />
               <path d="M596 434 Q622 462 648 434" strokeWidth="15" />
               <path d="M488 466 Q512 480 536 466" strokeWidth="13" />
+            </g>
+
+            <g className="lh-f-delight">
+              <path d="M374 446 Q400 412 426 446" stroke={INK} strokeWidth="15" fill="none" />
+              <path d="M596 446 Q622 412 648 446" stroke={INK} strokeWidth="15" fill="none" />
+              <path d="M484 462 H540 Q538 500 512 502 Q486 500 484 462Z" fill={INK} />
+              <path d="M496 490 Q512 480 528 490 Q522 500 512 500 Q502 500 496 490Z" fill="#FF8D7E" />
             </g>
           </g>
 

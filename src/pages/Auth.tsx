@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,20 +31,50 @@ const Auth = () => {
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, loading, signUp, signIn, joinClassroom, createClassroom, setAvatar } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // The lantern reacts to the form: happy while an email is typed, turns its back for the password
+  // The lantern reacts to the form. Email and the other text fields: happy eyes that follow
+  // what you type, with a hop per typing burst. Password: turns its back and peeks.
+  // Sign-up choices (role, class code, avatar) get a short reaction, then it settles again.
   const [mood, setMood] = useState<LanternMood>("idle");
   const [bounce, setBounce] = useState(0);
+  const [look, setLook] = useState(0);
   const lastBounce = useRef(0);
+  const settle = useRef<number>();
+  useEffect(() => () => window.clearTimeout(settle.current), []);
+
   const bumpLantern = () => {
     const now = Date.now();
     if (now - lastBounce.current < 420) return;
     lastBounce.current = now;
     setBounce((b) => b + 1);
   };
+  const changeMood = (m: LanternMood) => {
+    window.clearTimeout(settle.current);
+    setMood(m);
+  };
+  // A one-off reaction that wears off by itself
+  const react = (m: LanternMood, ms = 1600) => {
+    changeMood(m);
+    bumpLantern();
+    settle.current = window.setTimeout(() => setMood((cur) => (cur === m ? "idle" : cur)), ms);
+  };
+  // Eyes follow the text from the start of the field to the end, like reading along
+  const watchText = (text: string, rtl = false, span = 24) => {
+    const along = Math.min(text.length, span) / span;
+    setLook((rtl ? -1 : 1) * (along * 2 - 1));
+  };
+  const watchField = (text: string, rtl = false, span = 24) => {
+    changeMood("watch");
+    watchText(text, rtl, span);
+  };
+  const typeInField = (text: string, rtl = false, span = 24) => {
+    watchField(text, rtl, span);
+    bumpLantern();
+  };
+  const rtl = language === "ar";
 
   if (!loading && user && !isSubmitting) return <Navigate to="/" replace />;
 
@@ -52,10 +82,11 @@ const Auth = () => {
     e.preventDefault();
     if (isSignUp && role === "student" && classroomCode.length < 6) {
       setCodeError(true);
+      changeMood("sad");
       return;
     }
     setIsSubmitting(true);
-    setMood("thinking");
+    changeMood("thinking");
 
     try {
       if (isSignUp) {
@@ -83,17 +114,17 @@ const Auth = () => {
           }
         }
 
-        setMood("celebrate");
+        changeMood("celebrate");
         toast({ title: t("auth.created"), description: t("auth.created.desc") });
         navigate(role === "teacher" ? "/dashboard" : "/");
       } else {
         await signIn(email, password);
-        setMood("happy");
+        changeMood("happy");
         toast({ title: t("auth.welcomed") });
         navigate("/");
       }
     } catch (err: any) {
-      setMood("sad");
+      changeMood("sad");
       toast({
         title: isSignUp ? t("auth.signup.failed") : t("auth.signin.failed"),
         description: err.message || t("auth.try_again"),
@@ -108,10 +139,21 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen py-10 px-4 flex items-start md:items-center justify-center">
-      <Card className="w-full max-w-4xl grid md:grid-cols-2 overflow-hidden p-0">
-        <div className="bg-gradient-to-b from-card to-muted border-b-2 md:border-b-0 md:border-e-2 border-stroke flex items-center justify-center min-h-[220px] md:min-h-[520px] overflow-hidden">
+      <Card className="w-full max-w-4xl grid md:grid-cols-2 overflow-clip p-0">
+        {/* On phones the sign-up form is long, so the lantern stays pinned under the header to keep reacting */}
+        <div
+          className={`bg-gradient-to-b from-card to-muted border-b-2 md:border-b-0 md:border-e-2 border-stroke flex items-center justify-center md:min-h-[520px] overflow-hidden ${
+            isSignUp ? "max-md:sticky max-md:top-[66px] max-md:z-10 min-h-[150px]" : "min-h-[220px]"
+          }`}
+        >
           <div className="lantern-glow [--glow-size:200%] [--glow-y:62%]">
-            <Lantern mood={mood} bounce={bounce} entering className="w-48 h-48 md:w-72 md:h-72" />
+            <Lantern
+              mood={mood}
+              bounce={bounce}
+              look={look}
+              entering
+              className={`md:w-72 md:h-72 ${isSignUp ? "w-36 h-36" : "w-48 h-48"}`}
+            />
           </div>
         </div>
 
@@ -129,7 +171,10 @@ const Auth = () => {
                 type="button"
                 role="tab"
                 aria-selected={isSignUp === signUpTab}
-                onClick={() => setIsSignUp(signUpTab)}
+                onClick={() => {
+                  if (isSignUp !== signUpTab) react("happy", 1200);
+                  setIsSignUp(signUpTab);
+                }}
                 className={`py-2 ${isSignUp === signUpTab ? "bg-foreground text-background" : "bg-card"}`}
               >
                 {signUpTab ? t("auth.signup") : t("auth.signin")}
@@ -145,7 +190,12 @@ const Auth = () => {
                   <Input
                     id="name"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onFocus={() => watchField(fullName, rtl)}
+                    onBlur={leaveField}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      typeInField(e.target.value, rtl);
+                    }}
                     placeholder={t("auth.name.placeholder")}
                     required
                   />
@@ -162,7 +212,10 @@ const Auth = () => {
                           type="button"
                           role="radio"
                           aria-checked={on}
-                          onClick={() => setRole(r.value)}
+                          onClick={() => {
+                            if (role !== r.value) react("happy");
+                            setRole(r.value);
+                          }}
                           className={`flex flex-col items-center gap-1.5 rounded-[12px] border-2 px-2 py-3 font-bold text-sm leading-tight text-center ${
                             on ? "border-stroke bg-accent shadow-[3px_3px_0_hsl(var(--stamp))]" : "border-border bg-card text-muted-foreground"
                           }`}
@@ -181,9 +234,14 @@ const Auth = () => {
                     <ClassCodeInput
                       id="classroom"
                       value={classroomCode}
+                      onFocus={() => watchField(classroomCode, false, 6)}
+                      onBlur={leaveField}
                       onChange={(c) => {
                         setClassroomCode(c);
                         setCodeError(false);
+                        // Six characters is a whole code: a little cheer, then back to watching
+                        if (c.length === 6 && classroomCode.length < 6) react("happy", 1400);
+                        else typeInField(c, false, 6);
                       }}
                     />
                     <span className={`text-xs ${codeError ? "text-destructive font-bold" : "text-muted-foreground"}`}>
@@ -198,7 +256,12 @@ const Auth = () => {
                     <Input
                       id="classname"
                       value={className}
-                      onChange={(e) => setClassName(e.target.value)}
+                      onFocus={() => watchField(className, rtl)}
+                      onBlur={leaveField}
+                      onChange={(e) => {
+                        setClassName(e.target.value);
+                        typeInField(e.target.value, rtl);
+                      }}
                       placeholder={t("dashboard.classroom_name_placeholder")}
                     />
                     <span className="text-xs text-muted-foreground">{t("auth.classname.hint")}</span>
@@ -214,7 +277,10 @@ const Auth = () => {
                         type="button"
                         aria-label={t(`avatar.${id}`)}
                         aria-pressed={selectedAvatar === id}
-                        onClick={() => setSelectedAvatar(id)}
+                        onClick={() => {
+                          if (selectedAvatar !== id) react("delight", 2200);
+                          setSelectedAvatar(id);
+                        }}
                         className={`aspect-square rounded-full border-2 p-0.5 sm:p-1 grid place-items-center ${
                           selectedAvatar === id ? "border-stroke bg-accent shadow-[2px_2px_0_hsl(var(--stamp))]" : "border-border bg-card"
                         }`}
@@ -235,12 +301,11 @@ const Auth = () => {
                 type="email"
                 dir="ltr"
                 value={email}
-                onFocus={() => setMood("watch")}
+                onFocus={() => watchField(email)}
                 onBlur={leaveField}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  setMood("watch");
-                  bumpLantern();
+                  typeInField(e.target.value);
                 }}
                 placeholder="you@example.com"
                 required
@@ -253,7 +318,7 @@ const Auth = () => {
                 id="password"
                 type="password"
                 value={password}
-                onFocus={() => setMood("shy")}
+                onFocus={() => changeMood("shy")}
                 onBlur={leaveField}
                 onChange={(e) => {
                   setPassword(e.target.value);

@@ -6,13 +6,15 @@ interface ClassCodeInputProps {
   value: string;
   onChange: (code: string) => void;
   className?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 /**
  * Six-character class code, shown as six boxes so it is easy to copy from a board.
  * One real input underneath keeps paste, autofill and screen readers working.
  */
-const ClassCodeInput = ({ id, value, onChange, className }: ClassCodeInputProps) => {
+const ClassCodeInput = ({ id, value, onChange, className, onFocus, onBlur }: ClassCodeInputProps) => {
   const [focused, setFocused] = useState(false);
   const chars = value.padEnd(6, " ").slice(0, 6).split("");
   return (
@@ -26,8 +28,14 @@ const ClassCodeInput = ({ id, value, onChange, className }: ClassCodeInputProps)
         spellCheck={false}
         inputMode="text"
         maxLength={6}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onFocus={() => {
+          setFocused(true);
+          onFocus?.();
+        }}
+        onBlur={() => {
+          setFocused(false);
+          onBlur?.();
+        }}
         className="absolute inset-0 w-full h-full opacity-0 cursor-text"
         aria-describedby={id ? `${id}-boxes` : undefined}
       />
