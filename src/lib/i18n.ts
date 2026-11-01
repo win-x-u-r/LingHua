@@ -380,7 +380,7 @@ const translations: Record<string, Record<Language, string>> = {
   "auth.role.student": { en: "Student", ar: "طالب" },
   "auth.role.independent": { en: "Independent learner", ar: "متعلم مستقل" },
   "auth.role.teacher": { en: "Teacher", ar: "معلم" },
-  "auth.avatar": { en: "Pick your buddy", ar: "اختر رفيقك" },
+  "auth.avatar": { en: "Pick your avatar", ar: "اختر صورتك الرمزية" },
   "auth.classroom": { en: "Class code", ar: "رمز الفصل" },
   "auth.classroom.placeholder": { en: "From your teacher", ar: "من معلمك" },
   "auth.email": { en: "Email", ar: "البريد الإلكتروني" },
