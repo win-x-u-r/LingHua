@@ -49,6 +49,10 @@ CORS_ORIGINS=https://${DOMAIN}
 EOF
 fi
 
+# The backend runs as www-data, so it must be able to read its files and .env
+# (same as deploy.sh). Without this the new root-owned .env stops it starting.
+chown -R www-data:www-data "$INSTALL_DIR/backend"
+
 log "Restarting backend..."
 systemctl restart "$SERVICE_NAME"
 
@@ -62,7 +66,7 @@ rm -rf "${WEB_ROOT:?}"/*
 cp -r "$INSTALL_DIR/dist/." "$WEB_ROOT/"
 chown -R www-data:www-data "$WEB_ROOT"
 
-sleep 3
+sleep 10
 if systemctl is-active --quiet "$SERVICE_NAME"; then
   log "Done. Backend is running and the website is updated."
 else
