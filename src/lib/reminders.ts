@@ -19,6 +19,7 @@ export interface ReminderContext {
   goal: number; // minutes
   minutes: number; // learned today
   streak: number;
+  dueWords: number; // words waiting for review today
 }
 
 type Line = { en: string; ar: string };
@@ -35,16 +36,18 @@ export const HUA_LINES = {
 export type ReminderKind = keyof typeof HUA_LINES;
 
 // Days with nothing special to say rotate through these
-const EVERYDAY: ReminderKind[] = ["daily", "vocabulary", "nudge"];
+const EVERYDAY: ReminderKind[] = ["daily", "nudge"];
 
 export const REMINDER_TITLE: Line = { en: "Hua", ar: "هوا" };
 
 /**
- * Which reminder fits right now: already started today = progress, a streak of two days
- * or more = streak, otherwise the everyday lines in turn. `seed` changes the line day to day.
+ * Which reminder fits right now, first match wins: already started today = progress,
+ * words due for review = new word, a streak of two days or more = streak, otherwise
+ * the everyday lines in turn. `seed` changes the everyday line from day to day.
  */
 export function reminderKind(ctx: ReminderContext, seed = new Date().getDate()): ReminderKind {
   if (ctx.minutes > 0) return "progress";
+  if (ctx.dueWords > 0) return "vocabulary";
   if (ctx.streak >= 2) return "streak";
   return EVERYDAY[seed % EVERYDAY.length];
 }

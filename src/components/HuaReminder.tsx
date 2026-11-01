@@ -7,6 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTodayMinutes } from "@/hooks/use-today-minutes";
 import { supabase } from "@/integrations/supabase/client";
 import { dayKey } from "@/lib/dailyGoal";
+import { getDueWords } from "@/lib/spacedRepetition";
 import {
   REMINDER_TITLE,
   huaMessage,
@@ -32,6 +33,7 @@ const HuaReminder = () => {
   const navigate = useNavigate();
   const { minutes, goal, done } = useTodayMinutes();
   const [streak, setStreak] = useState(0);
+  const [dueWords, setDueWords] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
 
   const active = !!user && !!prefs?.reminderOn && profile?.role !== "teacher";
@@ -44,11 +46,12 @@ const HuaReminder = () => {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }: { data: { current_streak: number } | null }) => setStreak(data?.current_streak ?? 0));
+    getDueWords(supabase, user.id).then((words) => setDueWords(words.length));
   }, [active, user]);
 
   // Read the latest numbers inside timers without restarting them every minute
-  const latest = useRef({ minutes, goal, done, streak, language, pathname });
-  latest.current = { minutes, goal, done, streak, language, pathname };
+  const latest = useRef({ minutes, goal, done, streak, dueWords, language, pathname });
+  latest.current = { minutes, goal, done, streak, dueWords, language, pathname };
 
   const remind = (asNotification: boolean) => {
     if (!user) return;
@@ -56,7 +59,7 @@ const HuaReminder = () => {
     const now = latest.current;
     if (now.done || remindedOn(user.id) === today) return;
     const body = huaMessage(
-      { name: (profile?.full_name ?? "").split(" ")[0], goal: now.goal, minutes: now.minutes, streak: now.streak },
+      { name: (profile?.full_name ?? "").split(" ")[0], goal: now.goal, minutes: now.minutes, streak: now.streak, dueWords: now.dueWords },
       now.language,
     );
     markReminded(user.id, today);
