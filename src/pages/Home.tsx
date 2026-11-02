@@ -7,6 +7,8 @@ import Lantern from "@/components/lantern/Lantern";
 import Seal from "@/components/Seal";
 import AvatarIcon from "@/components/AvatarIcon";
 import { useLanguage } from "@/contexts/LanguageContext";
+import PathIcon from "@/components/PathIcon";
+import { PATH_ZH, TEACHERS_CORNER_ZH } from "@/lib/learningPaths";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getDueWords } from "@/lib/spacedRepetition";
@@ -110,7 +112,7 @@ const Landing = () => {
 /* Logged in: today's goal, one Continue button, and the other activities */
 const Today = () => {
   const { t, language } = useLanguage();
-  const { user, profile } = useAuth();
+  const { user, profile, learningPath } = useAuth();
   const [streak, setStreak] = useState(0);
   const today = useTodayMinutes();
   const [dueCount, setDueCount] = useState(0);
@@ -136,15 +138,16 @@ const Today = () => {
   const isTeacher = profile?.role === "teacher";
 
   const activities = [
-    isTeacher
-      ? { to: "/dashboard", seal: "师", titleKey: "today.class", desc: t("today.class.desc") }
-      : {
+    // Teachers reach My Classroom from the big button above, so the list starts with speaking
+    ...(isTeacher
+      ? []
+      : [{
           to: "/flashcards",
           seal: "复",
           titleKey: "today.review",
           desc: dueCount > 0 ? `${dueCount} ${t("today.review.due")}` : t("today.review.none"),
           count: dueCount,
-        },
+        }]),
     { to: "/tutor", seal: "说", titleKey: "today.speak", desc: t("today.speak.desc") },
     { to: "/grammar", seal: "文", titleKey: "today.grammar", desc: t("today.grammar.desc") },
     { to: "/translator", seal: "译", titleKey: "today.translate", desc: t("today.translate.desc"), tone: "gold" as const },
@@ -154,13 +157,30 @@ const Today = () => {
     <div className="container mx-auto px-4 py-8 md:py-12 max-w-2xl flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <div>
+          {isTeacher && (
+            <span className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+              {t("corner.title")} <span lang="zh" className="font-zh normal-case tracking-normal">· {TEACHERS_CORNER_ZH}</span>
+            </span>
+          )}
           <h1 className="text-3xl md:text-4xl font-bold leading-tight">
             {greeting}
             {firstName && (language === "ar" ? ` يا ${firstName}` : `, ${firstName}`)}
           </h1>
-          <span className="inline-flex mt-2 px-3 py-0.5 rounded-full border-2 border-stroke bg-secondary text-secondary-foreground font-bold text-sm">
-            {streak} {t("today.streak")}
-          </span>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="inline-flex px-3 py-0.5 rounded-full border-2 border-stroke bg-secondary text-secondary-foreground font-bold text-sm">
+              {streak} {t("today.streak")}
+            </span>
+            {learningPath && (
+              <Link
+                to="/profile#path"
+                className="inline-flex items-center gap-1.5 ps-1 pe-3 py-0.5 rounded-full border-2 border-stroke bg-card font-bold text-sm"
+              >
+                <PathIcon path={learningPath} className="w-6 h-6" />
+                {t(`path.${learningPath}`)}
+                <span lang="zh" className="font-zh font-normal text-muted-foreground">{PATH_ZH[learningPath]}</span>
+              </Link>
+            )}
+          </div>
         </div>
         <Lantern mood={goalDone ? "happy" : hasPracticed ? "idle" : "sleepy"} className="w-24 h-24 md:w-28 md:h-28 shrink-0" />
       </div>
@@ -179,14 +199,23 @@ const Today = () => {
           </>
         )}
         {goalDone && <p className="font-semibold text-success-foreground">{t("today.goal.done")}</p>}
-        <div>
-          <p className="text-muted-foreground mb-3">{t("today.continue.desc")}</p>
-          <Link to="/flashcards">
-            <Button size="lg" className="w-full">
-              {hasPracticed ? t("today.continue") : t("today.start")}
-            </Button>
-          </Link>
-        </div>
+        {isTeacher ? (
+          <div>
+            <p className="text-muted-foreground mb-3">{t("today.class.desc")}</p>
+            <Link to="/dashboard">
+              <Button size="lg" className="w-full">{t("classroom.mine")}</Button>
+            </Link>
+          </div>
+        ) : (
+          <div>
+            <p className="text-muted-foreground mb-3">{t("today.continue.desc")}</p>
+            <Link to="/flashcards">
+              <Button size="lg" className="w-full">
+                {hasPracticed ? t("today.continue") : t("today.start")}
+              </Button>
+            </Link>
+          </div>
+        )}
       </Card>
 
       <ul className="flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden">

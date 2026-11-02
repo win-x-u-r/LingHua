@@ -13,6 +13,8 @@ import AvatarIcon from "@/components/AvatarIcon";
 import ClassCodeInput from "@/components/ClassCodeInput";
 import RoleIcon from "@/components/RoleIcon";
 import { GoalPicker, ReminderSetting } from "@/components/GoalPicker";
+import PathPicker from "@/components/PathPicker";
+import { DEFAULT_PATH, type LearningPath } from "@/lib/learningPaths";
 import { DEFAULT_GOAL_MINUTES, DEFAULT_REMINDER_TIME, tierFor, type GoalTier } from "@/lib/dailyGoal";
 
 // The lantern gets a little more excited the bigger the goal
@@ -40,8 +42,13 @@ const Auth = () => {
   const [codeError, setCodeError] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Learners get a second sign-up step for their daily goal; teachers skip it
-  const [goalStep, setGoalStep] = useState(false);
+  // Sign-up steps. Learners: details, then (independent learners only) their path, then the
+  // daily goal. Teachers: details, then their own welcome where they name the classroom.
+  const [step, setStep] = useState<"details" | "path" | "goal" | "teacher">("details");
+  const goalStep = step === "goal";
+  const [learningPath, setLearningPath] = useState<LearningPath>(DEFAULT_PATH);
+  const [guardian, setGuardian] = useState(false);
+  const [guardianError, setGuardianError] = useState(false);
   const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
   const [reminderOn, setReminderOn] = useState(true);
   const [reminderTime, setReminderTime] = useState(DEFAULT_REMINDER_TIME);
@@ -151,7 +158,7 @@ const Auth = () => {
     setSentTo("");
     setNotYet(false);
     setResent(false);
-    setGoalStep(false);
+    setStep("details");
     setIsSignUp(false);
     setPassword("");
   };
@@ -166,10 +173,24 @@ const Auth = () => {
       return;
     }
     const asksGoal = isSignUp && role !== "teacher";
-    if (asksGoal && !goalStep) {
-      setGoalStep(true);
+    const goTo = (next: typeof step) => {
+      setStep(next);
       react("happy", 1400);
       window.scrollTo({ top: 0 });
+    };
+    if (isSignUp && step === "details") {
+      return goTo(role === "teacher" ? "teacher" : role === "independent" ? "path" : "goal");
+    }
+    if (isSignUp && step === "path") {
+      if (learningPath === "little_lanterns" && !guardian) {
+        setGuardianError(true);
+        changeMood("sad");
+        return;
+      }
+      return goTo("goal");
+    }
+    if (isSignUp && step === "teacher" && !className.trim()) {
+      changeMood("sad");
       return;
     }
     setIsSubmitting(true);
@@ -182,6 +203,8 @@ const Auth = () => {
           avatar: selectedAvatar,
           classCode: role === "student" ? classroomCode : undefined,
           className: role === "teacher" ? className : undefined,
+          learningPath: role === "independent" ? learningPath : undefined,
+          guardianConfirmed: role === "independent" && learningPath === "little_lanterns" ? guardian : undefined,
         });
 
         if (needsConfirm) {
@@ -293,7 +316,19 @@ const Auth = () => {
           ) : (
           <>
           <div>
-            {goalStep ? (
+            {step === "teacher" ? (
+              <>
+                <h1 className="text-3xl font-bold text-balance">{t("teacher.welcome.title")}</h1>
+                <p lang="zh" className="font-zh text-muted-foreground">欢迎，老师！</p>
+                <p className="text-lg font-bold mt-3">{t("teacher.welcome.sub")}</p>
+                <p className="text-muted-foreground">{t("teacher.welcome.body")}</p>
+              </>
+            ) : step === "path" ? (
+              <>
+                <h1 id="path-title" className="text-3xl font-bold text-balance">{t("path.title")}</h1>
+                <p lang="zh" className="font-zh text-muted-foreground">选择你的学习之路</p>
+              </>
+            ) : goalStep ? (
               <>
                 <h1 id="goal-title" className="text-2xl md:text-3xl font-bold text-balance">{t("goal.title")}</h1>
                 <p className="text-muted-foreground mt-1">{t("goal.sub")}</p>
@@ -307,7 +342,7 @@ const Auth = () => {
           </div>
 
           {/* Log in or sign up */}
-          {!goalStep && (
+          {step === "details" && (
           <div className="grid grid-cols-2 border-2 border-stroke rounded-[10px] overflow-hidden font-bold" role="tablist">
             {[false, true].map((signUpTab) => (
               <button
@@ -318,7 +353,7 @@ const Auth = () => {
                 onClick={() => {
                   if (isSignUp !== signUpTab) react("happy", 1200);
                   setIsSignUp(signUpTab);
-                  setGoalStep(false);
+                  setStep("details");
                 }}
                 className={`py-2 ${isSignUp === signUpTab ? "bg-foreground text-background" : "bg-card"}`}
               >
@@ -348,6 +383,59 @@ const Auth = () => {
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {step === "path" && (
+              <>
+                <PathPicker
+                  value={learningPath}
+                  labelledBy="path-title"
+                  onChange={(p) => {
+                    if (p !== learningPath) react(p === "little_lanterns" ? "delight" : "happy", 1600);
+                    setLearningPath(p);
+                    setGuardianError(false);
+                  }}
+                />
+                {learningPath === "little_lanterns" && (
+                  <label className="flex items-start gap-3 rounded-[12px] border-2 border-stroke bg-card p-3 font-bold text-sm">
+                    <input
+                      type="checkbox"
+                      checked={guardian}
+                      onChange={(e) => {
+                        setGuardian(e.target.checked);
+                        setGuardianError(false);
+                        if (e.target.checked) react("happy", 1200);
+                      }}
+                      className="mt-0.5 h-5 w-5 accent-[hsl(var(--primary))]"
+                    />
+                    <span>
+                      {t("path.guardian")}
+                      {guardianError && (
+                        <span className="block text-destructive mt-1" role="alert">{t("path.guardian.needed")}</span>
+                      )}
+                    </span>
+                  </label>
+                )}
+              </>
+            )}
+
+            {step === "teacher" && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="classname">{t("auth.classname")}</Label>
+                <Input
+                  id="classname"
+                  value={className}
+                  onFocus={() => watchField(className, rtl)}
+                  onBlur={leaveField}
+                  onChange={(e) => {
+                    setClassName(e.target.value);
+                    typeInField(e.target.value, rtl);
+                  }}
+                  placeholder={t("dashboard.classroom_name_placeholder")}
+                  required
+                />
+                <span className="text-xs text-muted-foreground">{t("auth.classname.hint")}</span>
+              </div>
+            )}
+
             {goalStep && (
               <>
                 <GoalPicker
@@ -370,7 +458,7 @@ const Auth = () => {
               </>
             )}
 
-            {isSignUp && !goalStep && (
+            {isSignUp && step === "details" && (
               <>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="name">{t("auth.name")}</Label>
@@ -437,24 +525,6 @@ const Auth = () => {
                   </div>
                 )}
 
-                {role === "teacher" && (
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="classname">{t("auth.classname")}</Label>
-                    <Input
-                      id="classname"
-                      value={className}
-                      onFocus={() => watchField(className, rtl)}
-                      onBlur={leaveField}
-                      onChange={(e) => {
-                        setClassName(e.target.value);
-                        typeInField(e.target.value, rtl);
-                      }}
-                      placeholder={t("dashboard.classroom_name_placeholder")}
-                    />
-                    <span className="text-xs text-muted-foreground">{t("auth.classname.hint")}</span>
-                  </div>
-                )}
-
                 <fieldset className="flex flex-col gap-1.5">
                   <legend className="text-sm font-medium mb-1.5">{t("auth.avatar")}</legend>
                   <div className="grid grid-cols-6 gap-1.5 sm:gap-2 max-w-sm">
@@ -481,7 +551,7 @@ const Auth = () => {
               </>
             )}
 
-            {!goalStep && (
+            {step === "details" && (
             <>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">{t("auth.email")}</Label>
@@ -522,8 +592,13 @@ const Auth = () => {
             )}
 
             <div className="flex gap-3 mt-2">
-              {goalStep && (
-                <Button type="button" variant="outline" size="lg" onClick={() => setGoalStep(false)}>
+              {step !== "details" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setStep(step === "goal" && role === "independent" ? "path" : "details")}
+                >
                   {t("goal.back")}
                 </Button>
               )}
@@ -532,9 +607,11 @@ const Auth = () => {
                   ? t("auth.wait")
                   : !isSignUp
                     ? t("auth.signin")
-                    : role !== "teacher" && !goalStep
-                      ? t("goal.next")
-                      : t("auth.create")}
+                    : step === "teacher"
+                      ? t("teacher.welcome.cta")
+                      : step === "goal"
+                        ? t("auth.create")
+                        : t("goal.next")}
               </Button>
             </div>
           </form>

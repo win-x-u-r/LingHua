@@ -30,7 +30,9 @@ const Navbar = () => {
     ...(user
       ? [
           { path: "/grammar", labelKey: "nav.grammar", seal: "文" },
-          { path: "/dashboard", labelKey: "nav.dashboard", seal: "进" },
+          profile?.role === "teacher"
+            ? { path: "/dashboard", labelKey: "classroom.mine", seal: "师" }
+            : { path: "/dashboard", labelKey: "nav.dashboard", seal: "进" },
           { path: "/tutor", labelKey: "nav.tutor", seal: "师" },
         ]
       : []),

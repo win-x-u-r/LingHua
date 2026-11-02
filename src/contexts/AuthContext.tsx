@@ -4,6 +4,7 @@ import type { User, Session } from "@supabase/supabase-js";
 import { resolvePrefs, writeLocalPrefs, type LearningPrefs } from "@/lib/dailyGoal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
+import { pathFor, type LearningPath } from "@/lib/learningPaths";
 
 /** Sign-up choices that need a signed-in learner. When the email must be confirmed first,
  *  they wait in the sign-up details and are applied the first time the learner logs in. */
@@ -11,6 +12,10 @@ export interface SignUpExtras {
   avatar?: string;
   classCode?: string;
   className?: string;
+  /** Independent learners pick a learning path at sign-up */
+  learningPath?: LearningPath;
+  /** Little Lanterns without a class: a grown-up confirmed they are setting it up */
+  guardianConfirmed?: boolean;
 }
 
 export interface SignUpResult {
@@ -43,6 +48,9 @@ interface AuthContextType {
   loading: boolean;
   /** Daily goal and reminder settings; null when signed out */
   prefs: LearningPrefs | null;
+  /** The learning path this learner follows; null for teachers and when signed out */
+  learningPath: LearningPath | null;
+  setLearningPath: (path: LearningPath) => Promise<void>;
   signUp: (email: string, password: string, fullName: string, role: string, prefs?: LearningPrefs, extras?: SignUpExtras) => Promise<SignUpResult>;
   signIn: (email: string, password: string) => Promise<void>;
   resendConfirmation: (email: string) => Promise<void>;
@@ -132,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...(extras?.avatar && { pending_avatar: extras.avatar }),
           ...(extras?.classCode && { pending_class_code: extras.classCode.trim().toUpperCase() }),
           ...(extras?.className && { pending_class_name: extras.className.trim() }),
+          ...(extras?.learningPath && { learning_path: extras.learningPath }),
+          ...(extras?.guardianConfirmed && { guardian_confirmed: true }),
         },
       },
     });
@@ -229,6 +239,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, profile, prefsVersion],
   );
 
+  const learningPath = useMemo(
+    () => pathFor(user, profile?.role, profile?.classroom_id),
+    [user, profile],
+  );
+
+  // Kept in the account's sign-up details, so it needs no database column
+  const setLearningPath = async (path: LearningPath) => {
+    const { data, error } = await supabase.auth.updateUser({ data: { learning_path: path } });
+    if (error) throw error;
+    if (data.user) setUser(data.user);
+  };
+
   const createClassroom = async (name: string): Promise<string> => {
     const me = await currentUser();
     // No 0/O or 1/I so the code is easy to read out to a class
@@ -299,7 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, session, profile, loading, prefs,
+      user, session, profile, loading, prefs, learningPath, setLearningPath,
       signUp, signIn, resendConfirmation, finishSetup, signOut, joinClassroom, createClassroom, setAvatar, setLearningPrefs,
     }}>
       {children}

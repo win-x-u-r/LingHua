@@ -13,6 +13,9 @@ import { BadgeDisplay } from "@/components/BadgeDisplay";
 import { Star, BookOpen, Target, School } from "lucide-react";
 import { GoalPicker, ReminderSetting } from "@/components/GoalPicker";
 import type { LearningPrefs } from "@/lib/dailyGoal";
+import PathPicker from "@/components/PathPicker";
+import PathIcon from "@/components/PathIcon";
+import { PATH_ZH } from "@/lib/learningPaths";
 
 interface ProgressData {
   total_xp: number;
@@ -33,7 +36,7 @@ interface Badge {
 
 
 const Profile = () => {
-  const { user, profile, prefs, joinClassroom, setLearningPrefs } = useAuth();
+  const { user, profile, prefs, joinClassroom, setLearningPrefs, learningPath, setLearningPath } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
   const [progress, setProgress] = useState<ProgressData | null>(null);
@@ -60,8 +63,9 @@ const Profile = () => {
 
   // Opened from the "4 of 10 min" link on the home page
   useEffect(() => {
-    if (window.location.hash === "#goal" && profile) {
-      document.getElementById("goal")?.scrollIntoView({ block: "start" });
+    const target = window.location.hash.slice(1);
+    if ((target === "goal" || target === "path") && profile) {
+      document.getElementById(target)?.scrollIntoView({ block: "start" });
     }
   }, [profile]);
 
@@ -155,6 +159,36 @@ const Profile = () => {
             </div>
           </div>
         </Card>
+
+        {learningPath && (
+          <Card id="path" className="p-6 mb-6 scroll-mt-24 flex flex-col gap-4">
+            <h2 id="path-heading" className="font-bold text-lg">{t("path.yours")}</h2>
+            {profile.role === "student" && profile.classroom_id ? (
+              <div className="flex items-center gap-3">
+                <PathIcon path={learningPath} className="w-12 h-12" />
+                <div>
+                  <p className="font-bold leading-tight">{t(`path.${learningPath}`)}</p>
+                  <p lang="zh" className="font-zh text-sm text-muted-foreground">{PATH_ZH[learningPath]}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t("path.class_note")}</p>
+                </div>
+              </div>
+            ) : (
+              <PathPicker
+                value={learningPath}
+                labelledBy="path-heading"
+                onChange={async (p) => {
+                  if (p === learningPath) return;
+                  try {
+                    await setLearningPath(p);
+                    toast({ title: t("path.saved") });
+                  } catch {
+                    toast({ title: t("path.save_failed"), variant: "destructive" });
+                  }
+                }}
+              />
+            )}
+          </Card>
+        )}
 
         {prefs && profile.role !== "teacher" && (
           <Card id="goal" className="p-6 mb-6 scroll-mt-24 flex flex-col gap-4">

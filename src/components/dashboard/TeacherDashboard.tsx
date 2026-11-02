@@ -7,6 +7,7 @@ import Lantern from "@/components/lantern/Lantern";
 import Seal from "@/components/Seal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+import { MY_CLASSROOM_ZH } from "@/lib/learningPaths";
 import { WEEKLY_GOAL_DAYS, type ToneScore } from "./StudentDashboard";
 
 export interface ClassStudent {
@@ -51,8 +52,12 @@ export const CreateClass = ({ onCreate }: { onCreate: (name: string) => Promise<
         <div className="lantern-glow [--glow-size:220%]">
           <Lantern mood="idle" className="w-28 h-28" />
         </div>
-        <h1 className="text-2xl font-bold">{t("dashboard.create_classroom")}</h1>
-        <p className="text-muted-foreground">{t("dashboard.create_classroom_desc")}</p>
+        <div>
+          <h1 className="text-3xl font-bold">{t("teacher.welcome.title")}</h1>
+          <p lang="zh" className="font-zh text-muted-foreground">欢迎，老师！</p>
+        </div>
+        <p className="text-lg font-bold">{t("teacher.welcome.sub")}</p>
+        <p className="text-muted-foreground">{t("teacher.welcome.body")}</p>
         <form
           className="w-full flex flex-col gap-3"
           onSubmit={async (e) => {
@@ -65,7 +70,7 @@ export const CreateClass = ({ onCreate }: { onCreate: (name: string) => Promise<
         >
           <Input placeholder={t("dashboard.classroom_name_placeholder")} value={name} onChange={(e) => setName(e.target.value)} required />
           <Button type="submit" className="w-full" size="lg" disabled={busy}>
-            {t("dashboard.create_button")}
+            {t("teacher.welcome.cta")}
           </Button>
         </form>
       </Card>
@@ -93,7 +98,9 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
       {/* Class header: name, the code to share, and this week in one sentence */}
       <Card className="p-6 md:p-8 overflow-hidden grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] items-center">
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("teach.class")}</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            {t("classroom.mine")} <span lang="zh" className="font-zh normal-case tracking-normal">· {MY_CLASSROOM_ZH}</span>
+          </span>
           <h1 className="text-3xl md:text-4xl font-bold">{data.className || t("dashboard.teacher.title")}</h1>
           <p className="text-muted-foreground">
             {total === 0
