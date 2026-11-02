@@ -45,7 +45,12 @@ const Auth = () => {
   const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
   const [reminderOn, setReminderOn] = useState(true);
   const [reminderTime, setReminderTime] = useState(DEFAULT_REMINDER_TIME);
-  const { user, loading, signUp, signIn, joinClassroom, createClassroom, setAvatar, setLearningPrefs } = useAuth();
+  // After sign-up with email confirmation on: the address the link went to
+  const [sentTo, setSentTo] = useState("");
+  // Shown above the log-in form: the email isn't confirmed yet, or the link didn't work
+  const [notice, setNotice] = useState<"" | "unconfirmed" | "link_expired" | "link_failed">("");
+  const [resent, setResent] = useState(false);
+  const { user, loading, signUp, signIn, resendConfirmation, finishSetup, setLearningPrefs } = useAuth();
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -91,6 +96,35 @@ const Auth = () => {
   };
   const rtl = language === "ar";
 
+  // Coming back from the confirmation link with an error (Supabase puts it after # or ?)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.slice(1) || window.location.search);
+    const code = params.get("error_code") || params.get("error");
+    if (!code) return;
+    setNotice(code === "otp_expired" ? "link_expired" : "link_failed");
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+
+  const resend = async () => {
+    const to = sentTo || email;
+    if (!to) return;
+    try {
+      await resendConfirmation(to);
+      setResent(true);
+      react("happy", 1400);
+    } catch (err: any) {
+      toast({ title: t("auth.resend.failed"), description: err.message, variant: "destructive" });
+    }
+  };
+
+  const goToLogIn = () => {
+    setSentTo("");
+    setResent(false);
+    setGoalStep(false);
+    setIsSignUp(false);
+    setPassword("");
+  };
+
   if (!loading && user && !isSubmitting) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,7 +147,21 @@ const Auth = () => {
     try {
       if (isSignUp) {
         const prefs = asksGoal ? { goalMinutes, reminderOn, reminderTime } : undefined;
-        await signUp(email, password, fullName, role, prefs);
+        const { needsConfirm } = await signUp(email, password, fullName, role, prefs, {
+          avatar: selectedAvatar,
+          classCode: role === "student" ? classroomCode : undefined,
+          className: role === "teacher" ? className : undefined,
+        });
+
+        if (needsConfirm) {
+          // Not signed in yet: the avatar, class and goal are saved on the first log-in
+          setSentTo(email);
+          setResent(false);
+          changeMood("celebrate");
+          window.scrollTo({ top: 0 });
+          return;
+        }
+
         if (prefs) {
           try {
             await setLearningPrefs(prefs);
@@ -121,40 +169,35 @@ const Auth = () => {
             // Already kept in the sign-up details and on this device
           }
         }
-
-        try {
-          await setAvatar(selectedAvatar);
-        } catch {
-          // Keeps the default panda; can be changed later
-        }
-
-        // Joining or creating the class never blocks sign-up; the dashboard offers it again
-        if (role === "student" && classroomCode.trim()) {
-          try {
-            await joinClassroom(classroomCode);
-          } catch {
-            toast({ title: t("class.join.failed"), description: t("class.join.later") });
-          }
-        }
-        if (role === "teacher" && className.trim()) {
-          try {
-            await createClassroom(className.trim());
-          } catch {
-            // The dashboard shows "create your class" when there is none yet
-          }
-        }
+        // Avatar, then joining or creating the class; never blocks sign-up
+        await finishSetup();
 
         changeMood("celebrate");
         toast({ title: t("auth.created"), description: t("auth.created.desc") });
         navigate(role === "teacher" ? "/dashboard" : "/");
       } else {
         await signIn(email, password);
+        setNotice("");
         changeMood("happy");
         toast({ title: t("auth.welcomed") });
         navigate("/");
       }
     } catch (err: any) {
       changeMood("sad");
+      if (err?.message === "already_registered") {
+        toast({ title: t("auth.signup.failed"), description: t("auth.already") });
+        goToLogIn();
+        return;
+      }
+      if (!isSignUp && (err?.code === "email_not_confirmed" || /not confirmed/i.test(err?.message ?? ""))) {
+        setNotice("unconfirmed");
+        setResent(false);
+        return;
+      }
+      if (!isSignUp && (err?.code === "invalid_credentials" || /invalid login/i.test(err?.message ?? ""))) {
+        toast({ title: t("auth.signin.failed"), description: t("auth.try_again"), variant: "destructive" });
+        return;
+      }
       toast({
         title: isSignUp ? t("auth.signup.failed") : t("auth.signin.failed"),
         description: err.message || t("auth.try_again"),
@@ -188,6 +231,29 @@ const Auth = () => {
         </div>
 
         <div className="p-6 md:p-8 flex flex-col gap-5">
+          {sentTo ? (
+            <div className="flex flex-col gap-4" role="status">
+              <div>
+                <h1 className="text-3xl font-bold">{t("auth.check.title")}</h1>
+                <p lang="zh" className="font-zh text-muted-foreground">请查收邮件</p>
+              </div>
+              <p>
+                {t("auth.check.sent")}{" "}
+                <bdi dir="ltr" className="font-bold break-all">{sentTo}</bdi>
+              </p>
+              <p className="text-muted-foreground">{t("auth.check.next")}</p>
+              <p className="text-sm text-muted-foreground">{t("auth.check.spam")}</p>
+              <div className="flex flex-wrap gap-3 mt-2">
+                <Button type="button" size="lg" className="flex-1" onClick={goToLogIn}>
+                  {t("auth.signin")}
+                </Button>
+                <Button type="button" size="lg" variant="outline" onClick={resend} disabled={resent}>
+                  {resent ? t("auth.resend.done") : t("auth.resend")}
+                </Button>
+              </div>
+            </div>
+          ) : (
+          <>
           <div>
             {goalStep ? (
               <>
@@ -222,6 +288,25 @@ const Auth = () => {
               </button>
             ))}
           </div>
+          )}
+
+          {!isSignUp && notice && (
+            <div className="rounded-[12px] border-2 border-stroke bg-accent p-4 flex flex-col gap-2" role="alert">
+              <p className="font-bold">{t(`auth.notice.${notice}`)}</p>
+              <p className="text-sm">{t(`auth.notice.${notice}.desc`)}</p>
+              {notice !== "link_failed" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  onClick={resend}
+                  disabled={resent || !email}
+                >
+                  {resent ? t("auth.resend.done") : t("auth.resend")}
+                </Button>
+              )}
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -415,6 +500,8 @@ const Auth = () => {
               </Button>
             </div>
           </form>
+          </>
+          )}
         </div>
       </Card>
     </div>

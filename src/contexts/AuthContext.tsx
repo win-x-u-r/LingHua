@@ -1,7 +1,25 @@
-import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import { resolvePrefs, writeLocalPrefs, type LearningPrefs } from "@/lib/dailyGoal";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { toast } from "@/hooks/use-toast";
+
+/** Sign-up choices that need a signed-in learner. When the email must be confirmed first,
+ *  they wait in the sign-up details and are applied the first time the learner logs in. */
+export interface SignUpExtras {
+  avatar?: string;
+  classCode?: string;
+  className?: string;
+}
+
+export interface SignUpResult {
+  /** Supabase sent a confirmation email and the learner is not signed in yet */
+  needsConfirm: boolean;
+}
+
+/** Where the confirmation email sends people back to: the site they signed up on */
+export const authRedirectUrl = () => `${window.location.origin}/auth`;
 
 export type UserRole = "student" | "teacher" | "independent";
 
@@ -25,8 +43,11 @@ interface AuthContextType {
   loading: boolean;
   /** Daily goal and reminder settings; null when signed out */
   prefs: LearningPrefs | null;
-  signUp: (email: string, password: string, fullName: string, role: string, prefs?: LearningPrefs) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, role: string, prefs?: LearningPrefs, extras?: SignUpExtras) => Promise<SignUpResult>;
   signIn: (email: string, password: string) => Promise<void>;
+  resendConfirmation: (email: string) => Promise<void>;
+  /** Saves the avatar and class picked at sign-up, if they are still waiting */
+  finishSetup: () => Promise<void>;
   signOut: () => Promise<void>;
   joinClassroom: (code: string) => Promise<void>;
   createClassroom: (name: string) => Promise<string>;
@@ -42,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [prefsVersion, setPrefsVersion] = useState(0);
+  const { t } = useLanguage();
+  const setupJob = useRef<Promise<void> | null>(null);
+  const setupDone = useRef(new Set<string>());
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -81,12 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role: string, prefs?: LearningPrefs) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+    role: string,
+    prefs?: LearningPrefs,
+    extras?: SignUpExtras,
+  ): Promise<SignUpResult> => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // The goal rides along in the sign-up metadata too, so it is kept even when email confirmation is on
+        // Without this the confirmation link goes to the Site URL in Supabase, which may not be this site
+        emailRedirectTo: authRedirectUrl(),
+        // The goal and the other choices ride along in the sign-up metadata, so they are kept
+        // even when email confirmation is on and nobody is signed in yet
         data: {
           full_name: fullName,
           role,
@@ -95,15 +129,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             reminder_enabled: prefs.reminderOn,
             reminder_time: prefs.reminderTime,
           }),
+          ...(extras?.avatar && { pending_avatar: extras.avatar }),
+          ...(extras?.classCode && { pending_class_code: extras.classCode.trim().toUpperCase() }),
+          ...(extras?.className && { pending_class_name: extras.className.trim() }),
         },
       },
     });
     if (error) throw error;
+    // With confirmation on, Supabase answers an already-used email with a user that has no identities
+    if (data.user && data.user.identities?.length === 0) throw new Error("already_registered");
     if (prefs && data.user) writeLocalPrefs(data.user.id, prefs);
+    return { needsConfirm: !data.session };
   };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  };
+
+  const resendConfirmation = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: authRedirectUrl() },
+    });
     if (error) throw error;
   };
 
@@ -194,10 +243,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return code;
   };
 
+  // Finish the sign-up choices (avatar, class) that wait in the sign-up details. With email
+  // confirmation on they can only be saved once the learner is signed in, so this runs on the
+  // first log-in. It is safe to call more than once: each step checks whether it is still needed.
+  const finishSetup = (): Promise<void> => {
+    setupJob.current ??= (async () => {
+      const { data: { user: me } } = await supabase.auth.getUser();
+      if (!me || setupDone.current.has(me.id)) return;
+      const meta = me.user_metadata ?? {};
+      const avatar = typeof meta.pending_avatar === "string" ? meta.pending_avatar : "";
+      const classCode = typeof meta.pending_class_code === "string" ? meta.pending_class_code : "";
+      const className = typeof meta.pending_class_name === "string" ? meta.pending_class_name : "";
+      if (!avatar && !classCode && !className) {
+        setupDone.current.add(me.id);
+        return;
+      }
+      const { data: mine } = await (supabase as any).from("profiles").select("*").eq("id", me.id).maybeSingle();
+      if (!mine) return; // no profile row yet: try again next time
+
+      if (avatar && mine.avatar_url !== avatar) {
+        try { await setAvatar(avatar); } catch { /* keeps the default panda */ }
+      }
+      if (classCode && mine.role === "student" && !mine.classroom_id) {
+        try {
+          await joinClassroom(classCode);
+        } catch {
+          toast({ title: t("class.join.failed"), description: t("class.join.later") });
+        }
+      }
+      if (className && mine.role === "teacher") {
+        try {
+          const { data: existing } = await (supabase as any)
+            .from("classrooms").select("id").eq("teacher_id", me.id).limit(1);
+          if (!existing?.length) await createClassroom(className);
+        } catch {
+          // The dashboard shows "create your class" when there is none yet
+        }
+      }
+      setupDone.current.add(me.id);
+      await supabase.auth.updateUser({
+        data: { pending_avatar: null, pending_class_code: null, pending_class_name: null },
+      });
+    })().finally(() => {
+      setupJob.current = null;
+    });
+    return setupJob.current;
+  };
+
+  useEffect(() => {
+    const meta = user?.user_metadata;
+    if (!user || !profile || setupDone.current.has(user.id)) return;
+    if (meta?.pending_avatar || meta?.pending_class_code || meta?.pending_class_name) void finishSetup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile]);
+
   return (
     <AuthContext.Provider value={{
       user, session, profile, loading, prefs,
-      signUp, signIn, signOut, joinClassroom, createClassroom, setAvatar, setLearningPrefs,
+      signUp, signIn, resendConfirmation, finishSetup, signOut, joinClassroom, createClassroom, setAvatar, setLearningPrefs,
     }}>
       {children}
     </AuthContext.Provider>
