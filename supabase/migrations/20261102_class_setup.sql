@@ -3,6 +3,6 @@
 -- Teachers can have several classes (nothing limited them to one before either).
 ALTER TABLE public.classrooms
   ADD COLUMN IF NOT EXISTS age_group TEXT
-    CHECK (age_group IN ('4-6', '7-9', '10-12', '13-15', '16-18', 'adults')),
+    CHECK (age_group IN ('4-6', '7-9', '10-12', '13-15', '16-18', 'adults', 'mixed')),
   ADD COLUMN IF NOT EXISTS level TEXT
     CHECK (level IN ('zero', 'beginner', 'intermediate', 'advanced', 'mixed'));

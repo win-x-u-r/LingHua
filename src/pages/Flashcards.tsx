@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { getLesson } from "@/lib/lessons";
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone, recordingFile } from "@/hooks/use-microphone";
 import { missLineKey, type Miss } from "@/lib/missedSpeech";
@@ -35,6 +36,10 @@ const Flashcards = () => {
   const { user } = useAuth();
   const [level, setLevel] = useState<Level>("beginner");
   const [mode, setMode] = useState<Mode>("beginner");
+  // ?lesson=<id>: the words a teacher picked for the class ("From your teacher")
+  const [params, setParams] = useSearchParams();
+  const lessonId = params.get("lesson");
+  const [lessonTitle, setLessonTitle] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [xp, setXp] = useState(0);
@@ -63,13 +68,15 @@ const Flashcards = () => {
   }, [user]);
 
   useEffect(() => {
-    if (mode === "review") {
+    if (lessonId) {
+      loadLessonWords(lessonId);
+    } else if (mode === "review") {
       loadReviewWords();
     } else {
       loadVocabulary();
     }
     loadProgress();
-  }, [mode, level]);
+  }, [mode, level, lessonId]);
 
   // Handle mic errors
   useEffect(() => {
@@ -244,6 +251,23 @@ const Flashcards = () => {
     setLoading(false);
   };
 
+  const loadLessonWords = async (id: string) => {
+    setLoading(true);
+    try {
+      const lesson = await getLesson(id);
+      setLessonTitle(lesson?.title ?? "");
+      const ids = lesson?.vocabIds ?? [];
+      const { data } = ids.length ? await supabase.from("vocab").select("*").in("id", ids) : { data: [] };
+      setVocabulary((data as VocabWord[]) || []);
+    } catch {
+      setVocabulary([]);
+    }
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    setFinished(false);
+    setLoading(false);
+  };
+
   const loadVocabulary = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -308,6 +332,7 @@ const Flashcards = () => {
   };
 
   const handleSelectMode = (newMode: Mode) => {
+    if (lessonId) setParams({});
     if (newMode === "review") {
       setMode("review");
     } else {
@@ -364,11 +389,11 @@ const Flashcards = () => {
             key={m}
             type="button"
             role="tab"
-            aria-selected={mode === m}
+            aria-selected={!lessonId && mode === m}
             onClick={() => handleSelectMode(m)}
             className={`py-2 px-3 border-border ${i % 2 === 0 ? "border-e-2" : ""} ${i >= 2 ? "border-t-2 sm:border-t-0" : ""} ${
               i < modes.length - 1 ? "sm:border-e-2" : "sm:border-e-0"
-            } ${mode === m ? "bg-foreground text-background" : ""}`}
+            } ${!lessonId && mode === m ? "bg-foreground text-background" : ""}`}
           >
             {m === "review" ? t("flashcards.review_due") : t(`common.${m}`)}
             {m === "review" && dueCount > 0 && (
@@ -379,6 +404,12 @@ const Flashcards = () => {
           </button>
         ))}
       </div>
+
+      {lessonId && (
+        <p className="mb-6 rounded-[12px] border-2 border-stroke bg-accent px-4 py-2 font-bold">
+          {t("lesson.from_teacher")}: {lessonTitle}
+        </p>
+      )}
     </>
   );
 
@@ -504,7 +535,7 @@ const Flashcards = () => {
                 style={{ backfaceVisibility: "hidden" }}
               >
                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {mode === "review" ? t("flashcards.review_mode") : t(`common.${level}`)}
+                  {lessonId ? lessonTitle : mode === "review" ? t("flashcards.review_mode") : t(`common.${level}`)}
                 </span>
                 <span lang="zh" className="font-zh font-bold text-8xl md:text-9xl leading-none">{currentWord.hanzi}</span>
                 <span className="text-sm text-muted-foreground mt-4">{t("flashcards.tap_show_answer")}</span>

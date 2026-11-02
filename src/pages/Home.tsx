@@ -15,6 +15,7 @@ import { getDueWords } from "@/lib/spacedRepetition";
 import { useTodayMinutes } from "@/hooks/use-today-minutes";
 import GoalIcon from "@/components/GoalIcon";
 import { progressText, tierFor } from "@/lib/dailyGoal";
+import { listLessons, type Lesson } from "@/lib/lessons";
 
 const Home = () => {
   const { user } = useAuth();
@@ -117,6 +118,13 @@ const Today = () => {
   const today = useTodayMinutes();
   const [dueCount, setDueCount] = useState(0);
   const [hasPracticed, setHasPracticed] = useState(true);
+  // Lessons the teacher picked for this student's class
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  useEffect(() => {
+    const classId = profile?.role === "student" ? profile.classroom_id : null;
+    if (!classId) return setLessons([]);
+    listLessons(classId).then(setLessons).catch(() => setLessons([]));
+  }, [profile?.role, profile?.classroom_id]);
 
   useEffect(() => {
     if (!user) return;
@@ -218,6 +226,38 @@ const Today = () => {
           </div>
         )}
       </Card>
+
+      {lessons.length > 0 && (
+        <section className="flex flex-col gap-3" aria-labelledby="from-teacher">
+          <h2 id="from-teacher" className="text-xl font-bold">
+            {t("lesson.from_teacher")} <span lang="zh" className="font-zh font-normal text-muted-foreground">· 老师布置</span>
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {lessons.map((l) => (
+              <li key={l.id} className="rounded-[14px] border-2 border-stroke bg-card p-4 flex flex-col gap-3">
+                <span>
+                  <span className="block text-lg font-bold leading-tight">{l.title}</span>
+                  <span className="block text-sm text-muted-foreground">
+                    {t("lesson.count").replace("{w}", String(l.vocabIds.length)).replace("{g}", String(l.grammarIds.length))}
+                  </span>
+                </span>
+                <span className="flex flex-wrap gap-2">
+                  {l.vocabIds.length > 0 && (
+                    <Link to={`/flashcards?lesson=${l.id}`}>
+                      <Button size="sm">{t("lesson.practise.words")}</Button>
+                    </Link>
+                  )}
+                  {l.grammarIds.length > 0 && (
+                    <Link to={`/grammar?lesson=${l.id}`}>
+                      <Button size="sm" variant="outline">{t("lesson.practise.grammar")}</Button>
+                    </Link>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <ul className="flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden">
         {activities.map((a) => (

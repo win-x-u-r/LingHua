@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { MY_CLASSROOM_ZH } from "@/lib/learningPaths";
 import KidsLoginCard from "./KidsLoginCard";
+import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { deleteLesson, listLessons, LessonsNotSetUp, type Lesson } from "@/lib/lessons";
 import ClassSetupFields, { AgePicker, LevelPicker } from "@/components/ClassSetupFields";
 import { LEVEL_ZH, type AgeGroup, type ClassLevel } from "@/lib/classSetup";
 import PathIcon from "@/components/PathIcon";
@@ -161,7 +164,10 @@ const ClassFacts = ({
   }
 
   const parts = [
-    data.ageGroup && t("class.ages").replace("{age}", t(`class.age.${data.ageGroup}`)),
+    data.ageGroup &&
+      (data.ageGroup === "adults" || data.ageGroup === "mixed"
+        ? t(`class.age.${data.ageGroup}`)
+        : t("class.ages").replace("{age}", t(`class.age.${data.ageGroup}`))),
     data.level && t(`class.level.${data.level}`),
   ].filter(Boolean);
   return (
@@ -290,6 +296,9 @@ const TeacherDashboard = ({
           <span className="text-xs text-secondary-foreground text-center max-w-[16rem]">{t("teach.code.hint")}</span>
         </div>
       </Card>
+
+      {/* Teachers decide what to teach: the class's lessons */}
+      <LessonsSection classId={data.classId} />
 
       {total === 0 ? (
         <Card className="p-6 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-start">
@@ -499,6 +508,71 @@ const TeacherDashboard = ({
         onReset={(id) => setHelpedIds((ids) => [...ids, id])}
       />
     </div>
+  );
+};
+
+/** My Classroom: the lessons this class practises, with New, Edit and Delete */
+const LessonsSection = ({ classId }: { classId: string }) => {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [lessons, setLessons] = useState<Lesson[] | null>(null);
+  const [notSetUp, setNotSetUp] = useState(false);
+
+  useEffect(() => {
+    setLessons(null);
+    listLessons(classId)
+      .then(setLessons)
+      .catch((e) => {
+        setNotSetUp(e instanceof LessonsNotSetUp);
+        setLessons([]);
+      });
+  }, [classId]);
+
+  const remove = async (l: Lesson) => {
+    if (!window.confirm(t("lesson.delete.confirm"))) return;
+    try {
+      await deleteLesson(l.id);
+      setLessons((ls) => (ls ?? []).filter((x) => x.id !== l.id));
+    } catch {
+      toast({ title: t("lesson.failed"), variant: "destructive" });
+    }
+  };
+
+  return (
+    <Section seal="课" title={t("lesson.title")} note={t("lesson.note")}>
+      <div className="flex flex-col gap-3">
+        {notSetUp ? (
+          <p className="text-sm text-muted-foreground">{t("lesson.not_set_up")}</p>
+        ) : lessons && lessons.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("lesson.none")}</p>
+        ) : (
+          <ul className="flex flex-col divide-y-2 divide-border">
+            {(lessons ?? []).map((l) => (
+              <li key={l.id} className="py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className="flex-1 min-w-[10rem]">
+                  <span className="block font-bold">{l.title}</span>
+                  <span className="block text-sm text-muted-foreground">
+                    {t("lesson.count").replace("{w}", String(l.vocabIds.length)).replace("{g}", String(l.grammarIds.length))}
+                  </span>
+                </span>
+                <Link to={`/lessons/${l.id}`}>
+                  <Button variant="outline" size="sm">{t("lesson.edit")}</Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={() => remove(l)}>{t("lesson.delete")}</Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!notSetUp && (
+          <Link to={`/lessons/new?class=${classId}`} className="self-start">
+            <Button size="sm">
+              <span aria-hidden="true">+</span>
+              <span>{t("lesson.new")}</span>
+            </Button>
+          </Link>
+        )}
+      </div>
+    </Section>
   );
 };
 

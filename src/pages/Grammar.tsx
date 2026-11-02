@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { getLesson, type Lesson } from "@/lib/lessons";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateXpEarned, shouldUpdateStreak } from "@/lib/gamification";
 import {
-  topicsByLevel, allQuestions, topicFocus,
+  topicsByLevel, allQuestions, topicFocus, GRAMMAR_TOPICS,
   type GrammarLevel, type GrammarTopic, type GrammarQuestion as GQ,
 } from "@/lib/grammarContent";
 import { recordGrammarAnswer, getWeakQuestionIds, getWeakCount } from "@/lib/grammarReview";
@@ -33,6 +35,14 @@ const Grammar = () => {
   const [correctCount, setCorrectCount] = useState(0);
   const [earnedXp, setEarnedXp] = useState(0);
   const [weakCount, setWeakCount] = useState(0);
+  // ?lesson=<id>: only the grammar points a teacher picked for the class
+  const [params, setParams] = useSearchParams();
+  const lessonId = params.get("lesson");
+  const [lesson, setLesson] = useState<Lesson | null>(null);
+  useEffect(() => {
+    if (!lessonId) return setLesson(null);
+    getLesson(lessonId).then(setLesson).catch(() => setLesson(null));
+  }, [lessonId]);
 
   useEffect(() => {
     if (view === "topics" || view === "complete") setWeakCount(getWeakCount());
@@ -122,7 +132,9 @@ const Grammar = () => {
 
   // ── Topic picker ──────────────────────────────────────────────────────
   if (view === "topics") {
-    const topics = topicsByLevel(level);
+    const topics = lessonId
+      ? GRAMMAR_TOPICS.filter((g) => lesson?.grammarIds.includes(g.id))
+      : topicsByLevel(level);
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8">
         <div className="text-center mb-6">
@@ -136,9 +148,12 @@ const Grammar = () => {
           {LEVELS.map((lvl) => (
             <Button
               key={lvl}
-              onClick={() => setLevel(lvl)}
-              variant={level === lvl ? "default" : "outline"}
-              className={level === lvl ? "bg-foreground text-background" : ""}
+              onClick={() => {
+                setLevel(lvl);
+                if (lessonId) setParams({});
+              }}
+              variant={!lessonId && level === lvl ? "default" : "outline"}
+              className={!lessonId && level === lvl ? "bg-foreground text-background" : ""}
             >
               {t(`common.${lvl}`)}
             </Button>
@@ -152,6 +167,12 @@ const Grammar = () => {
             </Button>
           )}
         </div>
+
+        {lessonId && lesson && (
+          <p className="mb-4 rounded-[12px] border-2 border-stroke bg-accent px-4 py-2 font-bold">
+            {t("lesson.from_teacher")}: {lesson.title}
+          </p>
+        )}
 
         <div className="space-y-3">
           {topics.length === 0 && (

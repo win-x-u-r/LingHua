@@ -538,6 +538,7 @@ const Dashboard = () => {
   if (user && !codeShown && !seenCode(user.id, teacherData.code)) {
     return (
       <ClassCodeReady
+        classId={teacherData.classId}
         code={teacherData.code}
         className={teacherData.className}
         onCopy={copyCode}

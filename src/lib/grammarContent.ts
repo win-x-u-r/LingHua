@@ -46,8 +46,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "le-completed",
     level: "beginner",
-    title: "了 — Completed action",
-    titleAr: "了 — الفعل المكتمل",
+    title: "了: Completed action",
+    titleAr: "了: الفعل المكتمل",
     blurb: "Mandarin has no tense; add 了 after a verb to mark a completed action.",
     blurbAr: "لا يوجد تصريف زمني في الصينية؛ أضف 了 بعد الفعل للدلالة على فعل مكتمل.",
     cards: [
@@ -158,8 +158,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "shi-tobe",
     level: "beginner",
-    title: "是 — A is B",
-    titleAr: "是 — أ هو ب",
+    title: "是: A is B",
+    titleAr: "是: أ هو ب",
     blurb: "Use 是 to link two nouns: A 是 B. Not used before adjectives.",
     blurbAr: "استخدم 是 للربط بين اسمين: A 是 B. لا تُستخدم قبل الصفات.",
     cards: [
@@ -226,8 +226,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "negation-bu-mei",
     level: "beginner",
-    title: "不 / 没 — Negation",
-    titleAr: "不 / 没 — النفي",
+    title: "不 / 没: Negation",
+    titleAr: "不 / 没: النفي",
     blurb: "不 negates the present/habitual/future; 没 negates the past / 'didn't'.",
     blurbAr: "不 تنفي الحاضر/المعتاد/المستقبل؛ 没 تنفي الماضي / \"لم\".",
     cards: [
@@ -296,8 +296,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "ma-questions",
     level: "beginner",
-    title: "吗 — Yes/No questions",
-    titleAr: "吗 — أسئلة نعم/لا",
+    title: "吗: Yes/No questions",
+    titleAr: "吗: أسئلة نعم/لا",
     blurb: "Turn a statement into a yes/no question by adding 吗 at the end.",
     blurbAr: "حوّل الجملة الخبرية إلى سؤال نعم/لا بإضافة 吗 في النهاية.",
     cards: [
@@ -358,8 +358,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "zai-progressive",
     level: "intermediate",
-    title: "在 — Ongoing action",
-    titleAr: "在 — الفعل المستمر",
+    title: "在: Ongoing action",
+    titleAr: "在: الفعل المستمر",
     blurb: "Put 在 before the verb to show an action is happening right now.",
     blurbAr: "ضع 在 قبل الفعل للدلالة على فعل يحدث الآن.",
     cards: [
@@ -381,8 +381,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "bi-comparison",
     level: "intermediate",
-    title: "比 — Comparison",
-    titleAr: "比 — المقارنة",
+    title: "比: Comparison",
+    titleAr: "比: المقارنة",
     blurb: "Compare with 比: A 比 B + adjective (don't use 很).",
     blurbAr: "قارن باستخدام 比: A 比 B + صفة (بدون 很).",
     cards: [
@@ -404,8 +404,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "modal-verbs",
     level: "intermediate",
-    title: "想 / 要 / 会 — Modal verbs",
-    titleAr: "想 / 要 / 会 — أفعال الرغبة والقدرة",
+    title: "想 / 要 / 会: Modal verbs",
+    titleAr: "想 / 要 / 会: أفعال الرغبة والقدرة",
     blurb: "Before a verb: 想 = want to, 要 = will/want, 会 = can (a learned skill).",
     blurbAr: "قبل الفعل: 想 = يريد أن، 要 = سوف/يريد، 会 = يستطيع (مهارة مكتسبة).",
     cards: [
@@ -429,8 +429,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "ba-construction",
     level: "advanced",
-    title: "把 — The 把 construction",
-    titleAr: "把 — تركيب 把",
+    title: "把: The 把 construction",
+    titleAr: "把: تركيب 把",
     blurb: "把 moves the object before the verb to stress what happens to it.",
     blurbAr: "把 تنقل المفعول قبل الفعل للتأكيد على ما يحدث له.",
     cards: [
@@ -452,8 +452,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "bei-passive",
     level: "advanced",
-    title: "被 — Passive voice",
-    titleAr: "被 — المبني للمجهول",
+    title: "被: Passive voice",
+    titleAr: "被: المبني للمجهول",
     blurb: "被 marks the passive: the subject receives the action.",
     blurbAr: "被 تدل على المبني للمجهول: الفاعل يتلقى الفعل.",
     cards: [
@@ -475,8 +475,8 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   {
     id: "guo-experiential",
     level: "advanced",
-    title: "过 — Experiential aspect",
-    titleAr: "过 — صيغة الخبرة",
+    title: "过: Experiential aspect",
+    titleAr: "过: صيغة الخبرة",
     blurb: "Put 过 after a verb to say you have done/experienced it before.",
     blurbAr: "ضع 过 بعد الفعل للقول إنك فعلت/جرّبت ذلك من قبل.",
     cards: [
@@ -495,9 +495,9 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   },
 ];
 
-/** The grammar word(s) a topic teaches, read from its title: "不 / 没 — Negation" → ["不", "没"]. */
+/** The grammar word(s) a topic teaches, read from its title: "不 / 没: Negation" → ["不", "没"]. */
 export function topicFocus(topic: GrammarTopic): string[] {
-  const head = topic.title.split("—")[0];
+  const head = topic.title.split(":")[0];
   return head.split("/").map((w) => w.trim()).filter((w) => /[\u4e00-\u9fff]/.test(w));
 }
 

@@ -315,7 +315,7 @@ const Auth = () => {
               <>
                 <h1 className="text-3xl font-bold text-balance">{t("corner.welcome")}</h1>
                 <p lang="zh" className="font-zh text-muted-foreground">欢迎来到教师天地</p>
-                <p className="text-lg font-bold mt-3">{t("teacher.welcome.title")} {t("teacher.welcome.sub")}</p>
+                <p className="text-lg font-bold mt-3">{t("teacher.welcome.sub")}</p>
                 <p className="text-muted-foreground">{t("teacher.welcome.body")}</p>
               </>
             ) : step === "class" ? (
@@ -391,7 +391,7 @@ const Auth = () => {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {step === "teacher" && (
               <ul className="flex flex-col gap-3">
-                {([["师", "corner.lead"], ["码", "corner.code"], ["课", "corner.watch"]] as const).map(([seal, key]) => (
+                {([["选", "corner.yours"], ["练", "corner.life"], ["进", "corner.steps"]] as const).map(([seal, key]) => (
                   <li key={key} className="flex items-start gap-3">
                     <Seal char={seal} size="md" />
                     <span>

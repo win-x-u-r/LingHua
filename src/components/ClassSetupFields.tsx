@@ -14,7 +14,7 @@ export const AgePicker = ({ value, onChange }: { value: AgeGroup | null; onChang
   return (
     <fieldset className="flex flex-col gap-1.5">
       <legend className="text-sm font-medium mb-1.5">{t("class.age")}</legend>
-      <div className="grid grid-cols-3 gap-2" role="radiogroup">
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2" role="radiogroup">
         {AGE_GROUPS.map((a) => (
           <button key={a} type="button" role="radio" aria-checked={value === a} onClick={() => onChange(a)} className={chip(value === a)}>
             {t(`class.age.${a}`)}

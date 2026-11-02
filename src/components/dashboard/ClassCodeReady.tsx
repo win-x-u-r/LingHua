@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Seal from "@/components/Seal";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Lantern from "@/components/lantern/Lantern";
@@ -24,9 +26,27 @@ const CodeTiles = ({ code, big = false }: { code: string; big?: boolean }) => (
  * Teacher onboarding, after "Welcome, teacher!": the new class code with Copy and a
  * full-screen "Show on the board" view, then on to My Classroom. Shown once per class.
  */
-const ClassCodeReady = ({ code, className, onCopy, onDone }: { code: string; className: string; onCopy: () => void; onDone: () => void }) => {
+const ClassCodeReady = ({
+  classId,
+  code,
+  className,
+  onCopy,
+  onDone,
+}: {
+  classId: string;
+  code: string;
+  className: string;
+  onCopy: () => void;
+  onDone: () => void;
+}) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [board, setBoard] = useState(false);
+  const [makeYours, setMakeYours] = useState(false);
+  const buildLesson = (tab: "words" | "grammar") => {
+    onDone();
+    navigate(`/lessons/new?class=${classId}&tab=${tab}`);
+  };
   const url = `${window.location.host}/kids`;
   const how = t("teach.ready.how").replace("{url}", url);
   const [before, after] = how.split(url);
@@ -49,6 +69,41 @@ const ClassCodeReady = ({ code, className, onCopy, onDone }: { code: string; cla
     );
   }
 
+  // Optional: pick the class's first words and grammar now, or later from My Classroom
+  if (makeYours) {
+    return (
+      <div className="container mx-auto max-w-md px-4 py-12">
+        <Card className="p-8 flex flex-col items-center text-center gap-5 overflow-hidden">
+          <div className="lantern-glow [--glow-size:220%]">
+            <Lantern mood="delight" entering className="w-24 h-24" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-balance">{t("lesson.intro.title")}</h1>
+            <p lang="zh" className="font-zh text-muted-foreground">现在，打造属于你的课堂。</p>
+          </div>
+          <p className="text-muted-foreground">{t("lesson.intro.desc")}</p>
+          <div className="w-full flex flex-col gap-2">
+            {([["词", "words", "lesson.choose.words"], ["文", "grammar", "lesson.choose.grammar"]] as const).map(([seal, tab, key]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => buildLesson(tab)}
+                className="flex items-center gap-3 rounded-[12px] border-2 border-stroke bg-card p-3 font-bold text-start shadow-[3px_3px_0_hsl(var(--stamp))]"
+              >
+                <Seal char={seal} size="md" />
+                {t(key)}
+              </button>
+            ))}
+          </div>
+          <div className="w-full flex flex-col gap-3">
+            <Button size="lg" onClick={() => buildLesson("words")}>{t("lesson.first")}</Button>
+            <Button size="lg" variant="outline" onClick={onDone}>{t("lesson.later")}</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-md px-4 py-12">
       <Card className="p-8 flex flex-col items-center text-center gap-5 overflow-hidden">
@@ -67,7 +122,15 @@ const ClassCodeReady = ({ code, className, onCopy, onDone }: { code: string; cla
             <Button variant="outline" size="lg" onClick={onCopy}>{t("dashboard.copy")}</Button>
             <Button variant="outline" size="lg" onClick={() => setBoard(true)}>{t("teach.ready.board")}</Button>
           </div>
-          <Button size="lg" onClick={onDone}>{t("teach.ready.go")}</Button>
+          <Button
+            size="lg"
+            onClick={() => {
+              setMakeYours(true);
+              window.scrollTo({ top: 0 });
+            }}
+          >
+            {t("goal.next")}
+          </Button>
         </div>
       </Card>
     </div>
