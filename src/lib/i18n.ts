@@ -290,6 +290,7 @@ const translations: Record<string, Record<Language, string>> = {
   "grammar.prev": { en: "Back", ar: "السابق" },
   "grammar.next": { en: "Next", ar: "التالي" },
   "grammar.finish": { en: "Finish", ar: "إنهاء" },
+  "grammar.blank": { en: "blank", ar: "فراغ" },
   "grammar.check": { en: "Check", ar: "تحقق" },
   "grammar.tap_to_build": { en: "Tap words to build the sentence", ar: "اضغط على الكلمات لبناء الجملة" },
   "grammar.correct": { en: "Correct!", ar: "!صحيح" },
