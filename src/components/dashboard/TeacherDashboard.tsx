@@ -142,8 +142,6 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
         </div>
       </Card>
 
-      <KidsLoginCard code={data.code} kids={data.students.filter((s) => s.kid)} />
-
       {total === 0 ? (
         <Card className="p-6 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-start">
           <Lantern mood="sleepy" className="w-28 h-28 shrink-0" />
@@ -331,6 +329,7 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
           </Section>
         </>
       )}
+      <KidsLoginCard code={data.code} kids={data.students.filter((s) => s.kid)} />
     </div>
   );
 };
