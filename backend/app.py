@@ -434,7 +434,7 @@ def _kids_call(fn):
 
 @app.route("/kids/roster", methods=["POST"])
 def kids_roster():
-    """{ "code" } -> { "class_name", "kids": [{ "id", "name", "avatar" }] }"""
+    """{ "code" } -> { "class_name" }"""
     return _kids_call(lambda db, d: kids.roster(db, d.get("code")))
 
 
@@ -446,14 +446,14 @@ def kids_join():
 
 @app.route("/kids/login", methods=["POST"])
 def kids_login():
-    """{ "kid_id", "pictures": [3 ids] } -> { "access_token", "refresh_token" }"""
-    return _kids_call(lambda db, d: kids.login(db, str(d.get("kid_id") or ""), d.get("pictures")))
+    """{ "code", "name" (full), "pictures": [3 ids] } -> { "access_token", "refresh_token" }"""
+    return _kids_call(lambda db, d: kids.login_by_name(db, d.get("code"), d.get("name"), d.get("pictures")))
 
 
 @app.route("/kids/help", methods=["POST"])
 def kids_help():
-    """{ "kid_id" }: the child forgot their pictures; tells their teacher."""
-    return _kids_call(lambda db, d: kids.ask_help(db, str(d.get("kid_id") or "")))
+    """{ "code", "name" }: the child forgot their pictures; tells their teacher."""
+    return _kids_call(lambda db, d: kids.ask_help(db, code=d.get("code"), name=d.get("name")))
 
 
 @app.route("/kids/reset", methods=["POST"])

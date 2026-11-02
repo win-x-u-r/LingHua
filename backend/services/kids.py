@@ -200,9 +200,21 @@ class Supabase:
 
 
 def roster(db: Supabase, code: str) -> dict:
+    """Checks the class code. Never lists the children: classmates' names stay private."""
     room = db.classroom(clean_code(code))
-    kids = [{"id": k["id"], "name": k["full_name"], "avatar": k.get("avatar_url") or "panda"} for k in db.kids_in(room["id"])]
-    return {"class_name": room["name"], "kids": kids}
+    return {"class_name": room["name"]}
+
+
+def find_kid(db: Supabase, code: str, name: str) -> dict:
+    """The child in this class with this full name (as they typed it when they joined)."""
+    room = db.classroom(clean_code(code))
+    wanted = clean_name(name).casefold()
+    if not wanted:
+        raise KidsError("name_needed")
+    for k in db.kids_in(room["id"]):
+        if clean_name(k["full_name"]).casefold() == wanted:
+            return k
+    raise KidsError("name_not_found", 404)
 
 
 def join(db: Supabase, code: str, name: str, avatar: str, pictures, first_name: str = "") -> dict:
@@ -238,6 +250,11 @@ def join(db: Supabase, code: str, name: str, avatar: str, pictures, first_name: 
     return session
 
 
+def login_by_name(db: Supabase, code: str, name: str, pictures) -> dict:
+    check_pictures(pictures)
+    return login(db, find_kid(db, code, name)["id"], pictures)
+
+
 def login(db: Supabase, kid_id: str, pictures) -> dict:
     pictures = check_pictures(pictures)
     if lockout.locked(kid_id):
@@ -261,8 +278,10 @@ def clear_help(db: Supabase, kid_id: str) -> None:
         pass
 
 
-def ask_help(db: Supabase, kid_id: str) -> None:
+def ask_help(db: Supabase, kid_id: str = "", code: str = "", name: str = "") -> None:
     """A child who forgot their pictures asks their teacher for new ones."""
+    if not kid_id:
+        kid_id = find_kid(db, code, name)["id"]
     kid = db.profile(kid_id)
     if not kid or not kid.get("kid_login") or not kid.get("classroom_id"):
         raise KidsError("not_a_kid", 404)

@@ -12,8 +12,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { AVATAR_IDS } from "@/lib/avatars";
 import { PATH_ZH } from "@/lib/learningPaths";
 import {
-  KidsError, PICTURE_COUNT, askTeacherForHelp, getClassKids, kidJoin, kidLogIn,
-  type Kid, type KidsErrorCode, type SecretPicture,
+  KidsError, PICTURE_COUNT, askTeacherForHelp, checkClassCode, kidJoin, kidLogIn,
+  type KidsErrorCode, type SecretPicture,
 } from "@/lib/kidsAPI";
 
 type Step = "code" | "who" | "pictures" | "name" | "pick" | "again";
@@ -22,6 +22,7 @@ const ERROR_KEY: Partial<Record<KidsErrorCode, string>> = {
   class_not_found: "kids.no_class",
   name_taken: "kids.name.taken",
   wrong_pictures: "kids.wrong",
+  name_not_found: "kids.no_name",
   locked: "kids.locked",
   not_set_up: "kids.not_set_up",
 };
@@ -29,7 +30,8 @@ const ERROR_KEY: Partial<Record<KidsErrorCode, string>> = {
 const same = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /**
- * Little Lanterns log-in: class code, tap your name, tap your 3 secret pictures.
+ * Little Lanterns log-in: class code, type your first and last name, tap your 3 secret pictures.
+ * Classmates' names are never shown.
  * New kids type their name, pick an avatar and pick their pictures twice.
  */
 const KidsLogin = () => {
@@ -39,13 +41,12 @@ const KidsLogin = () => {
   const [step, setStep] = useState<Step>("code");
   const [code, setCode] = useState("");
   const [className, setClassName] = useState("");
-  const [kids, setKids] = useState<Kid[]>([]);
-  const [kid, setKid] = useState<Kid | null>(null);
   // First and last name apart: a class can have many Mohammeds. Hua greets
   // them by first name; the teacher sees the full name.
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const nameDone = !!firstName.trim() && !!lastName.trim();
+  const fullName = `${firstName.trim()} ${lastName.trim()}`;
   const [avatar, setAvatar] = useState<string>("panda");
   const [pictures, setPictures] = useState<SecretPicture[]>([]);
   const [chosen, setChosen] = useState<SecretPicture[]>([]);
@@ -78,10 +79,8 @@ const KidsLogin = () => {
     if (code.length < 6) return;
     setBusy(true);
     try {
-      const found = await getClassKids(code);
-      setClassName(found.className);
-      setKids(found.kids);
-      go(found.kids.length ? "who" : "name");
+      setClassName(await checkClassCode(code));
+      go("who");
     } catch (err) {
       oops(err);
     } finally {
@@ -90,16 +89,17 @@ const KidsLogin = () => {
   };
 
   const tryLogIn = async (pics: SecretPicture[]) => {
-    if (!kid) return;
     setBusy(true);
     setMood("thinking");
     try {
-      await kidLogIn(kid.id, pics);
+      await kidLogIn(code, fullName, pics);
       setMood("celebrate");
       navigate("/");
     } catch (err) {
       oops(err);
       setPictures([]);
+      // Typo in the name: back to the name boxes, keeping the message
+      if (err instanceof KidsError && err.code === "name_not_found") setStep("who");
     } finally {
       setBusy(false);
     }
@@ -133,10 +133,9 @@ const KidsLogin = () => {
   };
 
   const askHelp = async () => {
-    if (!kid) return;
     setBusy(true);
     try {
-      await askTeacherForHelp(kid.id);
+      await askTeacherForHelp(code, fullName);
       setHelped(true);
       setMessage(t("kids.helped"));
       cheer("happy");
@@ -161,15 +160,46 @@ const KidsLogin = () => {
   };
 
   const back = () => {
-    const prev: Record<Step, Step | null> = { code: null, who: "code", pictures: "who", name: kids.length ? "who" : "code", pick: "name", again: "pick" };
+    const prev: Record<Step, Step | null> = { code: null, who: "code", pictures: "who", name: "who", pick: "name", again: "pick" };
     const p = prev[step];
     if (p) go(p);
     else navigate("/auth");
   };
 
+  // First and last name, used both to log in and to join
+  const nameFields = (
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  setMessage("");
+                }}
+                placeholder={t("kids.first")}
+                maxLength={24}
+                className="text-center text-lg h-12"
+                aria-label={t("kids.first")}
+                autoComplete="off"
+                autoFocus
+              />
+              <Input
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  setMessage("");
+                }}
+                placeholder={t("kids.last")}
+                maxLength={24}
+                className="text-center text-lg h-12"
+                aria-label={t("kids.last")}
+                autoComplete="off"
+              />
+            </div>
+  );
+
   const heading: Record<Step, string> = {
     code: t("kids.code"),
-    who: t("kids.who"),
+    who: t("kids.name"),
     pictures: t("kids.pictures"),
     name: t("kids.name"),
     pick: t("kids.pick"),
@@ -214,38 +244,21 @@ const KidsLogin = () => {
         )}
 
         {step === "who" && (
-          <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {kids.map((k) => (
-              <button
-                key={k.id}
-                type="button"
-                onClick={() => {
-                  setKid(k);
-                  go("pictures");
-                }}
-                className="flex flex-col items-center gap-1.5 rounded-[14px] border-2 border-stroke bg-card p-3 font-bold shadow-[3px_3px_0_hsl(var(--stamp))]"
-              >
-                <AvatarIcon id={k.avatar} className="w-14 h-14" />
-                <span className="leading-tight break-words">{k.name}</span>
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => go("name")}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-[14px] border-2 border-dashed border-primary/60 bg-card p-3 font-bold text-primary"
-            >
-              <span className="text-4xl leading-none" aria-hidden="true">+</span>
-              {t("kids.new")}
-            </button>
-          </div>
+          <form
+            className="w-full flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (nameDone) go("pictures");
+            }}
+          >
+            {nameFields}
+            <Button type="submit" size="lg" disabled={!nameDone}>{t("goal.next")}</Button>
+            <Button type="button" variant="link" onClick={() => go("name")}>{t("kids.new")}</Button>
+          </form>
         )}
 
-        {step === "pictures" && kid && (
-          <div className="flex flex-col items-center gap-2">
-            <span className="flex items-center gap-2 font-bold">
-              <AvatarIcon id={kid.avatar} className="w-8 h-8" /> {kid.name}
-            </span>
-          </div>
+        {step === "pictures" && (
+          <p className="font-bold">{fullName}</p>
         )}
 
         {step === "name" && (
@@ -256,33 +269,7 @@ const KidsLogin = () => {
               if (nameDone) go("pick");
             }}
           >
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                value={firstName}
-                onChange={(e) => {
-                  setFirstName(e.target.value);
-                  setMessage("");
-                }}
-                placeholder={t("kids.first")}
-                maxLength={24}
-                className="text-center text-lg h-12"
-                aria-label={t("kids.first")}
-                autoComplete="off"
-                autoFocus
-              />
-              <Input
-                value={lastName}
-                onChange={(e) => {
-                  setLastName(e.target.value);
-                  setMessage("");
-                }}
-                placeholder={t("kids.last")}
-                maxLength={24}
-                className="text-center text-lg h-12"
-                aria-label={t("kids.last")}
-                autoComplete="off"
-              />
-            </div>
+            {nameFields}
             <fieldset className="flex flex-col items-center gap-2">
               <legend className="text-sm font-bold mb-2">{t("auth.avatar")}</legend>
               <div className="grid grid-cols-6 gap-1.5 sm:gap-2 w-full max-w-sm">
@@ -319,7 +306,7 @@ const KidsLogin = () => {
           </p>
         )}
 
-        {step === "pictures" && kid && !helped && (
+        {step === "pictures" && !helped && (
           <Button type="button" variant="link" onClick={askHelp} disabled={busy}>
             {t("kids.forgot")}
           </Button>

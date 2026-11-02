@@ -111,3 +111,12 @@ def test_join_keeps_first_name_for_the_greeting():
     assert db.created[0][2] == "Abdul Rahman Ali" and db.first == "Abdul Rahman"
     kids.join(db, "ABC234", "Mohammed Saleh", "panda", ["panda", "kite", "lotus"])
     assert db.first == "Mohammed"
+
+
+def test_roster_never_lists_names_and_login_finds_kid_by_name():
+    db = FakeDb([{"id": "k1", "full_name": "Mohammed  Ali", "avatar_url": "panda"}])
+    assert kids.roster(db, "ABC234") == {"class_name": "Year 2"}
+    assert kids.find_kid(db, "abc234", " mohammed ali ")["id"] == "k1"
+    with pytest.raises(kids.KidsError) as e:
+        kids.find_kid(db, "ABC234", "Mohammed Saleh")
+    assert e.value.code == "name_not_found"

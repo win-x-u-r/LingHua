@@ -10,18 +10,13 @@ export const SECRET_PICTURES = ["panda", "dragon", "dumpling", "cat", "lotus", "
 export type SecretPicture = (typeof SECRET_PICTURES)[number];
 export const PICTURE_COUNT = 3;
 
-export interface Kid {
-  id: string;
-  name: string;
-  avatar: string;
-}
-
 /** Error codes the screens turn into friendly messages. */
 export type KidsErrorCode =
   | "class_not_found"
   | "name_taken"
   | "name_needed"
   | "wrong_pictures"
+  | "name_not_found"
   | "locked"
   | "not_set_up"
   | "server_error";
@@ -53,9 +48,10 @@ async function call<T>(path: string, body: unknown, token?: string): Promise<T> 
   return data as T;
 }
 
-export async function getClassKids(code: string): Promise<{ className: string; kids: Kid[] }> {
-  const data = await call<{ class_name: string; kids: Kid[] }>("roster", { code });
-  return { className: data.class_name, kids: data.kids };
+/** Checks the class code and gives back the class name. Classmates' names are never sent. */
+export async function checkClassCode(code: string): Promise<string> {
+  const data = await call<{ class_name: string }>("roster", { code });
+  return data.class_name;
 }
 
 async function startSession(tokens: { access_token: string; refresh_token: string }) {
@@ -63,8 +59,9 @@ async function startSession(tokens: { access_token: string; refresh_token: strin
   if (error) throw new KidsError("server_error");
 }
 
-export async function kidLogIn(kidId: string, pictures: SecretPicture[]) {
-  await startSession(await call("login", { kid_id: kidId, pictures }));
+/** name is the full name the child typed when they joined. */
+export async function kidLogIn(code: string, name: string, pictures: SecretPicture[]) {
+  await startSession(await call("login", { code, name, pictures }));
 }
 
 export async function kidJoin(code: string, firstName: string, lastName: string, avatar: string, pictures: SecretPicture[]) {
@@ -74,8 +71,8 @@ export async function kidJoin(code: string, firstName: string, lastName: string,
 }
 
 /** The child forgot their pictures: puts them on the teacher's "needs help" list. */
-export async function askTeacherForHelp(kidId: string) {
-  await call("help", { kid_id: kidId });
+export async function askTeacherForHelp(code: string, name: string) {
+  await call("help", { code, name });
 }
 
 /** Teacher only: give a child in the teacher's class new secret pictures. */
