@@ -67,8 +67,10 @@ export async function kidLogIn(kidId: string, pictures: SecretPicture[]) {
   await startSession(await call("login", { kid_id: kidId, pictures }));
 }
 
-export async function kidJoin(code: string, name: string, avatar: string, pictures: SecretPicture[]) {
-  await startSession(await call("join", { code, name, avatar, pictures }));
+export async function kidJoin(code: string, firstName: string, lastName: string, avatar: string, pictures: SecretPicture[]) {
+  const first = firstName.trim();
+  const name = `${first} ${lastName.trim()}`.trim();
+  await startSession(await call("join", { code, name, first_name: first, avatar, pictures }));
 }
 
 /** The child forgot their pictures: puts them on the teacher's "needs help" list. */

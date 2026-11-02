@@ -56,7 +56,7 @@ def clean_code(code) -> str:
 
 def clean_name(name) -> str:
     name = re.sub(r"\s+", " ", str(name or "")).strip()
-    return name[:24]
+    return name[:48]
 
 
 def check_pictures(pictures) -> list[str]:
@@ -154,7 +154,7 @@ class Supabase:
         rows = self.rest("GET", "profiles", {"select": "id,full_name,classroom_id,kid_login", "id": f"eq.{user_id}"})
         return rows[0] if rows else None
 
-    def create_user(self, email: str, password: str, name: str) -> str:
+    def create_user(self, email: str, password: str, name: str, first_name: str = "") -> str:
         r = requests.post(
             f"{self.url}/auth/v1/admin/users",
             headers=self.headers,
@@ -162,7 +162,7 @@ class Supabase:
                 "email": email,
                 "password": password,
                 "email_confirm": True,
-                "user_metadata": {"full_name": name, "role": "student", "learning_path": "little_lanterns", "kid": True},
+                "user_metadata": {"full_name": name, "first_name": first_name or name.split(" ")[0], "role": "student", "learning_path": "little_lanterns", "kid": True},
             },
             timeout=20,
         )
@@ -205,7 +205,7 @@ def roster(db: Supabase, code: str) -> dict:
     return {"class_name": room["name"], "kids": kids}
 
 
-def join(db: Supabase, code: str, name: str, avatar: str, pictures) -> dict:
+def join(db: Supabase, code: str, name: str, avatar: str, pictures, first_name: str = "") -> dict:
     room = db.classroom(clean_code(code))
     name = clean_name(name)
     if not name:
@@ -220,7 +220,11 @@ def join(db: Supabase, code: str, name: str, avatar: str, pictures) -> dict:
     handle = secrets.token_hex(8)
     email = f"kid-{handle}@{KID_EMAIL_DOMAIN}"
     password = kid_password(handle, pictures)
-    user_id = db.create_user(email, password, name)
+    # Hua greets the child by first name ("Abdul Rahman" stays whole)
+    first = clean_name(first_name)
+    if not first or not name.casefold().startswith(first.casefold()):
+        first = name.split(" ")[0]
+    user_id = db.create_user(email, password, name, first)
     # The sign-up trigger made the profile; put the child in the class
     db.rest(
         "PATCH",

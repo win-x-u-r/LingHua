@@ -59,8 +59,9 @@ class FakeDb:
     def kids_in(self, room):
         return self.kids
 
-    def create_user(self, email, password, name):
+    def create_user(self, email, password, name, first_name=""):
         self.created.append((email, password, name))
+        self.first = first_name
         return "kid1"
 
     def rest(self, method, table, params=None, body=None, prefer=None):
@@ -102,3 +103,11 @@ def test_clear_help_never_breaks_log_in():
         def rest(self, *a, **k):
             raise RuntimeError("column missing")
     kids.clear_help(Broken(), "kid1")
+
+
+def test_join_keeps_first_name_for_the_greeting():
+    db = FakeDb()
+    kids.join(db, "ABC234", "Abdul Rahman Ali", "panda", ["panda", "kite", "lotus"], "Abdul Rahman")
+    assert db.created[0][2] == "Abdul Rahman Ali" and db.first == "Abdul Rahman"
+    kids.join(db, "ABC234", "Mohammed Saleh", "panda", ["panda", "kite", "lotus"])
+    assert db.first == "Mohammed"

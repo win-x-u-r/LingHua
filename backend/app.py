@@ -440,8 +440,8 @@ def kids_roster():
 
 @app.route("/kids/join", methods=["POST"])
 def kids_join():
-    """{ "code", "name", "avatar", "pictures": [3 ids] } -> { "access_token", "refresh_token" }"""
-    return _kids_call(lambda db, d: kids.join(db, d.get("code"), d.get("name"), d.get("avatar"), d.get("pictures")))
+    """{ "code", "name" (full), "first_name", "avatar", "pictures": [3 ids] } -> { "access_token", "refresh_token" }"""
+    return _kids_call(lambda db, d: kids.join(db, d.get("code"), d.get("name"), d.get("avatar"), d.get("pictures"), d.get("first_name") or ""))
 
 
 @app.route("/kids/login", methods=["POST"])

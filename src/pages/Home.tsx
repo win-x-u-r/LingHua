@@ -133,7 +133,8 @@ const Today = () => {
 
   const hour = new Date().getHours();
   const greeting = t(hour < 12 ? "today.morning" : hour < 18 ? "today.afternoon" : "today.evening");
-  const firstName = (profile?.full_name ?? "").split(" ")[0];
+  // Little Lanterns kids give their first name apart ("Abdul Rahman" stays whole)
+  const firstName = (user?.user_metadata?.first_name as string | undefined) || (profile?.full_name ?? "").split(" ")[0];
   const goalDone = today.done;
   const isTeacher = profile?.role === "teacher";
 

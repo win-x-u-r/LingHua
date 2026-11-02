@@ -41,7 +41,11 @@ const KidsLogin = () => {
   const [className, setClassName] = useState("");
   const [kids, setKids] = useState<Kid[]>([]);
   const [kid, setKid] = useState<Kid | null>(null);
-  const [name, setName] = useState("");
+  // First and last name apart: a class can have many Mohammeds. Hua greets
+  // them by first name; the teacher sees the full name.
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const nameDone = !!firstName.trim() && !!lastName.trim();
   const [avatar, setAvatar] = useState<string>("panda");
   const [pictures, setPictures] = useState<SecretPicture[]>([]);
   const [chosen, setChosen] = useState<SecretPicture[]>([]);
@@ -113,7 +117,7 @@ const KidsLogin = () => {
     setBusy(true);
     setMood("thinking");
     try {
-      await kidJoin(code, name, avatar, pics);
+      await kidJoin(code, firstName, lastName, avatar, pics);
       setMood("celebrate");
       navigate("/");
     } catch (err) {
@@ -249,21 +253,36 @@ const KidsLogin = () => {
             className="w-full flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault();
-              if (name.trim()) go("pick");
+              if (nameDone) go("pick");
             }}
           >
-            <Input
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setMessage("");
-              }}
-              placeholder={t("auth.name.placeholder")}
-              maxLength={24}
-              className="text-center text-lg h-12"
-              aria-label={t("kids.name")}
-              autoFocus
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  setMessage("");
+                }}
+                placeholder={t("kids.first")}
+                maxLength={24}
+                className="text-center text-lg h-12"
+                aria-label={t("kids.first")}
+                autoComplete="off"
+                autoFocus
+              />
+              <Input
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  setMessage("");
+                }}
+                placeholder={t("kids.last")}
+                maxLength={24}
+                className="text-center text-lg h-12"
+                aria-label={t("kids.last")}
+                autoComplete="off"
+              />
+            </div>
             <fieldset className="flex flex-col items-center gap-2">
               <legend className="text-sm font-bold mb-2">{t("auth.avatar")}</legend>
               <div className="grid grid-cols-6 gap-1.5 sm:gap-2 w-full max-w-sm">
@@ -286,7 +305,7 @@ const KidsLogin = () => {
                 ))}
               </div>
             </fieldset>
-            <Button type="submit" size="lg" disabled={!name.trim()}>{t("goal.next")}</Button>
+            <Button type="submit" size="lg" disabled={!nameDone}>{t("goal.next")}</Button>
           </form>
         )}
 
