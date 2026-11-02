@@ -13,6 +13,7 @@ import HuaReminder from "./components/HuaReminder";
 import { useLearningTimer } from "./hooks/use-learning-timer";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
+import KidsLogin from "./pages/KidsLogin";
 import Translator from "./pages/Translator";
 import Flashcards from "./pages/Flashcards";
 import Practice from "./pages/Practice";
@@ -44,6 +45,7 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/kids" element={<KidsLogin />} />
         <Route path="/translator" element={<Translator />} />
         <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
         <Route path="/practice" element={<ProtectedRoute><Practice /></ProtectedRoute>} />

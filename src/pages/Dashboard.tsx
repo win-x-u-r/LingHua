@@ -250,6 +250,12 @@ const Dashboard = () => {
         .eq("role", "student");
       const profiles: { id: string; full_name: string }[] = studentProfiles || [];
       const studentIds = profiles.map((p) => p.id);
+      // Kids who log in with pictures. The kid_login column comes with
+      // 20261102_kids_picture_login.sql; until it is run this finds nobody.
+      const { data: kidRows, error: kidError } = studentIds.length
+        ? await (supabase as any).from("profiles").select("id").eq("classroom_id", classroom.id).eq("kid_login", true)
+        : { data: [], error: null };
+      const kidIds = new Set<string>(kidError ? [] : (kidRows || []).map((k: { id: string }) => k.id));
 
       const [progressRes, attemptRes] = studentIds.length
         ? await Promise.all([
@@ -300,6 +306,7 @@ const Dashboard = () => {
           week: weekIso.map((d) => days.has(d)),
           weakestTone: weakest,
           lastActive: last,
+          kid: kidIds.has(sp.id),
         };
       });
 

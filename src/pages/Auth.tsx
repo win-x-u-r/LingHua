@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import ClassCodeInput from "@/components/ClassCodeInput";
 import RoleIcon from "@/components/RoleIcon";
 import { GoalPicker, ReminderSetting } from "@/components/GoalPicker";
 import PathPicker from "@/components/PathPicker";
+import PathIcon from "@/components/PathIcon";
 import { DEFAULT_PATH, type LearningPath } from "@/lib/learningPaths";
 import { DEFAULT_GOAL_MINUTES, DEFAULT_REMINDER_TIME, tierFor, type GoalTier } from "@/lib/dailyGoal";
 
@@ -351,6 +352,16 @@ const Auth = () => {
               </button>
             ))}
           </div>
+          )}
+
+          {step === "details" && (
+            <Link
+              to="/kids"
+              className="flex items-center gap-3 rounded-[12px] border-2 border-stroke bg-card p-3 font-bold shadow-[3px_3px_0_hsl(var(--stamp))]"
+            >
+              <PathIcon path="little_lanterns" className="w-10 h-10" />
+              <span className="flex-1">{t("kids.link")}</span>
+            </Link>
           )}
 
           {!isSignUp && notice && (

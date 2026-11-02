@@ -34,6 +34,7 @@ from services.tts import text_to_speech, text_to_speech_tutor
 from services.asr import transcribe
 from services.scoring import score_pronunciation, get_breakdown, get_pinyin_display, pinyin_to_arabic
 from services.tutor import chat as tutor_chat, chat_stream as tutor_chat_stream
+from services import kids
 
 app = Flask(__name__)
 CORS(app, origins=Config.CORS_ORIGINS)
@@ -416,6 +417,45 @@ def tutor():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": f"Tutor request failed: {str(e)}"}), 500
+
+
+# ─── Little Lanterns: picture-password log-in for kids in a class ────
+def _kids_call(fn):
+    if not kids.configured():
+        return jsonify({"error": "not_set_up"}), 503
+    try:
+        return jsonify(fn(kids.Supabase(), request.get_json(silent=True) or {}) or {"ok": True})
+    except kids.KidsError as e:
+        return jsonify({"error": e.code}), e.status
+    except Exception:
+        traceback.print_exc()
+        return jsonify({"error": "server_error"}), 500
+
+
+@app.route("/kids/roster", methods=["POST"])
+def kids_roster():
+    """{ "code" } -> { "class_name", "kids": [{ "id", "name", "avatar" }] }"""
+    return _kids_call(lambda db, d: kids.roster(db, d.get("code")))
+
+
+@app.route("/kids/join", methods=["POST"])
+def kids_join():
+    """{ "code", "name", "avatar", "pictures": [3 ids] } -> { "access_token", "refresh_token" }"""
+    return _kids_call(lambda db, d: kids.join(db, d.get("code"), d.get("name"), d.get("avatar"), d.get("pictures")))
+
+
+@app.route("/kids/login", methods=["POST"])
+def kids_login():
+    """{ "kid_id", "pictures": [3 ids] } -> { "access_token", "refresh_token" }"""
+    return _kids_call(lambda db, d: kids.login(db, str(d.get("kid_id") or ""), d.get("pictures")))
+
+
+@app.route("/kids/reset", methods=["POST"])
+def kids_reset():
+    """Teacher only (Authorization: Bearer <teacher's token>). { "kid_id", "pictures" }"""
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    return _kids_call(lambda db, d: kids.reset(db, token, str(d.get("kid_id") or ""), d.get("pictures")))
+
 
 
 if __name__ == "__main__":

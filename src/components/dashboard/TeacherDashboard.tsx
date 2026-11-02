@@ -8,6 +8,7 @@ import Seal from "@/components/Seal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { MY_CLASSROOM_ZH } from "@/lib/learningPaths";
+import KidsLoginCard from "./KidsLoginCard";
 import { WEEKLY_GOAL_DAYS, type ToneScore } from "./StudentDashboard";
 
 export interface ClassStudent {
@@ -18,6 +19,8 @@ export interface ClassStudent {
   week: boolean[]; // last 7 days, oldest first
   weakestTone: 1 | 2 | 3 | 4 | null;
   lastActive: string | null; // ISO date
+  /** Logs in with the class code and secret pictures (Little Lanterns) */
+  kid?: boolean;
 }
 
 export interface ClassWord {
@@ -138,6 +141,8 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
           <span className="text-xs text-secondary-foreground text-center max-w-[16rem]">{t("teach.code.hint")}</span>
         </div>
       </Card>
+
+      <KidsLoginCard code={data.code} kids={data.students.filter((s) => s.kid)} />
 
       {total === 0 ? (
         <Card className="p-6 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-start">
