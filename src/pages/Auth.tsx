@@ -270,9 +270,9 @@ const Auth = () => {
                 <p lang="zh" className="font-zh text-muted-foreground">查收邮件</p>
               </div>
               <p>
-                {t("auth.check.sent")}{" "}
-                <bdi dir="ltr" className="font-bold break-all">{sentTo}</bdi>
-                {t("auth.check.sent.end")}
+                {t("auth.check.sent")}
+                {/* On its own line so a long address never splits mid-word next to Arabic text */}
+                <span className="block font-bold break-all"><bdi>{sentTo}</bdi></span>
               </p>
               <p className="text-muted-foreground">{t("auth.check.next")}</p>
               <p className="text-sm text-muted-foreground">{t("auth.check.spam")}</p>
