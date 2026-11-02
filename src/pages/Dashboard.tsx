@@ -252,10 +252,17 @@ const Dashboard = () => {
       const studentIds = profiles.map((p) => p.id);
       // Kids who log in with pictures. The kid_login column comes with
       // 20261102_kids_picture_login.sql; until it is run this finds nobody.
-      const { data: kidRows, error: kidError } = studentIds.length
-        ? await (supabase as any).from("profiles").select("id").eq("classroom_id", classroom.id).eq("kid_login", true)
-        : { data: [], error: null };
-      const kidIds = new Set<string>(kidError ? [] : (kidRows || []).map((k: { id: string }) => k.id));
+      const kidQuery = (cols: string) =>
+        (supabase as any).from("profiles").select(cols).eq("classroom_id", classroom.id).eq("kid_login", true);
+      let kidRows: { id: string; kid_help_at?: string | null }[] = [];
+      if (studentIds.length) {
+        // kid_help_at may not exist yet on an older database; fall back to ids only
+        const withHelp = await kidQuery("id, kid_help_at");
+        const res = withHelp.error ? await kidQuery("id") : withHelp;
+        kidRows = res.error ? [] : res.data || [];
+      }
+      const kidIds = new Set<string>(kidRows.map((k) => k.id));
+      const helpIds = new Set<string>(kidRows.filter((k) => k.kid_help_at).map((k) => k.id));
 
       const [progressRes, attemptRes] = studentIds.length
         ? await Promise.all([
@@ -307,6 +314,7 @@ const Dashboard = () => {
           weakestTone: weakest,
           lastActive: last,
           kid: kidIds.has(sp.id),
+          needsHelp: helpIds.has(sp.id),
         };
       });
 

@@ -71,6 +71,11 @@ export async function kidJoin(code: string, name: string, avatar: string, pictur
   await startSession(await call("join", { code, name, avatar, pictures }));
 }
 
+/** The child forgot their pictures: puts them on the teacher's "needs help" list. */
+export async function askTeacherForHelp(kidId: string) {
+  await call("help", { kid_id: kidId });
+}
+
 /** Teacher only: give a child in the teacher's class new secret pictures. */
 export async function resetKidPictures(kidId: string, pictures: SecretPicture[]) {
   const { data } = await supabase.auth.getSession();

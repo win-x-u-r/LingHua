@@ -22,6 +22,7 @@ import re
 import secrets
 import threading
 import time
+from datetime import datetime, timezone
 
 import requests
 
@@ -244,7 +245,24 @@ def login(db: Supabase, kid_id: str, pictures) -> dict:
         left = lockout.fail(kid_id)
         raise KidsError("locked" if left == 0 else "wrong_pictures", 429 if left == 0 else 401)
     lockout.clear(kid_id)
+    clear_help(db, kid_id)
     return session
+
+
+def clear_help(db: Supabase, kid_id: str) -> None:
+    """Takes the child off the teacher's "needs help" list. Never blocks a log-in."""
+    try:
+        db.rest("PATCH", "profiles", {"id": f"eq.{kid_id}", "kid_help_at": "not.is.null"}, {"kid_help_at": None})
+    except Exception:
+        pass
+
+
+def ask_help(db: Supabase, kid_id: str) -> None:
+    """A child who forgot their pictures asks their teacher for new ones."""
+    kid = db.profile(kid_id)
+    if not kid or not kid.get("kid_login") or not kid.get("classroom_id"):
+        raise KidsError("not_a_kid", 404)
+    db.rest("PATCH", "profiles", {"id": f"eq.{kid_id}"}, {"kid_help_at": datetime.now(timezone.utc).isoformat()})
 
 
 def reset(db: Supabase, teacher_token: str, kid_id: str, pictures) -> None:
@@ -262,4 +280,5 @@ def reset(db: Supabase, teacher_token: str, kid_id: str, pictures) -> None:
     user = db.get_user(kid_id)
     handle = handle_from_email(user.get("email", ""))
     db.set_password(kid_id, kid_password(handle, pictures))
+    clear_help(db, kid_id)
     lockout.clear(kid_id)

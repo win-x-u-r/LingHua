@@ -7,3 +7,9 @@ ALTER TABLE public.profiles
 CREATE INDEX IF NOT EXISTS profiles_kid_login_classroom_idx
   ON public.profiles (classroom_id)
   WHERE kid_login;
+
+-- "Ask my teacher for help": set when a child who forgot their pictures asks
+-- for help, cleared when the teacher gives them new ones. My Classroom shows
+-- these children at the top.
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS kid_help_at TIMESTAMPTZ;

@@ -12,7 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { AVATAR_IDS } from "@/lib/avatars";
 import { PATH_ZH } from "@/lib/learningPaths";
 import {
-  KidsError, PICTURE_COUNT, getClassKids, kidJoin, kidLogIn,
+  KidsError, PICTURE_COUNT, askTeacherForHelp, getClassKids, kidJoin, kidLogIn,
   type Kid, type KidsErrorCode, type SecretPicture,
 } from "@/lib/kidsAPI";
 
@@ -49,6 +49,7 @@ const KidsLogin = () => {
   const [busy, setBusy] = useState(false);
   const [mood, setMood] = useState<LanternMood>("idle");
   const [bounce, setBounce] = useState(0);
+  const [helped, setHelped] = useState(false);
 
   if (!loading && user && !busy) return <Navigate to="/" replace />;
 
@@ -63,6 +64,7 @@ const KidsLogin = () => {
   };
   const go = (next: Step) => {
     setMessage("");
+    setHelped(false);
     setPictures([]);
     setStep(next);
     cheer();
@@ -121,6 +123,21 @@ const KidsLogin = () => {
         setChosen([]);
         setStep("name");
       }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const askHelp = async () => {
+    if (!kid) return;
+    setBusy(true);
+    try {
+      await askTeacherForHelp(kid.id);
+      setHelped(true);
+      setMessage(t("kids.helped"));
+      cheer("happy");
+    } catch (err) {
+      oops(err);
     } finally {
       setBusy(false);
     }
@@ -281,6 +298,12 @@ const KidsLogin = () => {
           <p className="rounded-[12px] border-2 border-stroke bg-accent px-4 py-2 font-bold" role="alert">
             {message}
           </p>
+        )}
+
+        {step === "pictures" && kid && !helped && (
+          <Button type="button" variant="link" onClick={askHelp} disabled={busy}>
+            {t("kids.forgot")}
+          </Button>
         )}
 
         <Button type="button" variant="outline" onClick={back} disabled={busy}>

@@ -85,3 +85,20 @@ def test_join_refuses_a_name_already_in_the_class():
     with pytest.raises(kids.KidsError) as e:
         kids.join(db, "ABC234", "Sara", "panda", ["panda", "kite", "lotus"])
     assert e.value.code == "name_taken"
+
+
+def test_ask_help_flags_only_kids_in_a_class():
+    db = FakeDb()
+    db.profile = lambda uid: {"id": uid, "kid_login": uid == "kid1", "classroom_id": "room1"}
+    kids.ask_help(db, "kid1")
+    table, params, body = db.patched[0]
+    assert table == "profiles" and params == {"id": "eq.kid1"} and body["kid_help_at"]
+    with pytest.raises(kids.KidsError):
+        kids.ask_help(db, "grownup")
+
+
+def test_clear_help_never_breaks_log_in():
+    class Broken(FakeDb):
+        def rest(self, *a, **k):
+            raise RuntimeError("column missing")
+    kids.clear_help(Broken(), "kid1")

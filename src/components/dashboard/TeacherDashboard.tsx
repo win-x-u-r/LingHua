@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { MY_CLASSROOM_ZH } from "@/lib/learningPaths";
 import KidsLoginCard from "./KidsLoginCard";
+import PathIcon from "@/components/PathIcon";
 import { WEEKLY_GOAL_DAYS, type ToneScore } from "./StudentDashboard";
 
 export interface ClassStudent {
@@ -21,6 +22,8 @@ export interface ClassStudent {
   lastActive: string | null; // ISO date
   /** Logs in with the class code and secret pictures (Little Lanterns) */
   kid?: boolean;
+  /** Forgot their pictures and asked the teacher for new ones */
+  needsHelp?: boolean;
 }
 
 export interface ClassWord {
@@ -85,6 +88,13 @@ export const CreateClass = ({ onCreate }: { onCreate: (name: string) => Promise<
    Class view
    ────────────────────────────────────────── */
 const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy: () => void }) => {
+  // Kids who forgot their pictures; taken off the list once the teacher helps
+  const [helpedIds, setHelpedIds] = useState<string[]>([]);
+  const [helpFor, setHelpFor] = useState<{ id: string; n: number } | null>(null);
+  const kidsList = data.students
+    .filter((s) => s.kid)
+    .map((s) => ({ ...s, needsHelp: s.needsHelp && !helpedIds.includes(s.id) }));
+  const needHelp = kidsList.filter((s) => s.needsHelp);
   const { t, language } = useLanguage();
   const total = data.students.length;
   const onTrack = data.students.filter((s) => s.week.filter(Boolean).length >= WEEKLY_GOAL_DAYS).length;
@@ -152,6 +162,20 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
         </Card>
       ) : (
         <>
+          {/* Kids locked out: the one thing in Little Lanterns log-in that needs the teacher */}
+          {needHelp.length > 0 && (
+            <Card className="p-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+              <PathIcon path="little_lanterns" className="w-10 h-10 shrink-0" />
+              <p className="flex-1 min-w-[12rem]">
+                <span className="font-bold">{t("teach.kids.help")}</span>{" "}
+                {needHelp.map((s) => s.name.split(" ")[0]).join(language === "ar" ? "، " : ", ")}
+              </p>
+              <Button size="sm" onClick={() => setHelpFor((h) => ({ id: needHelp[0].id, n: (h?.n ?? 0) + 1 }))}>
+                {t("teach.kids.help.cta")}
+              </Button>
+            </Card>
+          )}
+
           {/* Who needs a nudge */}
           {quiet.length > 0 && (
             <Card className="p-5 flex items-center gap-4 bg-accent">
@@ -329,7 +353,12 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
           </Section>
         </>
       )}
-      <KidsLoginCard code={data.code} kids={data.students.filter((s) => s.kid)} />
+      <KidsLoginCard
+        code={data.code}
+        kids={kidsList}
+        focus={helpFor}
+        onReset={(id) => setHelpedIds((ids) => [...ids, id])}
+      />
     </div>
   );
 };

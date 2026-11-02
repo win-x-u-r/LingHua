@@ -450,6 +450,12 @@ def kids_login():
     return _kids_call(lambda db, d: kids.login(db, str(d.get("kid_id") or ""), d.get("pictures")))
 
 
+@app.route("/kids/help", methods=["POST"])
+def kids_help():
+    """{ "kid_id" }: the child forgot their pictures; tells their teacher."""
+    return _kids_call(lambda db, d: kids.ask_help(db, str(d.get("kid_id") or "")))
+
+
 @app.route("/kids/reset", methods=["POST"])
 def kids_reset():
     """Teacher only (Authorization: Bearer <teacher's token>). { "kid_id", "pictures" }"""
