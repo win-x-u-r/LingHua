@@ -61,7 +61,7 @@ const translations: Record<string, Record<Language, string>> = {
   "teach.kids.reset.save": { en: "Save pictures", ar: "حفظ الصور" },
   "teach.kids.reset.done": { en: "New pictures saved", ar: "تم حفظ الصور الجديدة" },
   "kids.forgot": { en: "I forgot my pictures", ar: "نسيت صوري" },
-  "kids.helped": { en: "Your teacher knows! They'll give you new pictures soon.", ar: "عرف معلمك! سيعطيك صورًا جديدة قريبًا." },
+  "kids.helped": { en: "Ask your teacher for new pictures.", ar: "اطلب صورًا جديدة من معلمك." },
   "teach.kids.help": { en: "Forgot their pictures:", ar: "نسوا صورهم:" },
   "teach.kids.help.cta": { en: "Give new pictures", ar: "أعطهم صورًا جديدة" },
   "teach.kids.asked": { en: "Asked for help", ar: "طلب المساعدة" },
