@@ -28,18 +28,19 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
   // Sign-up starts with the path. Teacher's Corner is the teachers' own path; Little Lanterns
   // join their class with the code at /kids; everyone else learns on their own path.
   const [choice, setChoice] = useState<PathChoice>(DEFAULT_PATH);
   const role: UserRole = choice === "teacher" ? "teacher" : "independent";
-  const kidsChoice = isSignUp && choice === "little_lanterns";
   const [className, setClassName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Sign-up steps. Learners: path and details, then the daily goal. Teachers: Teacher's Corner
   // and details, then their own welcome where they name the classroom.
-  const [step, setStep] = useState<"details" | "goal" | "teacher">("details");
+  const [step, setStep] = useState<"path" | "details" | "goal" | "teacher">("details");
   const goalStep = step === "goal";
   const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
   const [reminderOn, setReminderOn] = useState(true);
@@ -159,13 +160,17 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (kidsChoice) return;
     const asksGoal = isSignUp && role !== "teacher";
     const goTo = (next: typeof step) => {
       setStep(next);
       react("happy", 1400);
       window.scrollTo({ top: 0 });
     };
+    // Little Lanterns join their class with the code, no email
+    if (isSignUp && step === "path") {
+      if (choice === "little_lanterns") return navigate("/kids");
+      return goTo("details");
+    }
     if (isSignUp && step === "details") {
       return goTo(role === "teacher" ? "teacher" : "goal");
     }
@@ -182,6 +187,7 @@ const Auth = () => {
         const { needsConfirm } = await signUp(email, password, fullName, role, prefs, {
           avatar: selectedAvatar,
           className: role === "teacher" ? className : undefined,
+          firstName: firstName.trim(),
           learningPath: choice !== "teacher" ? choice : undefined,
         });
 
@@ -315,7 +321,7 @@ const Auth = () => {
           </div>
 
           {/* Log in or sign up */}
-          {step === "details" && (
+          {(step === "path" || (step === "details" && !isSignUp)) && (
           <div className="grid grid-cols-2 border-2 border-stroke rounded-[10px] overflow-hidden font-bold" role="tablist">
             {[false, true].map((signUpTab) => (
               <button
@@ -326,7 +332,7 @@ const Auth = () => {
                 onClick={() => {
                   if (isSignUp !== signUpTab) react("happy", 1200);
                   setIsSignUp(signUpTab);
-                  setStep("details");
+                  setStep(signUpTab ? "path" : "details");
                 }}
                 className={`py-2 ${isSignUp === signUpTab ? "bg-foreground text-background" : "bg-card"}`}
               >
@@ -408,7 +414,7 @@ const Auth = () => {
               </>
             )}
 
-            {isSignUp && step === "details" && (
+            {isSignUp && step === "path" && (
               <>
                 <fieldset className="flex flex-col gap-1.5">
                   <legend id="path-title" className="text-sm font-medium mb-1.5">{t("path.title")}</legend>
@@ -423,29 +429,42 @@ const Auth = () => {
                   />
                 </fieldset>
 
-                {kidsChoice ? (
-                  <div className="flex flex-col gap-3 rounded-[12px] border-2 border-stroke bg-accent p-4">
-                    <p className="font-bold">{t("path.signup.kids")}</p>
-                    <Link to="/kids">
-                      <Button type="button" size="lg" className="w-full">{t("path.signup.kids.cta")}</Button>
-                    </Link>
+              </>
+            )}
+
+            {isSignUp && step === "details" && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="first-name">{t("kids.first")}</Label>
+                    <Input
+                      id="first-name"
+                      value={firstName}
+                      onFocus={() => watchField(firstName, rtl, 12)}
+                      onBlur={leaveField}
+                      onChange={(e) => {
+                        setFirstName(e.target.value);
+                        typeInField(e.target.value, rtl, 12);
+                      }}
+                      autoComplete="given-name"
+                      required
+                    />
                   </div>
-                ) : (
-                <>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="name">{t("auth.name")}</Label>
-                  <Input
-                    id="name"
-                    value={fullName}
-                    onFocus={() => watchField(fullName, rtl)}
-                    onBlur={leaveField}
-                    onChange={(e) => {
-                      setFullName(e.target.value);
-                      typeInField(e.target.value, rtl);
-                    }}
-                    placeholder={t("auth.name.placeholder")}
-                    required
-                  />
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="last-name">{t("kids.last")}</Label>
+                    <Input
+                      id="last-name"
+                      value={lastName}
+                      onFocus={() => watchField(lastName, rtl, 12)}
+                      onBlur={leaveField}
+                      onChange={(e) => {
+                        setLastName(e.target.value);
+                        typeInField(e.target.value, rtl, 12);
+                      }}
+                      autoComplete="family-name"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <fieldset className="flex flex-col gap-1.5">
@@ -470,12 +489,10 @@ const Auth = () => {
                     ))}
                   </div>
                 </fieldset>
-                </>
-                )}
               </>
             )}
 
-            {step === "details" && !kidsChoice && (
+            {step === "details" && (
             <>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">{t("auth.email")}</Label>
@@ -516,17 +533,16 @@ const Auth = () => {
             )}
 
             <div className="flex gap-3 mt-2">
-              {step !== "details" && (
+              {isSignUp && step !== "path" && (
                 <Button
                   type="button"
                   variant="outline"
                   size="lg"
-                  onClick={() => setStep("details")}
+                  onClick={() => setStep(step === "details" ? "path" : "details")}
                 >
                   {t("goal.back")}
                 </Button>
               )}
-              {!kidsChoice && (
               <Button type="submit" disabled={isSubmitting} size="lg" className="flex-1">
                 {isSubmitting
                   ? t("auth.wait")
@@ -538,7 +554,6 @@ const Auth = () => {
                         ? t("auth.create")
                         : t("goal.next")}
               </Button>
-              )}
             </div>
           </form>
           </>

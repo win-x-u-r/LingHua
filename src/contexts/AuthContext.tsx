@@ -12,6 +12,8 @@ export interface SignUpExtras {
   avatar?: string;
   classCode?: string;
   className?: string;
+  /** Kept apart so Hua can greet people by first name ("Abdul Rahman" stays whole) */
+  firstName?: string;
   /** Independent learners pick a learning path at sign-up */
   learningPath?: LearningPath;
 }
@@ -137,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...(extras?.avatar && { pending_avatar: extras.avatar }),
           ...(extras?.classCode && { pending_class_code: extras.classCode.trim().toUpperCase() }),
           ...(extras?.className && { pending_class_name: extras.className.trim() }),
+          ...(extras?.firstName && { first_name: extras.firstName }),
           ...(extras?.learningPath && { learning_path: extras.learningPath }),
         },
       },

@@ -27,8 +27,6 @@ const translations: Record<string, Record<Language, string>> = {
   "teacher.welcome.cta": { en: "Create my classroom", ar: "أنشئ فصلي" },
   "corner.title": { en: "Teacher's Corner", ar: "ركن المعلم" },
   "corner.desc": { en: "For teachers and their classes", ar: "للمعلمين وفصولهم" },
-  "path.signup.kids": { en: "Little Lanterns join with the class code from their teacher. No email needed.", ar: "ينضم الفوانيس الصغيرة برمز الفصل من معلمهم. لا حاجة لبريد إلكتروني." },
-  "path.signup.kids.cta": { en: "Join with a class code", ar: "انضم برمز الفصل" },
   "classroom.mine": { en: "My Classroom", ar: "فصلي" },
   "kids.code": { en: "Type your class code", ar: "اكتب رمز فصلك" },
   "kids.code.hint": { en: "Your teacher has it.", ar: "الرمز عند معلمك." },
