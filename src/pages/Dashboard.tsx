@@ -5,7 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import ClassCodeReady from "@/components/dashboard/ClassCodeReady";
-import TeacherDashboard, { CreateClass, type TeacherDashboardData, type ClassStudent, type ClassWord } from "@/components/dashboard/TeacherDashboard";
+import { isAgeGroup, isClassLevel, type AgeGroup, type ClassLevel } from "@/lib/classSetup";
+import TeacherDashboard, { CreateClass, type ClassSummary, type TeacherDashboardData, type ClassStudent, type ClassWord } from "@/components/dashboard/TeacherDashboard";
 import StudentDashboard, { type StudentDashboardData, type ToneScore, type MissedWord } from "@/components/dashboard/StudentDashboard";
 
 /* Tone of each syllable from its pinyin tone mark (neutral tones are skipped) */
@@ -53,6 +54,23 @@ const markCodeSeen = (uid: string, code: string) => {
   }
 };
 
+// The class a teacher looked at last, remembered on this device
+const pickKey = (uid: string) => `linghua-class-${uid}`;
+const readPickedClass = (uid: string) => {
+  try {
+    return localStorage.getItem(pickKey(uid)) ?? undefined;
+  } catch {
+    return undefined;
+  }
+};
+const savePickedClass = (uid: string, id: string) => {
+  try {
+    localStorage.setItem(pickKey(uid), id);
+  } catch {
+    // Private window: falls back to the first class
+  }
+};
+
 const Dashboard = () => {
   const { user, profile, createClassroom, joinClassroom } = useAuth();
   const { t } = useLanguage();
@@ -60,6 +78,7 @@ const Dashboard = () => {
 
   // Teacher state
   const [codeShown, setCodeShown] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [teacherData, setTeacherData] = useState<TeacherDashboardData | null>(null);
 
   // Student analytics state
@@ -247,20 +266,31 @@ const Dashboard = () => {
   // ──────────────────────────────────────────
   //  Teacher data loading (original logic)
   // ──────────────────────────────────────────
-  const loadTeacherData = async () => {
+  const loadTeacherData = async (pickId?: string) => {
     setLoading(true);
     try {
+      // All of the teacher's classes, oldest first; the one shown is the last one picked
       const { data: classrooms } = await (supabase as any)
         .from("classrooms")
         .select("*")
         .eq("teacher_id", user!.id)
-        .limit(1);
+        .order("created_at", { ascending: true });
 
       if (!classrooms || classrooms.length === 0) {
         setTeacherData(null);
         return;
       }
-      const classroom = classrooms[0];
+      const wanted = pickId ?? readPickedClass(user!.id);
+      const classroom = classrooms.find((c: { id: string }) => c.id === wanted) ?? classrooms[0];
+      if (pickId) savePickedClass(user!.id, pickId);
+      const classes: ClassSummary[] = classrooms.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        code: c.code,
+        ageGroup: isAgeGroup(c.age_group) ? c.age_group : null,
+        level: isClassLevel(c.level) ? c.level : null,
+      }));
+      const current = classes.find((c) => c.id === classroom.id)!;
 
       const { data: studentProfiles } = await (supabase as any)
         .from("profiles")
@@ -371,8 +401,12 @@ const Dashboard = () => {
         .slice(0, 6);
 
       setTeacherData({
-        className: classroom.name,
-        code: classroom.code,
+        classId: current.id,
+        className: current.name,
+        code: current.code,
+        ageGroup: current.ageGroup,
+        level: current.level,
+        classes,
         students: classStudents,
         tones: ([1, 2, 3, 4] as const).map((tn) => ({
           tone: tn,
@@ -389,14 +423,36 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreateClassroom = async (name: string) => {
+  const handleCreateClassroom = async (name: string, setup: { ageGroup: AgeGroup; level: ClassLevel }) => {
     try {
-      const code = await createClassroom(name);
+      const code = await createClassroom(name, setup);
       toast({ title: t("dashboard.classroom_created"), description: `${t("dashboard.classroom_code")}: ${code}` });
-      await loadTeacherData();
+      const { data: made } = await (supabase as any).from("classrooms").select("id").eq("code", code).maybeSingle();
+      setCreating(false);
+      await loadTeacherData(made?.id);
     } catch {
       toast({ title: t("dashboard.create_failed"), variant: "destructive" });
     }
+  };
+
+  // Change the class's age group or level later (it only sets where activities start)
+  const updateClass = async (setup: { ageGroup: AgeGroup | null; level: ClassLevel | null }) => {
+    if (!teacherData) return false;
+    const { error } = await (supabase as any)
+      .from("classrooms")
+      .update({ age_group: setup.ageGroup, level: setup.level })
+      .eq("id", teacherData.classId);
+    if (error) {
+      toast({ title: t("class.save.failed"), variant: "destructive" });
+      return false;
+    }
+    toast({ title: t("class.saved") });
+    setTeacherData({
+      ...teacherData,
+      ...setup,
+      classes: teacherData.classes.map((c) => (c.id === teacherData.classId ? { ...c, ...setup } : c)),
+    });
+    return true;
   };
 
   const copyCode = () => {
@@ -477,6 +533,7 @@ const Dashboard = () => {
   //  TEACHER VIEW
   // ──────────────────────────────────────────
   if (!teacherData) return <CreateClass onCreate={handleCreateClassroom} />;
+  if (creating) return <CreateClass onCreate={handleCreateClassroom} onCancel={() => setCreating(false)} />;
   // First visit with a new class: the code screen, once per class
   if (user && !codeShown && !seenCode(user.id, teacherData.code)) {
     return (
@@ -492,7 +549,18 @@ const Dashboard = () => {
       />
     );
   }
-  return <TeacherDashboard data={teacherData} onCopy={copyCode} />;
+  return (
+    <TeacherDashboard
+      data={teacherData}
+      onCopy={copyCode}
+      onSwitch={(id) => void loadTeacherData(id)}
+      onNewClass={() => {
+        setCreating(true);
+        window.scrollTo({ top: 0 });
+      }}
+      onUpdate={updateClass}
+    />
+  );
 };
 
 export default Dashboard;

@@ -5,6 +5,7 @@ import { resolvePrefs, writeLocalPrefs, type LearningPrefs } from "@/lib/dailyGo
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { pathFor, type LearningPath } from "@/lib/learningPaths";
+import { isAgeGroup, isClassLevel, type AgeGroup, type ClassLevel } from "@/lib/classSetup";
 
 /** Sign-up choices that need a signed-in learner. When the email must be confirmed first,
  *  they wait in the sign-up details and are applied the first time the learner logs in. */
@@ -12,6 +13,9 @@ export interface SignUpExtras {
   avatar?: string;
   classCode?: string;
   className?: string;
+  /** Teacher's Corner set-up of that first class */
+  classAge?: AgeGroup | null;
+  classLevel?: ClassLevel | null;
   /** Kept apart so Hua can greet people by first name ("Abdul Rahman" stays whole) */
   firstName?: string;
   /** Independent learners pick a learning path at sign-up */
@@ -57,7 +61,7 @@ interface AuthContextType {
   finishSetup: () => Promise<void>;
   signOut: () => Promise<void>;
   joinClassroom: (code: string) => Promise<void>;
-  createClassroom: (name: string) => Promise<string>;
+  createClassroom: (name: string, setup?: { ageGroup?: AgeGroup | null; level?: ClassLevel | null }) => Promise<string>;
   setAvatar: (avatarId: string) => Promise<void>;
   setLearningPrefs: (prefs: LearningPrefs) => Promise<void>;
 }
@@ -139,6 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...(extras?.avatar && { pending_avatar: extras.avatar }),
           ...(extras?.classCode && { pending_class_code: extras.classCode.trim().toUpperCase() }),
           ...(extras?.className && { pending_class_name: extras.className.trim() }),
+          ...(extras?.classAge && { pending_class_age: extras.classAge }),
+          ...(extras?.classLevel && { pending_class_level: extras.classLevel }),
           ...(extras?.firstName && { first_name: extras.firstName }),
           ...(extras?.learningPath && { learning_path: extras.learningPath }),
         },
@@ -243,15 +249,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, profile],
   );
 
-  const createClassroom = async (name: string): Promise<string> => {
+  const createClassroom = async (name: string, setup?: { ageGroup?: AgeGroup | null; level?: ClassLevel | null }): Promise<string> => {
     const me = await currentUser();
     // No 0/O or 1/I so the code is easy to read out to a class
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     const code = Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
 
-    const { error } = await (supabase as any)
-      .from("classrooms")
-      .insert({ teacher_id: me.id, name, code });
+    const insert = (row: Record<string, string>) => (supabase as any).from("classrooms").insert(row);
+    const extra = {
+      ...(setup?.ageGroup && { age_group: setup.ageGroup }),
+      ...(setup?.level && { level: setup.level }),
+    };
+    let { error } = await insert({ teacher_id: me.id, name, code, ...extra });
+    // Database without the set-up columns yet (20261102_class_setup.sql): create the class anyway
+    if (error && Object.keys(extra).length && /age_group|level/.test(error.message ?? "")) {
+      ({ error } = await insert({ teacher_id: me.id, name, code }));
+    }
 
     if (error) throw error;
     return code;
@@ -268,6 +281,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const avatar = typeof meta.pending_avatar === "string" ? meta.pending_avatar : "";
       const classCode = typeof meta.pending_class_code === "string" ? meta.pending_class_code : "";
       const className = typeof meta.pending_class_name === "string" ? meta.pending_class_name : "";
+      const classSetup = {
+        ageGroup: isAgeGroup(meta.pending_class_age) ? meta.pending_class_age : null,
+        level: isClassLevel(meta.pending_class_level) ? meta.pending_class_level : null,
+      };
       if (!avatar && !classCode && !className) {
         setupDone.current.add(me.id);
         return;
@@ -289,14 +306,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const { data: existing } = await (supabase as any)
             .from("classrooms").select("id").eq("teacher_id", me.id).limit(1);
-          if (!existing?.length) await createClassroom(className);
+          if (!existing?.length) await createClassroom(className, classSetup);
         } catch {
           // The dashboard shows "create your class" when there is none yet
         }
       }
       setupDone.current.add(me.id);
       await supabase.auth.updateUser({
-        data: { pending_avatar: null, pending_class_code: null, pending_class_name: null },
+        data: {
+          pending_avatar: null, pending_class_code: null, pending_class_name: null,
+          pending_class_age: null, pending_class_level: null,
+        },
       });
     })().finally(() => {
       setupJob.current = null;

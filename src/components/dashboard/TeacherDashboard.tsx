@@ -9,6 +9,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { MY_CLASSROOM_ZH } from "@/lib/learningPaths";
 import KidsLoginCard from "./KidsLoginCard";
+import ClassSetupFields, { AgePicker, LevelPicker } from "@/components/ClassSetupFields";
+import { LEVEL_ZH, type AgeGroup, type ClassLevel } from "@/lib/classSetup";
 import PathIcon from "@/components/PathIcon";
 import { WEEKLY_GOAL_DAYS, type ToneScore } from "./StudentDashboard";
 
@@ -34,9 +36,22 @@ export interface ClassWord {
   attempts: number;
 }
 
+export interface ClassSummary {
+  id: string;
+  name: string;
+  code: string;
+  ageGroup: AgeGroup | null;
+  level: ClassLevel | null;
+}
+
 export interface TeacherDashboardData {
+  classId: string;
   className: string;
   code: string;
+  ageGroup: AgeGroup | null;
+  level: ClassLevel | null;
+  /** All of this teacher's classes, for the switcher */
+  classes: ClassSummary[];
   students: ClassStudent[];
   tones: ToneScore[];
   hardWords: ClassWord[];
@@ -48,46 +63,146 @@ const TONE_MARK: Record<number, string> = { 1: "ā", 2: "á", 3: "ǎ", 4: "à" }
 /* ──────────────────────────────────────────
    No class yet: create one
    ────────────────────────────────────────── */
-export const CreateClass = ({ onCreate }: { onCreate: (name: string) => Promise<void> }) => {
+export const CreateClass = ({
+  onCreate,
+  onCancel,
+}: {
+  onCreate: (name: string, setup: { ageGroup: AgeGroup; level: ClassLevel }) => Promise<void>;
+  /** Set when the teacher already has a class: adding another one */
+  onCancel?: () => void;
+}) => {
   const { t } = useLanguage();
   const [name, setName] = useState("");
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | null>(null);
+  const [level, setLevel] = useState<ClassLevel | null>(null);
+  const [missing, setMissing] = useState(false);
   const [busy, setBusy] = useState(false);
   return (
     <div className="container mx-auto max-w-md px-4 py-12">
-      <Card className="p-8 flex flex-col items-center text-center gap-4 overflow-hidden">
+      <Card className="p-6 md:p-8 flex flex-col items-center text-center gap-4 overflow-hidden">
         <div className="lantern-glow [--glow-size:220%]">
-          <Lantern mood="idle" className="w-28 h-28" />
+          <Lantern mood="idle" className="w-24 h-24" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">{t("teacher.welcome.title")}</h1>
-          <p lang="zh" className="font-zh text-muted-foreground">欢迎，老师！</p>
+          <h1 className="text-3xl font-bold">{t("class.setup")}</h1>
+          <p lang="zh" className="font-zh text-muted-foreground">设置你的课堂</p>
         </div>
-        <p className="text-lg font-bold">{t("teacher.welcome.sub")}</p>
-        <p className="text-muted-foreground">{t("teacher.welcome.body")}</p>
+        {!onCancel && <p className="text-muted-foreground">{t("teacher.welcome.body")}</p>}
         <form
-          className="w-full flex flex-col gap-3"
+          className="w-full flex flex-col gap-4"
           onSubmit={async (e) => {
             e.preventDefault();
-            if (!name.trim()) return;
+            if (!name.trim() || !ageGroup || !level) return setMissing(true);
             setBusy(true);
-            await onCreate(name.trim());
+            await onCreate(name.trim(), { ageGroup, level });
             setBusy(false);
           }}
         >
-          <Input placeholder={t("dashboard.classroom_name_placeholder")} value={name} onChange={(e) => setName(e.target.value)} required />
-          <Button type="submit" className="w-full" size="lg" disabled={busy}>
-            {t("teacher.welcome.cta")}
-          </Button>
+          <ClassSetupFields
+            name={name}
+            onName={(v) => { setName(v); setMissing(false); }}
+            ageGroup={ageGroup}
+            onAge={(a) => { setAgeGroup(a); setMissing(false); }}
+            level={level}
+            onLevel={(l) => { setLevel(l); setMissing(false); }}
+          />
+          {missing && <p className="text-sm font-bold text-destructive" role="alert">{t("class.pick.required")}</p>}
+          <div className="flex gap-3">
+            {onCancel && (
+              <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={busy}>
+                {t("class.cancel")}
+              </Button>
+            )}
+            <Button type="submit" className="flex-1" size="lg" disabled={busy}>
+              {t("teacher.welcome.cta")}
+            </Button>
+          </div>
         </form>
       </Card>
     </div>
   );
 };
 
+/** "Ages 7 to 9 · Beginners 初级", with Change to edit both in place */
+const ClassFacts = ({
+  data,
+  onUpdate,
+}: {
+  data: TeacherDashboardData;
+  onUpdate: (setup: { ageGroup: AgeGroup | null; level: ClassLevel | null }) => Promise<boolean>;
+}) => {
+  const { t } = useLanguage();
+  const [editing, setEditing] = useState(false);
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | null>(data.ageGroup);
+  const [level, setLevel] = useState<ClassLevel | null>(data.level);
+  const [busy, setBusy] = useState(false);
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-4 rounded-[12px] border-2 border-border bg-muted/40 p-4">
+        <AgePicker value={ageGroup} onChange={setAgeGroup} />
+        <LevelPicker value={level} onChange={setLevel} />
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={busy}>{t("class.cancel")}</Button>
+          <Button
+            size="sm"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              if (await onUpdate({ ageGroup, level })) setEditing(false);
+              setBusy(false);
+            }}
+          >
+            {t("class.save")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const parts = [
+    data.ageGroup && t("class.ages").replace("{age}", t(`class.age.${data.ageGroup}`)),
+    data.level && t(`class.level.${data.level}`),
+  ].filter(Boolean);
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      {parts.length > 0 && (
+        <span className="font-bold">
+          {parts.join(" · ")}
+          {data.level && <span lang="zh" className="font-zh font-normal text-muted-foreground"> {LEVEL_ZH[data.level]}</span>}
+        </span>
+      )}
+      <button
+        type="button"
+        className="font-bold text-primary underline underline-offset-4"
+        onClick={() => {
+          setAgeGroup(data.ageGroup);
+          setLevel(data.level);
+          setEditing(true);
+        }}
+      >
+        {parts.length ? t("class.change") : t("class.level")}
+      </button>
+    </p>
+  );
+};
+
 /* ──────────────────────────────────────────
    Class view
    ────────────────────────────────────────── */
-const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy: () => void }) => {
+const TeacherDashboard = ({
+  data,
+  onCopy,
+  onSwitch,
+  onNewClass,
+  onUpdate,
+}: {
+  data: TeacherDashboardData;
+  onCopy: () => void;
+  onSwitch: (classId: string) => void;
+  onNewClass: () => void;
+  onUpdate: (setup: { ageGroup: AgeGroup | null; level: ClassLevel | null }) => Promise<boolean>;
+}) => {
   // Kids who forgot their pictures; taken off the list once the teacher helps
   const [helpedIds, setHelpedIds] = useState<string[]>([]);
   const [helpFor, setHelpFor] = useState<{ id: string; n: number } | null>(null);
@@ -108,6 +223,29 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
+      {/* Several classes: pick one, or add another */}
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label={t("class.yours")}>
+        {data.classes.length > 1 &&
+          data.classes.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={c.id === data.classId}
+              onClick={() => c.id !== data.classId && onSwitch(c.id)}
+              className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${
+                c.id === data.classId ? "border-stroke bg-foreground text-background" : "border-border bg-card"
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        <Button variant="outline" size="sm" className="ms-auto" onClick={onNewClass}>
+          <span aria-hidden="true">+</span>
+          <span>{t("class.new")}</span>
+        </Button>
+      </div>
+
       {/* Class header: name, the code to share, and this week in one sentence */}
       <Card className="p-6 md:p-8 overflow-hidden grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] items-center">
         <div className="flex flex-col gap-2">
@@ -115,6 +253,7 @@ const TeacherDashboard = ({ data, onCopy }: { data: TeacherDashboardData; onCopy
             {t("classroom.mine")} <span lang="zh" className="font-zh normal-case tracking-normal">· {MY_CLASSROOM_ZH}</span>
           </span>
           <h1 className="text-3xl md:text-4xl font-bold">{data.className || t("dashboard.teacher.title")}</h1>
+          <ClassFacts key={data.classId} data={data} onUpdate={onUpdate} />
           <p className="text-muted-foreground">
             {total === 0
               ? t("teach.week.empty")

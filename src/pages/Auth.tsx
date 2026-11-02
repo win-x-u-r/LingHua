@@ -14,6 +14,9 @@ import { GoalPicker, ReminderSetting } from "@/components/GoalPicker";
 import PathPicker, { type PathChoice } from "@/components/PathPicker";
 import PathIcon from "@/components/PathIcon";
 import { DEFAULT_PATH } from "@/lib/learningPaths";
+import ClassSetupFields from "@/components/ClassSetupFields";
+import Seal from "@/components/Seal";
+import type { AgeGroup, ClassLevel } from "@/lib/classSetup";
 import { DEFAULT_GOAL_MINUTES, DEFAULT_REMINDER_TIME, tierFor, type GoalTier } from "@/lib/dailyGoal";
 
 // The lantern gets a little more excited the bigger the goal
@@ -36,11 +39,14 @@ const Auth = () => {
   const [choice, setChoice] = useState<PathChoice>(DEFAULT_PATH);
   const role: UserRole = choice === "teacher" ? "teacher" : "independent";
   const [className, setClassName] = useState("");
+  const [classAge, setClassAge] = useState<AgeGroup | null>(null);
+  const [classLevel, setClassLevel] = useState<ClassLevel | null>(null);
+  const [setupError, setSetupError] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Sign-up steps. Learners: path and details, then the daily goal. Teachers: Teacher's Corner
   // and details, then their own welcome where they name the classroom.
-  const [step, setStep] = useState<"path" | "details" | "goal" | "teacher">("details");
+  const [step, setStep] = useState<"path" | "details" | "goal" | "teacher" | "class">("details");
   const goalStep = step === "goal";
   const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
   const [reminderOn, setReminderOn] = useState(true);
@@ -174,7 +180,10 @@ const Auth = () => {
     if (isSignUp && step === "details") {
       return goTo(role === "teacher" ? "teacher" : "goal");
     }
-    if (isSignUp && step === "teacher" && !className.trim()) {
+    // Teachers: Welcome to Teacher's Corner, then set up the classroom
+    if (isSignUp && step === "teacher") return goTo("class");
+    if (isSignUp && step === "class" && (!className.trim() || !classAge || !classLevel)) {
+      setSetupError(true);
       changeMood("sad");
       return;
     }
@@ -187,6 +196,8 @@ const Auth = () => {
         const { needsConfirm } = await signUp(email, password, fullName, role, prefs, {
           avatar: selectedAvatar,
           className: role === "teacher" ? className : undefined,
+          classAge: role === "teacher" ? classAge : undefined,
+          classLevel: role === "teacher" ? classLevel : undefined,
           firstName: firstName.trim(),
           learningPath: choice !== "teacher" ? choice : undefined,
         });
@@ -302,10 +313,15 @@ const Auth = () => {
           <div>
             {step === "teacher" ? (
               <>
-                <h1 className="text-3xl font-bold text-balance">{t("teacher.welcome.title")}</h1>
-                <p lang="zh" className="font-zh text-muted-foreground">欢迎，老师！</p>
-                <p className="text-lg font-bold mt-3">{t("teacher.welcome.sub")}</p>
+                <h1 className="text-3xl font-bold text-balance">{t("corner.welcome")}</h1>
+                <p lang="zh" className="font-zh text-muted-foreground">欢迎来到教师天地</p>
+                <p className="text-lg font-bold mt-3">{t("teacher.welcome.title")} {t("teacher.welcome.sub")}</p>
                 <p className="text-muted-foreground">{t("teacher.welcome.body")}</p>
+              </>
+            ) : step === "class" ? (
+              <>
+                <h1 className="text-3xl font-bold text-balance">{t("class.setup")}</h1>
+                <p lang="zh" className="font-zh text-muted-foreground">设置你的课堂</p>
               </>
             ) : goalStep ? (
               <>
@@ -374,22 +390,46 @@ const Auth = () => {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {step === "teacher" && (
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="classname">{t("auth.classname")}</Label>
-                <Input
-                  id="classname"
-                  value={className}
-                  onFocus={() => watchField(className, rtl)}
-                  onBlur={leaveField}
-                  onChange={(e) => {
-                    setClassName(e.target.value);
-                    typeInField(e.target.value, rtl);
+              <ul className="flex flex-col gap-3">
+                {([["师", "corner.lead"], ["码", "corner.code"], ["课", "corner.watch"]] as const).map(([seal, key]) => (
+                  <li key={key} className="flex items-start gap-3">
+                    <Seal char={seal} size="md" />
+                    <span>
+                      <span className="block font-bold leading-tight">{t(key)}</span>
+                      <span className="block text-sm text-muted-foreground">{t(`${key}.desc`)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {step === "class" && (
+              <>
+                <ClassSetupFields
+                  name={className}
+                  onName={(v) => {
+                    setClassName(v);
+                    setSetupError(false);
+                    typeInField(v, rtl);
                   }}
-                  placeholder={t("dashboard.classroom_name_placeholder")}
-                  required
+                  ageGroup={classAge}
+                  onAge={(a) => {
+                    if (a !== classAge) react("happy", 1200);
+                    setClassAge(a);
+                    setSetupError(false);
+                  }}
+                  level={classLevel}
+                  onLevel={(l) => {
+                    if (l !== classLevel) react("delight", 1600);
+                    setClassLevel(l);
+                    setSetupError(false);
+                  }}
+                  nameProps={{ onFocus: () => watchField(className, rtl), onBlur: leaveField }}
                 />
-                <span className="text-xs text-muted-foreground">{t("auth.classname.hint")}</span>
-              </div>
+                {setupError && (
+                  <p className="text-sm font-bold text-destructive" role="alert">{t("class.pick.required")}</p>
+                )}
+              </>
             )}
 
             {goalStep && (
@@ -538,7 +578,7 @@ const Auth = () => {
                   type="button"
                   variant="outline"
                   size="lg"
-                  onClick={() => setStep(step === "details" ? "path" : "details")}
+                  onClick={() => setStep(step === "details" ? "path" : step === "class" ? "teacher" : "details")}
                 >
                   {t("goal.back")}
                 </Button>
@@ -548,7 +588,7 @@ const Auth = () => {
                   ? t("auth.wait")
                   : !isSignUp
                     ? t("auth.signin")
-                    : step === "teacher"
+                    : step === "class"
                       ? t("teacher.welcome.cta")
                       : step === "goal"
                         ? t("auth.create")
