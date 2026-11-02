@@ -281,8 +281,8 @@ const Auth = () => {
                   {t("auth.check.not_yet")}
                 </p>
               )}
-              <div className="flex flex-wrap gap-3 mt-2">
-                <Button type="button" size="lg" className="flex-1" onClick={checkVerified} disabled={checking}>
+              <div className="flex flex-col items-center gap-3 mt-2">
+                <Button type="button" size="lg" className="w-full" onClick={checkVerified} disabled={checking}>
                   {checking ? t("auth.wait") : t("auth.check.verified")}
                 </Button>
                 <Button type="button" size="lg" variant="outline" onClick={resend} disabled={resent}>
