@@ -7,7 +7,9 @@ import type { UserRole } from "@/contexts/AuthContext";
  *
  * - Students who join with a class code follow their class (Little Lanterns
  *   until teachers can pick a path per class).
- * - Independent learners pick a path at sign-up and can change it in Profile.
+ * - Independent learners pick a path at sign-up. It stays fixed; another path
+ *   means another account. My Mandarin Journey's freedom is inside the path:
+ *   any card set or grammar point, in any order.
  * - Teachers have no path: they get Teacher's Corner.
  *
  * The chosen path lives in the account's sign-up details (user_metadata), so it

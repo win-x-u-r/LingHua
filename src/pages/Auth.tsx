@@ -47,8 +47,6 @@ const Auth = () => {
   const [step, setStep] = useState<"details" | "path" | "goal" | "teacher">("details");
   const goalStep = step === "goal";
   const [learningPath, setLearningPath] = useState<LearningPath>(DEFAULT_PATH);
-  const [guardian, setGuardian] = useState(false);
-  const [guardianError, setGuardianError] = useState(false);
   const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
   const [reminderOn, setReminderOn] = useState(true);
   const [reminderTime, setReminderTime] = useState(DEFAULT_REMINDER_TIME);
@@ -181,14 +179,7 @@ const Auth = () => {
     if (isSignUp && step === "details") {
       return goTo(role === "teacher" ? "teacher" : role === "independent" ? "path" : "goal");
     }
-    if (isSignUp && step === "path") {
-      if (learningPath === "little_lanterns" && !guardian) {
-        setGuardianError(true);
-        changeMood("sad");
-        return;
-      }
-      return goTo("goal");
-    }
+    if (isSignUp && step === "path") return goTo("goal");
     if (isSignUp && step === "teacher" && !className.trim()) {
       changeMood("sad");
       return;
@@ -204,7 +195,6 @@ const Auth = () => {
           classCode: role === "student" ? classroomCode : undefined,
           className: role === "teacher" ? className : undefined,
           learningPath: role === "independent" ? learningPath : undefined,
-          guardianConfirmed: role === "independent" && learningPath === "little_lanterns" ? guardian : undefined,
         });
 
         if (needsConfirm) {
@@ -391,29 +381,8 @@ const Auth = () => {
                   onChange={(p) => {
                     if (p !== learningPath) react(p === "little_lanterns" ? "delight" : "happy", 1600);
                     setLearningPath(p);
-                    setGuardianError(false);
                   }}
                 />
-                {learningPath === "little_lanterns" && (
-                  <label className="flex items-start gap-3 rounded-[12px] border-2 border-stroke bg-card p-3 font-bold text-sm">
-                    <input
-                      type="checkbox"
-                      checked={guardian}
-                      onChange={(e) => {
-                        setGuardian(e.target.checked);
-                        setGuardianError(false);
-                        if (e.target.checked) react("happy", 1200);
-                      }}
-                      className="mt-0.5 h-5 w-5 accent-[hsl(var(--primary))]"
-                    />
-                    <span>
-                      {t("path.guardian")}
-                      {guardianError && (
-                        <span className="block text-destructive mt-1" role="alert">{t("path.guardian.needed")}</span>
-                      )}
-                    </span>
-                  </label>
-                )}
               </>
             )}
 

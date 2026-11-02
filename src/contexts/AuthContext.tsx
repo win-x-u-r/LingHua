@@ -14,8 +14,6 @@ export interface SignUpExtras {
   className?: string;
   /** Independent learners pick a learning path at sign-up */
   learningPath?: LearningPath;
-  /** Little Lanterns without a class: a grown-up confirmed they are setting it up */
-  guardianConfirmed?: boolean;
 }
 
 export interface SignUpResult {
@@ -50,7 +48,6 @@ interface AuthContextType {
   prefs: LearningPrefs | null;
   /** The learning path this learner follows; null for teachers and when signed out */
   learningPath: LearningPath | null;
-  setLearningPath: (path: LearningPath) => Promise<void>;
   signUp: (email: string, password: string, fullName: string, role: string, prefs?: LearningPrefs, extras?: SignUpExtras) => Promise<SignUpResult>;
   signIn: (email: string, password: string) => Promise<void>;
   resendConfirmation: (email: string) => Promise<void>;
@@ -141,7 +138,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...(extras?.classCode && { pending_class_code: extras.classCode.trim().toUpperCase() }),
           ...(extras?.className && { pending_class_name: extras.className.trim() }),
           ...(extras?.learningPath && { learning_path: extras.learningPath }),
-          ...(extras?.guardianConfirmed && { guardian_confirmed: true }),
         },
       },
     });
@@ -244,13 +240,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, profile],
   );
 
-  // Kept in the account's sign-up details, so it needs no database column
-  const setLearningPath = async (path: LearningPath) => {
-    const { data, error } = await supabase.auth.updateUser({ data: { learning_path: path } });
-    if (error) throw error;
-    if (data.user) setUser(data.user);
-  };
-
   const createClassroom = async (name: string): Promise<string> => {
     const me = await currentUser();
     // No 0/O or 1/I so the code is easy to read out to a class
@@ -321,7 +310,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, session, profile, loading, prefs, learningPath, setLearningPath,
+      user, session, profile, loading, prefs, learningPath,
       signUp, signIn, resendConfirmation, finishSetup, signOut, joinClassroom, createClassroom, setAvatar, setLearningPrefs,
     }}>
       {children}
