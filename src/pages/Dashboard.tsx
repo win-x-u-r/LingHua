@@ -6,7 +6,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import TeacherDashboard, { CreateClass, type TeacherDashboardData, type ClassStudent, type ClassWord } from "@/components/dashboard/TeacherDashboard";
 import StudentDashboard, { type StudentDashboardData, type ToneScore, type MissedWord } from "@/components/dashboard/StudentDashboard";
-import type { LearningPath } from "@/lib/learningPaths";
 
 /* Tone of each syllable from its pinyin tone mark (neutral tones are skipped) */
 const TONE_CHARS: Record<string, 1 | 2 | 3 | 4> = {};
@@ -371,9 +370,9 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreateClassroom = async (name: string, path: LearningPath) => {
+  const handleCreateClassroom = async (name: string) => {
     try {
-      const code = await createClassroom(name, path);
+      const code = await createClassroom(name);
       toast({ title: t("dashboard.classroom_created"), description: `${t("dashboard.classroom_code")}: ${code}` });
       await loadTeacherData();
     } catch {

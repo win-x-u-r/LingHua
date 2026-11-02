@@ -4,7 +4,7 @@ import type { User, Session } from "@supabase/supabase-js";
 import { resolvePrefs, writeLocalPrefs, type LearningPrefs } from "@/lib/dailyGoal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
-import { isLearningPath, pathFor, type LearningPath } from "@/lib/learningPaths";
+import { pathFor, type LearningPath } from "@/lib/learningPaths";
 
 /** Sign-up choices that need a signed-in learner. When the email must be confirmed first,
  *  they wait in the sign-up details and are applied the first time the learner logs in. */
@@ -12,9 +12,7 @@ export interface SignUpExtras {
   avatar?: string;
   classCode?: string;
   className?: string;
-  /** Teachers pick the path of the class they create */
-  classPath?: LearningPath;
-  /** Learners pick a learning path at sign-up (a class's path comes first) */
+  /** Independent learners pick a learning path at sign-up */
   learningPath?: LearningPath;
 }
 
@@ -57,7 +55,7 @@ interface AuthContextType {
   finishSetup: () => Promise<void>;
   signOut: () => Promise<void>;
   joinClassroom: (code: string) => Promise<void>;
-  createClassroom: (name: string, path?: LearningPath) => Promise<string>;
+  createClassroom: (name: string) => Promise<string>;
   setAvatar: (avatarId: string) => Promise<void>;
   setLearningPrefs: (prefs: LearningPrefs) => Promise<void>;
 }
@@ -139,7 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...(extras?.avatar && { pending_avatar: extras.avatar }),
           ...(extras?.classCode && { pending_class_code: extras.classCode.trim().toUpperCase() }),
           ...(extras?.className && { pending_class_name: extras.className.trim() }),
-          ...(extras?.classPath && { pending_class_path: extras.classPath }),
           ...(extras?.learningPath && { learning_path: extras.learningPath }),
         },
       },
@@ -238,44 +235,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, profile, prefsVersion],
   );
 
-  // The path of the student's class. Until 20261102_class_learning_path.sql is run
-  // there is no column, and classes follow Little Lanterns as before.
-  const [classPath, setClassPath] = useState<LearningPath | null>(null);
-  useEffect(() => {
-    const id = profile?.role === "student" ? profile.classroom_id : null;
-    if (!id) {
-      setClassPath(null);
-      return;
-    }
-    let live = true;
-    (supabase as any)
-      .from("classrooms")
-      .select("learning_path")
-      .eq("id", id)
-      .maybeSingle()
-      .then(({ data, error }: { data: { learning_path?: string } | null; error: unknown }) => {
-        if (live) setClassPath(!error && isLearningPath(data?.learning_path) ? data!.learning_path as LearningPath : null);
-      });
-    return () => {
-      live = false;
-    };
-  }, [profile?.role, profile?.classroom_id]);
-
   const learningPath = useMemo(
-    () => pathFor(user, profile?.role, profile?.classroom_id, classPath),
-    [user, profile, classPath],
+    () => pathFor(user, profile?.role, profile?.classroom_id),
+    [user, profile],
   );
 
-  const createClassroom = async (name: string, path?: LearningPath): Promise<string> => {
+  const createClassroom = async (name: string): Promise<string> => {
     const me = await currentUser();
     // No 0/O or 1/I so the code is easy to read out to a class
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     const code = Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
 
-    const insert = (row: Record<string, string>) => (supabase as any).from("classrooms").insert(row);
-    let { error } = await insert({ teacher_id: me.id, name, code, ...(path && { learning_path: path }) });
-    // Older database without the learning_path column: create the class anyway
-    if (error && path && /learning_path/.test(error.message ?? "")) ({ error } = await insert({ teacher_id: me.id, name, code }));
+    const { error } = await (supabase as any)
+      .from("classrooms")
+      .insert({ teacher_id: me.id, name, code });
 
     if (error) throw error;
     return code;
@@ -292,7 +265,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const avatar = typeof meta.pending_avatar === "string" ? meta.pending_avatar : "";
       const classCode = typeof meta.pending_class_code === "string" ? meta.pending_class_code : "";
       const className = typeof meta.pending_class_name === "string" ? meta.pending_class_name : "";
-      const classPathPick = isLearningPath(meta.pending_class_path) ? meta.pending_class_path : undefined;
       if (!avatar && !classCode && !className) {
         setupDone.current.add(me.id);
         return;
@@ -314,14 +286,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const { data: existing } = await (supabase as any)
             .from("classrooms").select("id").eq("teacher_id", me.id).limit(1);
-          if (!existing?.length) await createClassroom(className, classPathPick);
+          if (!existing?.length) await createClassroom(className);
         } catch {
           // The dashboard shows "create your class" when there is none yet
         }
       }
       setupDone.current.add(me.id);
       await supabase.auth.updateUser({
-        data: { pending_avatar: null, pending_class_code: null, pending_class_name: null, pending_class_path: null },
+        data: { pending_avatar: null, pending_class_code: null, pending_class_name: null },
       });
     })().finally(() => {
       setupJob.current = null;

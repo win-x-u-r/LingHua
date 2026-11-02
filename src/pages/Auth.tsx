@@ -10,11 +10,10 @@ import { useAuth, type UserRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { AVATAR_IDS } from "@/lib/avatars";
 import AvatarIcon from "@/components/AvatarIcon";
-import ClassCodeInput from "@/components/ClassCodeInput";
 import { GoalPicker, ReminderSetting } from "@/components/GoalPicker";
 import PathPicker, { type PathChoice } from "@/components/PathPicker";
 import PathIcon from "@/components/PathIcon";
-import { DEFAULT_PATH, type LearningPath } from "@/lib/learningPaths";
+import { DEFAULT_PATH } from "@/lib/learningPaths";
 import { DEFAULT_GOAL_MINUTES, DEFAULT_REMINDER_TIME, tierFor, type GoalTier } from "@/lib/dailyGoal";
 
 // The lantern gets a little more excited the bigger the goal
@@ -30,21 +29,18 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  // Sign-up starts with the path. Teacher's Corner makes a teacher; a learner who types a
-  // class code is a student (and follows the class's path); anyone else is independent.
+  // Sign-up starts with the path. Teacher's Corner is the teachers' own path; Little Lanterns
+  // join their class with the code at /kids; everyone else learns on their own path.
   const [choice, setChoice] = useState<PathChoice>(DEFAULT_PATH);
-  const [classroomCode, setClassroomCode] = useState("");
-  const role: UserRole = choice === "teacher" ? "teacher" : classroomCode ? "student" : "independent";
+  const role: UserRole = choice === "teacher" ? "teacher" : "independent";
   const kidsChoice = isSignUp && choice === "little_lanterns";
   const [className, setClassName] = useState("");
-  const [codeError, setCodeError] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Sign-up steps. Learners: path and details, then the daily goal. Teachers: Teacher's Corner
-  // and details, then their own welcome where they name the classroom and pick its path.
+  // and details, then their own welcome where they name the classroom.
   const [step, setStep] = useState<"details" | "goal" | "teacher">("details");
   const goalStep = step === "goal";
-  const [classPath, setClassPath] = useState<LearningPath>("little_lanterns");
   const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
   const [reminderOn, setReminderOn] = useState(true);
   const [reminderTime, setReminderTime] = useState(DEFAULT_REMINDER_TIME);
@@ -164,11 +160,6 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (kidsChoice) return;
-    if (isSignUp && choice !== "teacher" && classroomCode.length > 0 && classroomCode.length < 6) {
-      setCodeError(true);
-      changeMood("sad");
-      return;
-    }
     const asksGoal = isSignUp && role !== "teacher";
     const goTo = (next: typeof step) => {
       setStep(next);
@@ -190,9 +181,7 @@ const Auth = () => {
         const prefs = asksGoal ? { goalMinutes, reminderOn, reminderTime } : undefined;
         const { needsConfirm } = await signUp(email, password, fullName, role, prefs, {
           avatar: selectedAvatar,
-          classCode: role === "student" ? classroomCode : undefined,
           className: role === "teacher" ? className : undefined,
-          classPath: role === "teacher" ? classPath : undefined,
           learningPath: choice !== "teacher" ? choice : undefined,
         });
 
@@ -397,21 +386,6 @@ const Auth = () => {
               </div>
             )}
 
-            {step === "teacher" && (
-              <div className="flex flex-col gap-1.5">
-                <h2 id="class-path-title" className="text-sm font-medium">{t("path.class.title")}</h2>
-                <span className="text-xs text-muted-foreground -mt-1 mb-1">{t("path.class.hint")}</span>
-                <PathPicker
-                  value={classPath}
-                  labelledBy="class-path-title"
-                  onChange={(p) => {
-                    if (p !== classPath) react(p === "little_lanterns" ? "delight" : "happy", 1600);
-                    setClassPath(p);
-                  }}
-                />
-              </div>
-            )}
-
             {goalStep && (
               <>
                 <GoalPicker
@@ -473,28 +447,6 @@ const Auth = () => {
                     required
                   />
                 </div>
-
-                {choice !== "teacher" && (
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="classroom">{t("auth.classroom.optional")}</Label>
-                    <ClassCodeInput
-                      id="classroom"
-                      value={classroomCode}
-                      onFocus={() => watchField(classroomCode, false, 6)}
-                      onBlur={leaveField}
-                      onChange={(c) => {
-                        setClassroomCode(c);
-                        setCodeError(false);
-                        // Six characters is a whole code: a little cheer, then back to watching
-                        if (c.length === 6 && classroomCode.length < 6) react("happy", 1400);
-                        else typeInField(c, false, 6);
-                      }}
-                    />
-                    <span className={`text-xs ${codeError ? "text-destructive font-bold" : "text-muted-foreground"}`}>
-                      {codeError ? t("auth.classroom.short") : t("auth.classroom.follow")}
-                    </span>
-                  </div>
-                )}
 
                 <fieldset className="flex flex-col gap-1.5">
                   <legend className="text-sm font-medium mb-1.5">{t("auth.avatar")}</legend>
