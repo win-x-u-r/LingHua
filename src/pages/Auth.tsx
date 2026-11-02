@@ -50,6 +50,9 @@ const Auth = () => {
   // Shown above the log-in form: the email isn't confirmed yet, or the link didn't work
   const [notice, setNotice] = useState<"" | "unconfirmed" | "link_expired" | "link_failed">("");
   const [resent, setResent] = useState(false);
+  // "I've verified my email": asks Supabase, and says so if the email still isn't verified
+  const [checking, setChecking] = useState(false);
+  const [notYet, setNotYet] = useState(false);
   const { user, loading, signUp, signIn, resendConfirmation, finishSetup, setLearningPrefs } = useAuth();
   const { t, language } = useLanguage();
   const { toast } = useToast();
@@ -117,8 +120,36 @@ const Auth = () => {
     }
   };
 
+  // Logging in is the real check: Supabase refuses it until the email is verified
+  const checkVerified = async () => {
+    if (!sentTo || !password) return goToLogIn();
+    setChecking(true);
+    setIsSubmitting(true);
+    setNotYet(false);
+    changeMood("thinking");
+    try {
+      await signIn(sentTo, password);
+      await finishSetup();
+      changeMood("celebrate");
+      toast({ title: t("auth.created"), description: t("auth.created.desc") });
+      navigate(role === "teacher" ? "/dashboard" : "/");
+    } catch (err: any) {
+      if (err?.code === "email_not_confirmed" || /not confirmed/i.test(err?.message ?? "")) {
+        setNotYet(true);
+        changeMood("sad");
+      } else {
+        toast({ title: t("auth.signin.failed"), description: err?.message || t("auth.try_again"), variant: "destructive" });
+        goToLogIn();
+      }
+    } finally {
+      setChecking(false);
+      setIsSubmitting(false);
+    }
+  };
+
   const goToLogIn = () => {
     setSentTo("");
+    setNotYet(false);
     setResent(false);
     setGoalStep(false);
     setIsSignUp(false);
@@ -157,6 +188,7 @@ const Auth = () => {
           // Not signed in yet: the avatar, class and goal are saved on the first log-in
           setSentTo(email);
           setResent(false);
+          setNotYet(false);
           changeMood("celebrate");
           window.scrollTo({ top: 0 });
           return;
@@ -235,17 +267,23 @@ const Auth = () => {
             <div className="flex flex-col gap-4" role="status">
               <div>
                 <h1 className="text-3xl font-bold">{t("auth.check.title")}</h1>
-                <p lang="zh" className="font-zh text-muted-foreground">请查收邮件</p>
+                <p lang="zh" className="font-zh text-muted-foreground">查收邮件</p>
               </div>
               <p>
                 {t("auth.check.sent")}{" "}
                 <bdi dir="ltr" className="font-bold break-all">{sentTo}</bdi>
+                {t("auth.check.sent.end")}
               </p>
               <p className="text-muted-foreground">{t("auth.check.next")}</p>
               <p className="text-sm text-muted-foreground">{t("auth.check.spam")}</p>
+              {notYet && (
+                <p className="rounded-[12px] border-2 border-stroke bg-accent p-3 text-sm font-bold" role="alert">
+                  {t("auth.check.not_yet")}
+                </p>
+              )}
               <div className="flex flex-wrap gap-3 mt-2">
-                <Button type="button" size="lg" className="flex-1" onClick={goToLogIn}>
-                  {t("auth.signin")}
+                <Button type="button" size="lg" className="flex-1" onClick={checkVerified} disabled={checking}>
+                  {checking ? t("auth.wait") : t("auth.check.verified")}
                 </Button>
                 <Button type="button" size="lg" variant="outline" onClick={resend} disabled={resent}>
                   {resent ? t("auth.resend.done") : t("auth.resend")}
