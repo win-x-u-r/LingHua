@@ -3,15 +3,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  BookOpen, GraduationCap, RotateCcw, ChevronRight, ChevronLeft, Sparkles, ArrowLeft, Trophy,
-} from "lucide-react";
+import Lantern from "@/components/lantern/Lantern";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateXpEarned, shouldUpdateStreak } from "@/lib/gamification";
 import {
-  GRAMMAR_TOPICS, topicsByLevel, allQuestions,
+  topicsByLevel, allQuestions, topicFocus,
   type GrammarLevel, type GrammarTopic, type GrammarQuestion as GQ,
 } from "@/lib/grammarContent";
 import { recordGrammarAnswer, getWeakQuestionIds, getWeakCount } from "@/lib/grammarReview";
@@ -147,7 +145,6 @@ const Grammar = () => {
           ))}
           {weakCount > 0 && (
             <Button onClick={startReview} variant="outline" className="border-primary/40">
-              <RotateCcw className="w-4 h-4 mr-2" />
               {t("grammar.review_weak")}
               <Badge className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0.5 min-w-[1.25rem] justify-center">
                 {weakCount}
@@ -172,7 +169,6 @@ const Grammar = () => {
                   {language === "ar" ? tp.blurbAr : tp.blurb}
                 </p>
               </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
             </Card>
           ))}
         </div>
@@ -187,28 +183,27 @@ const Grammar = () => {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <Button variant="ghost" size="sm" onClick={backToTopics} className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {t("grammar.topics")}
+          {t("grammar.topics")}
         </Button>
 
-        <div className="flex items-center gap-2 mb-3">
-          <BookOpen className="w-5 h-5 text-primary" />
+        <div className="mb-3">
           <h2 className="text-xl font-bold" lang="zh">{language === "ar" ? topic.titleAr : topic.title}</h2>
         </div>
         <Progress value={((cardIdx + 1) / topic.cards.length) * 100} className="h-2 mb-4" />
 
-        <GrammarFlashcard card={card} />
+        <GrammarFlashcard key={cardIdx} card={card} focus={topicFocus(topic)} />
 
         <div className="flex justify-between items-center mt-4">
           <Button variant="outline" onClick={() => setCardIdx((i) => Math.max(0, i - 1))} disabled={cardIdx === 0}>
-            <ChevronLeft className="w-4 h-4 mr-1" /> {t("grammar.prev")}
+            {t("grammar.prev")}
           </Button>
           {isLast ? (
             <Button onClick={() => startPractice(topic.questions)} className="bg-gradient-coral">
-              <GraduationCap className="w-4 h-4 mr-2" /> {t("grammar.practice")}
+              {t("grammar.practice")}
             </Button>
           ) : (
             <Button onClick={() => setCardIdx((i) => i + 1)} className="bg-gradient-coral">
-              {t("grammar.next")} <ChevronRight className="w-4 h-4 ml-1" />
+              {t("grammar.next")}
             </Button>
           )}
         </div>
@@ -222,7 +217,7 @@ const Grammar = () => {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <Button variant="ghost" size="sm" onClick={backToTopics} className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {t("grammar.topics")}
+          {t("grammar.topics")}
         </Button>
 
         <div className="flex justify-between text-sm mb-2">
@@ -236,7 +231,6 @@ const Grammar = () => {
         <div className="flex justify-end mt-4">
           <Button onClick={handleNextQuestion} disabled={!answeredCurrent} className="bg-gradient-coral">
             {qIdx < questions.length - 1 ? t("grammar.next") : t("grammar.finish")}
-            <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
       </div>
@@ -249,19 +243,17 @@ const Grammar = () => {
     const pct = total ? Math.round((correctCount / total) * 100) : 0;
     return (
       <div className="container mx-auto max-w-md px-4 py-12 text-center">
-        <Trophy className="w-16 h-16 mx-auto text-sunshine mb-4" />
+        <Lantern mood={pct >= 60 ? "celebrate" : "happy"} className="w-36 h-36 mx-auto mb-2" />
         <h2 className="text-2xl font-bold mb-2">{t("grammar.session_complete")}</h2>
         <p className="text-4xl font-bold mb-2">{correctCount} / {total}</p>
         <p className="text-muted-foreground mb-4">{pct}%</p>
         {earnedXp > 0 && (
-          <div className="flex items-center justify-center gap-1 text-lg font-medium text-primary mb-6">
-            <Sparkles className="w-5 h-5" /> +{earnedXp} XP
-          </div>
+          <div className="text-lg font-medium text-primary mb-6">+{earnedXp} XP</div>
         )}
         <div className="flex flex-col gap-3">
           {weakCount > 0 && (
             <Button onClick={startReview} className="bg-gradient-coral">
-              <RotateCcw className="w-4 h-4 mr-2" /> {t("grammar.review_weak")} ({weakCount})
+              {t("grammar.review_weak")} ({weakCount})
             </Button>
           )}
           <Button variant="outline" onClick={backToTopics}>{t("grammar.back_to_topics")}</Button>

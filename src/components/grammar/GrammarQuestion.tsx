@@ -1,13 +1,56 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { tokenPinyin, type GrammarQuestion as GQ } from "@/lib/grammarContent";
+import { glossOf, segment } from "@/lib/grammarGloss";
+import { TickMark, CrossMark } from "@/components/grammar/GrammarIcons";
 
 interface GrammarQuestionProps {
   question: GQ;
   onAnswered: (correct: boolean) => void;
+}
+
+function shuffled<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Shuffle until the order differs from `avoid` (when that is possible). */
+function shuffledAwayFrom(items: string[], avoid: string[]): string[] {
+  if (new Set(items).size < 2) return [...items];
+  for (let tries = 0; tries < 10; tries++) {
+    const s = shuffled(items);
+    if (!arraysEqual(s, avoid)) return s;
+  }
+  return [...items].reverse();
+}
+
+// The Chinese line of a fill-the-blank question, without the English hint
+// some prompts carry in brackets, e.g. "我 ___ 学中文。(want to)".
+function chineseLine(prompt: string): string {
+  return prompt.replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
+// Sentence pieces for display. Punctuation rides on the word before it, so a
+// full stop never wraps onto a line of its own.
+function sentenceParts(prompt: string) {
+  const parts: { text: string; word: boolean; tail?: string }[] = [];
+  for (const seg of segment(chineseLine(prompt))) {
+    const text = seg.text.trim();
+    if (!text) continue;
+    const prev = parts[parts.length - 1];
+    if (!seg.word && !text.includes("_") && prev) {
+      prev.tail = (prev.tail ?? "") + text;
+      continue;
+    }
+    parts.push({ text, word: seg.word });
+  }
+  return parts;
 }
 
 function arraysEqual(a: string[], b: string[]) {
@@ -18,15 +61,26 @@ const GrammarQuestion = ({ question, onAnswered }: GrammarQuestionProps) => {
   const { t, language } = useLanguage();
   const [selected, setSelected] = useState<string | null>(null);
   const [built, setBuilt] = useState<string[]>([]);
-  const [bank, setBank] = useState<string[]>(question.options);
+  const isReorder = question.type === "reorder";
+  // Answers come in a fresh order every time. The authored data lists the
+  // right answer first, so without this the first button was always correct.
+  // Tap-the-word keeps its order, because its tokens are the sentence itself.
+  const [choices] = useState<string[]>(() =>
+    question.type === "tap_correct"
+      ? question.options
+      : isReorder
+        ? shuffledAwayFrom(question.options, question.answer as string[])
+        : shuffledAwayFrom(question.options, question.options),
+  );
+  const [bank, setBank] = useState<string[]>(choices);
   const [answered, setAnswered] = useState(false);
   const [correct, setCorrect] = useState(false);
 
-  const isReorder = question.type === "reorder";
   const showStimulus = question.type === "mcq_blank" || question.type === "word_bank";
   const explanation = language === "ar" ? question.explanationAr : question.explanation;
   const translation = language === "ar" ? question.translationAr : question.translation;
   const rtl = language === "ar";
+  const lang = rtl ? "ar" : "en";
   // MCQ / word-bank put the Chinese sentence (with the blank) below as the stimulus, so the
   // instruction line is a generic helper. Tap / reorder have no separate sentence, so the
   // authored per-question prompt ("Tap the question particle", "Arrange: …") IS the question.
@@ -79,11 +133,14 @@ const GrammarQuestion = ({ question, onAnswered }: GrammarQuestionProps) => {
     return "border-border/60 opacity-50";
   };
 
-  // A token (hanzi) with its pinyin shown underneath.
+  // A token (hanzi) with its pinyin and meaning underneath.
   const renderToken = (text: string) => (
     <span className="flex flex-col items-center leading-tight">
       <span>{text}</span>
-      <span className="text-[0.6rem] font-normal text-muted-foreground mt-0.5">{tokenPinyin(text)}</span>
+      <span className="font-pinyin text-xs font-normal text-muted-foreground mt-1">{tokenPinyin(text)}</span>
+      <span className="text-xs font-normal text-foreground/80 mt-0.5 max-w-[7rem] whitespace-normal" lang={lang} dir={rtl ? "rtl" : "ltr"}>
+        {glossOf(text, lang)}
+      </span>
     </span>
   );
 
@@ -100,9 +157,46 @@ const GrammarQuestion = ({ question, onAnswered }: GrammarQuestionProps) => {
 
       {/* Stimulus: the Chinese sentence with a blank (MCQ / word-bank) */}
       {showStimulus && (
-        <p className="text-2xl font-bold text-center mb-5" lang="zh" dir="ltr">
-          {question.prompt}
-        </p>
+        <>
+          <p className="text-center text-base font-semibold mb-3" dir={rtl ? "rtl" : "ltr"}>
+            {translation}
+          </p>
+          <div className="flex flex-wrap items-start justify-center gap-x-3 gap-y-2 mb-6" dir="ltr">
+            {sentenceParts(question.prompt).map((seg, i) => {
+              if (seg.word) {
+                return (
+                  <span key={i} className="flex flex-col items-center leading-tight">
+                    <span className="relative text-2xl font-bold" lang="zh">
+                      {seg.text}
+                      {seg.tail && <span className="absolute start-full">{seg.tail}</span>}
+                    </span>
+                    <span className="font-pinyin text-xs text-muted-foreground mt-1">{tokenPinyin(seg.text)}</span>
+                    <span className="text-xs text-foreground/80 mt-0.5" lang={lang} dir={rtl ? "rtl" : "ltr"}>
+                      {glossOf(seg.text, lang)}
+                    </span>
+                  </span>
+                );
+              }
+              if (seg.text.includes("_")) {
+                return (
+                  <span key={i} className="relative">
+                  <span
+                    aria-label={t("grammar.blank")}
+                    className={`mt-1 inline-block h-9 min-w-[3.5rem] rounded-md border-2 border-dashed px-2 text-2xl font-bold ${
+                      answered ? "border-green-500 text-green-700" : "border-primary/50"
+                    }`}
+                    lang="zh"
+                  >
+                    {answered ? (question.answer as string) : ""}
+                  </span>
+                  {seg.tail && <span className="absolute start-full top-0 text-2xl font-bold" lang="zh">{seg.tail}</span>}
+                  </span>
+                );
+              }
+              return <span key={i} className="text-2xl font-bold" lang="zh">{seg.text}</span>;
+            })}
+          </div>
+        </>
       )}
 
       {/* Selection UI */}
@@ -123,7 +217,7 @@ const GrammarQuestion = ({ question, onAnswered }: GrammarQuestionProps) => {
         </div>
       ) : !isReorder ? (
         <div className="flex flex-wrap gap-3 justify-center" lang="zh">
-          {question.options.map((opt) => (
+          {choices.map((opt) => (
             <Button
               key={opt}
               variant="outline"
@@ -178,7 +272,7 @@ const GrammarQuestion = ({ question, onAnswered }: GrammarQuestionProps) => {
           }`}
         >
           <div className={`flex items-center gap-2 font-bold ${correct ? "text-green-600" : "text-red-600"}`}>
-            {correct ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+            {correct ? <TickMark /> : <CrossMark />}
             {correct ? t("grammar.correct") : t("grammar.incorrect")}
           </div>
 

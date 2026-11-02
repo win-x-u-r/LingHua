@@ -495,6 +495,12 @@ export const GRAMMAR_TOPICS: GrammarTopic[] = [
   },
 ];
 
+/** The grammar word(s) a topic teaches, read from its title: "不 / 没 — Negation" → ["不", "没"]. */
+export function topicFocus(topic: GrammarTopic): string[] {
+  const head = topic.title.split("—")[0];
+  return head.split("/").map((w) => w.trim()).filter((w) => /[\u4e00-\u9fff]/.test(w));
+}
+
 export function topicsByLevel(level: GrammarLevel): GrammarTopic[] {
   return GRAMMAR_TOPICS.filter((t) => t.level === level);
 }
@@ -522,7 +528,13 @@ const CHAR_PINYIN: Record<string, string> = {
   "难": "nán", "饭": "fàn", "高": "gāo",
 };
 
+// Words whose tones change in context (一 becomes yì before a 3rd or 1st tone).
+const WORD_PINYIN: Record<string, string> = {
+  "一本": "yì běn", "一杯": "yì bēi",
+};
+
 /** Space-joined pinyin for a token (which may be one or several characters). */
 export function tokenPinyin(token: string): string {
+  if (WORD_PINYIN[token]) return WORD_PINYIN[token];
   return [...token].map((c) => CHAR_PINYIN[c] ?? "").join(" ").trim();
 }
