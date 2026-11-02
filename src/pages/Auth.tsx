@@ -11,9 +11,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { AVATAR_IDS } from "@/lib/avatars";
 import AvatarIcon from "@/components/AvatarIcon";
 import ClassCodeInput from "@/components/ClassCodeInput";
-import RoleIcon from "@/components/RoleIcon";
 import { GoalPicker, ReminderSetting } from "@/components/GoalPicker";
-import PathPicker from "@/components/PathPicker";
+import PathPicker, { type PathChoice } from "@/components/PathPicker";
 import PathIcon from "@/components/PathIcon";
 import { DEFAULT_PATH, type LearningPath } from "@/lib/learningPaths";
 import { DEFAULT_GOAL_MINUTES, DEFAULT_REMINDER_TIME, tierFor, type GoalTier } from "@/lib/dailyGoal";
@@ -26,28 +25,26 @@ const GOAL_MOOD: Record<GoalTier, LanternMood> = {
   dedicated: "celebrate",
 };
 
-const ROLES: { value: UserRole; labelKey: string }[] = [
-  { value: "student", labelKey: "auth.role.student" },
-  { value: "teacher", labelKey: "auth.role.teacher" },
-  { value: "independent", labelKey: "auth.role.independent" },
-];
-
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<UserRole>("student");
+  // Sign-up starts with the path. Teacher's Corner makes a teacher; a learner who types a
+  // class code is a student (and follows the class's path); anyone else is independent.
+  const [choice, setChoice] = useState<PathChoice>(DEFAULT_PATH);
   const [classroomCode, setClassroomCode] = useState("");
+  const role: UserRole = choice === "teacher" ? "teacher" : classroomCode ? "student" : "independent";
+  const kidsChoice = isSignUp && choice === "little_lanterns";
   const [className, setClassName] = useState("");
   const [codeError, setCodeError] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState("panda");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Sign-up steps. Learners: details, then (independent learners only) their path, then the
-  // daily goal. Teachers: details, then their own welcome where they name the classroom.
-  const [step, setStep] = useState<"details" | "path" | "goal" | "teacher">("details");
+  // Sign-up steps. Learners: path and details, then the daily goal. Teachers: Teacher's Corner
+  // and details, then their own welcome where they name the classroom and pick its path.
+  const [step, setStep] = useState<"details" | "goal" | "teacher">("details");
   const goalStep = step === "goal";
-  const [learningPath, setLearningPath] = useState<LearningPath>(DEFAULT_PATH);
+  const [classPath, setClassPath] = useState<LearningPath>("little_lanterns");
   const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
   const [reminderOn, setReminderOn] = useState(true);
   const [reminderTime, setReminderTime] = useState(DEFAULT_REMINDER_TIME);
@@ -166,7 +163,8 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSignUp && role === "student" && classroomCode.length < 6) {
+    if (kidsChoice) return;
+    if (isSignUp && choice !== "teacher" && classroomCode.length > 0 && classroomCode.length < 6) {
       setCodeError(true);
       changeMood("sad");
       return;
@@ -178,9 +176,8 @@ const Auth = () => {
       window.scrollTo({ top: 0 });
     };
     if (isSignUp && step === "details") {
-      return goTo(role === "teacher" ? "teacher" : role === "independent" ? "path" : "goal");
+      return goTo(role === "teacher" ? "teacher" : "goal");
     }
-    if (isSignUp && step === "path") return goTo("goal");
     if (isSignUp && step === "teacher" && !className.trim()) {
       changeMood("sad");
       return;
@@ -195,7 +192,8 @@ const Auth = () => {
           avatar: selectedAvatar,
           classCode: role === "student" ? classroomCode : undefined,
           className: role === "teacher" ? className : undefined,
-          learningPath: role === "independent" ? learningPath : undefined,
+          classPath: role === "teacher" ? classPath : undefined,
+          learningPath: choice !== "teacher" ? choice : undefined,
         });
 
         if (needsConfirm) {
@@ -314,11 +312,6 @@ const Auth = () => {
                 <p className="text-lg font-bold mt-3">{t("teacher.welcome.sub")}</p>
                 <p className="text-muted-foreground">{t("teacher.welcome.body")}</p>
               </>
-            ) : step === "path" ? (
-              <>
-                <h1 id="path-title" className="text-3xl font-bold text-balance">{t("path.title")}</h1>
-                <p lang="zh" className="font-zh text-muted-foreground">选择你的学习之路</p>
-              </>
             ) : goalStep ? (
               <>
                 <h1 id="goal-title" className="text-2xl md:text-3xl font-bold text-balance">{t("goal.title")}</h1>
@@ -354,7 +347,8 @@ const Auth = () => {
           </div>
           )}
 
-          {step === "details" && (
+          {/* Kids log in here; signing up, they pick Little Lanterns below */}
+          {step === "details" && !isSignUp && (
             <Link
               to="/kids"
               className="flex items-center gap-3 rounded-[12px] border-2 border-stroke bg-card p-3 font-bold shadow-[3px_3px_0_hsl(var(--stamp))]"
@@ -384,19 +378,6 @@ const Auth = () => {
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {step === "path" && (
-              <>
-                <PathPicker
-                  value={learningPath}
-                  labelledBy="path-title"
-                  onChange={(p) => {
-                    if (p !== learningPath) react(p === "little_lanterns" ? "delight" : "happy", 1600);
-                    setLearningPath(p);
-                  }}
-                />
-              </>
-            )}
-
             {step === "teacher" && (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="classname">{t("auth.classname")}</Label>
@@ -413,6 +394,21 @@ const Auth = () => {
                   required
                 />
                 <span className="text-xs text-muted-foreground">{t("auth.classname.hint")}</span>
+              </div>
+            )}
+
+            {step === "teacher" && (
+              <div className="flex flex-col gap-1.5">
+                <h2 id="class-path-title" className="text-sm font-medium">{t("path.class.title")}</h2>
+                <span className="text-xs text-muted-foreground -mt-1 mb-1">{t("path.class.hint")}</span>
+                <PathPicker
+                  value={classPath}
+                  labelledBy="class-path-title"
+                  onChange={(p) => {
+                    if (p !== classPath) react(p === "little_lanterns" ? "delight" : "happy", 1600);
+                    setClassPath(p);
+                  }}
+                />
               </div>
             )}
 
@@ -440,6 +436,28 @@ const Auth = () => {
 
             {isSignUp && step === "details" && (
               <>
+                <fieldset className="flex flex-col gap-1.5">
+                  <legend id="path-title" className="text-sm font-medium mb-1.5">{t("path.title")}</legend>
+                  <PathPicker
+                    value={choice}
+                    withTeacher
+                    labelledBy="path-title"
+                    onChange={(p) => {
+                      if (p !== choice) react(p === "little_lanterns" ? "delight" : "happy", 1600);
+                      setChoice(p);
+                    }}
+                  />
+                </fieldset>
+
+                {kidsChoice ? (
+                  <div className="flex flex-col gap-3 rounded-[12px] border-2 border-stroke bg-accent p-4">
+                    <p className="font-bold">{t("path.signup.kids")}</p>
+                    <Link to="/kids">
+                      <Button type="button" size="lg" className="w-full">{t("path.signup.kids.cta")}</Button>
+                    </Link>
+                  </div>
+                ) : (
+                <>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="name">{t("auth.name")}</Label>
                   <Input
@@ -456,36 +474,9 @@ const Auth = () => {
                   />
                 </div>
 
-                <fieldset className="flex flex-col gap-1.5">
-                  <legend className="text-sm font-medium mb-1.5">{t("auth.role")}</legend>
-                  <div className="grid grid-cols-3 gap-2" role="radiogroup">
-                    {ROLES.map((r) => {
-                      const on = role === r.value;
-                      return (
-                        <button
-                          key={r.value}
-                          type="button"
-                          role="radio"
-                          aria-checked={on}
-                          onClick={() => {
-                            if (role !== r.value) react("happy");
-                            setRole(r.value);
-                          }}
-                          className={`flex flex-col items-center gap-1.5 rounded-[12px] border-2 px-2 py-3 font-bold text-sm leading-tight text-center ${
-                            on ? "border-stroke bg-accent shadow-[3px_3px_0_hsl(var(--stamp))]" : "border-border bg-card text-muted-foreground"
-                          }`}
-                        >
-                          <RoleIcon role={r.value} className="w-11 h-11" />
-                          {t(r.labelKey)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </fieldset>
-
-                {role === "student" && (
+                {choice !== "teacher" && (
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="classroom">{t("auth.classroom")}</Label>
+                    <Label htmlFor="classroom">{t("auth.classroom.optional")}</Label>
                     <ClassCodeInput
                       id="classroom"
                       value={classroomCode}
@@ -500,7 +491,7 @@ const Auth = () => {
                       }}
                     />
                     <span className={`text-xs ${codeError ? "text-destructive font-bold" : "text-muted-foreground"}`}>
-                      {codeError ? t("auth.classroom.required") : t("auth.classroom.hint")}
+                      {codeError ? t("auth.classroom.short") : t("auth.classroom.follow")}
                     </span>
                   </div>
                 )}
@@ -527,11 +518,12 @@ const Auth = () => {
                     ))}
                   </div>
                 </fieldset>
-
+                </>
+                )}
               </>
             )}
 
-            {step === "details" && (
+            {step === "details" && !kidsChoice && (
             <>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">{t("auth.email")}</Label>
@@ -577,11 +569,12 @@ const Auth = () => {
                   type="button"
                   variant="outline"
                   size="lg"
-                  onClick={() => setStep(step === "goal" && role === "independent" ? "path" : "details")}
+                  onClick={() => setStep("details")}
                 >
                   {t("goal.back")}
                 </Button>
               )}
+              {!kidsChoice && (
               <Button type="submit" disabled={isSubmitting} size="lg" className="flex-1">
                 {isSubmitting
                   ? t("auth.wait")
@@ -593,6 +586,7 @@ const Auth = () => {
                         ? t("auth.create")
                         : t("goal.next")}
               </Button>
+              )}
             </div>
           </form>
           </>

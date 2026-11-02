@@ -5,15 +5,14 @@ import type { UserRole } from "@/contexts/AuthContext";
  * LingHua's learning paths. A path is how a learner moves through the shared
  * content; the account role (student, teacher, independent) stays separate.
  *
- * - Students who join with a class code follow their class (Little Lanterns
- *   until teachers can pick a path per class).
- * - Independent learners pick a path at sign-up. It stays fixed; another path
+ * - Sign-up starts with the path. Teachers pick Teacher's Corner and then a
+ *   path for their class (classrooms.learning_path).
+ * - Students who join with a class code follow their class's path.
+ * - Everyone else keeps the path they picked. It stays fixed; another path
  *   means another account. My Mandarin Journey's freedom is inside the path:
  *   any card set or grammar point, in any order.
- * - Teachers have no path: they get Teacher's Corner.
  *
- * The chosen path lives in the account's sign-up details (user_metadata), so it
- * needs no database change.
+ * A learner's own pick lives in the sign-up details (user_metadata).
  */
 export type LearningPath = "little_lanterns" | "hsk" | "my_mandarin" | "on_the_move";
 
@@ -36,10 +35,15 @@ export function isLearningPath(v: unknown): v is LearningPath {
   return typeof v === "string" && (LEARNING_PATHS as string[]).includes(v);
 }
 
-/** The path this account follows, or null for teachers. */
-export function pathFor(user: User | null, role: UserRole | undefined, classroomId?: string | null): LearningPath | null {
+/** The path this account follows, or null for teachers. classPath: the path of the learner's class. */
+export function pathFor(
+  user: User | null,
+  role: UserRole | undefined,
+  classroomId?: string | null,
+  classPath?: LearningPath | null,
+): LearningPath | null {
   if (!user || role === "teacher") return null;
-  if (role === "student" && classroomId) return "little_lanterns";
+  if (role === "student" && classroomId) return classPath ?? "little_lanterns";
   const chosen = user.user_metadata?.learning_path;
   return isLearningPath(chosen) ? chosen : DEFAULT_PATH;
 }

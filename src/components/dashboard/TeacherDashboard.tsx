@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { MY_CLASSROOM_ZH } from "@/lib/learningPaths";
 import KidsLoginCard from "./KidsLoginCard";
 import PathIcon from "@/components/PathIcon";
+import PathPicker from "@/components/PathPicker";
+import type { LearningPath } from "@/lib/learningPaths";
 import { WEEKLY_GOAL_DAYS, type ToneScore } from "./StudentDashboard";
 
 export interface ClassStudent {
@@ -48,9 +50,10 @@ const TONE_MARK: Record<number, string> = { 1: "ā", 2: "á", 3: "ǎ", 4: "à" }
 /* ──────────────────────────────────────────
    No class yet: create one
    ────────────────────────────────────────── */
-export const CreateClass = ({ onCreate }: { onCreate: (name: string) => Promise<void> }) => {
+export const CreateClass = ({ onCreate }: { onCreate: (name: string, path: LearningPath) => Promise<void> }) => {
   const { t } = useLanguage();
   const [name, setName] = useState("");
+  const [path, setPath] = useState<LearningPath>("little_lanterns");
   const [busy, setBusy] = useState(false);
   return (
     <div className="container mx-auto max-w-md px-4 py-12">
@@ -70,11 +73,16 @@ export const CreateClass = ({ onCreate }: { onCreate: (name: string) => Promise<
             e.preventDefault();
             if (!name.trim()) return;
             setBusy(true);
-            await onCreate(name.trim());
+            await onCreate(name.trim(), path);
             setBusy(false);
           }}
         >
           <Input placeholder={t("dashboard.classroom_name_placeholder")} value={name} onChange={(e) => setName(e.target.value)} required />
+          <div className="flex flex-col gap-1.5 text-start">
+            <h2 id="create-class-path" className="text-sm font-medium">{t("path.class.title")}</h2>
+            <span className="text-xs text-muted-foreground -mt-1 mb-1">{t("path.class.hint")}</span>
+            <PathPicker<LearningPath> value={path} onChange={setPath} labelledBy="create-class-path" />
+          </div>
           <Button type="submit" className="w-full" size="lg" disabled={busy}>
             {t("teacher.welcome.cta")}
           </Button>
