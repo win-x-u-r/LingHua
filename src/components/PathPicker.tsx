@@ -42,7 +42,7 @@ const PathPicker = <T extends PathChoice = LearningPath>({
             {teacher ? <RoleIcon role="teacher" className="w-12 h-12" /> : <PathIcon path={p} className="w-12 h-12" />}
             <span className="flex-1 min-w-0">
               <span className="block font-bold leading-tight">{t(teacher ? "corner.title" : `path.${p}`)}</span>
-              <span lang="zh" className="block font-zh text-sm text-muted-foreground">{teacher ? TEACHERS_CORNER_ZH : PATH_ZH[p]}</span>
+              <span lang="zh" className="block font-zh text-sm text-muted-foreground rtl:text-right">{teacher ? TEACHERS_CORNER_ZH : PATH_ZH[p]}</span>
               <span className="block text-xs text-muted-foreground mt-0.5">{t(teacher ? "corner.desc" : `path.${p}.desc`)}</span>
             </span>
           </button>

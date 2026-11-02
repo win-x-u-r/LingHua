@@ -180,11 +180,11 @@ All colors MUST be HSL.
     text-align: right;
   }
 
-  /* Chinese text always LTR within RTL context */
+  /* Chinese text always LTR within RTL context. Alignment follows the parent,
+     so centred Chinese lines stay centred in Arabic too. */
   [dir="rtl"] [lang="zh"],
   .chinese-text {
     direction: ltr;
-    text-align: left;
   }
 
   /* Kid-friendly animations */

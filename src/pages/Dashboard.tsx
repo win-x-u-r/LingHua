@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import ClassCodeReady from "@/components/dashboard/ClassCodeReady";
 import TeacherDashboard, { CreateClass, type TeacherDashboardData, type ClassStudent, type ClassWord } from "@/components/dashboard/TeacherDashboard";
 import StudentDashboard, { type StudentDashboardData, type ToneScore, type MissedWord } from "@/components/dashboard/StudentDashboard";
 
@@ -35,12 +36,30 @@ interface LevelProgress {
 // ──────────────────────────────────────────
 //  Component
 // ──────────────────────────────────────────
+// The "Your class code is ready" screen shows once per class, remembered on this device
+const codeKey = (uid: string, code: string) => `linghua-code-seen-${uid}-${code}`;
+const seenCode = (uid: string, code: string) => {
+  try {
+    return localStorage.getItem(codeKey(uid, code)) === "1";
+  } catch {
+    return true;
+  }
+};
+const markCodeSeen = (uid: string, code: string) => {
+  try {
+    localStorage.setItem(codeKey(uid, code), "1");
+  } catch {
+    // Private window: it may show again next time, which is harmless
+  }
+};
+
 const Dashboard = () => {
   const { user, profile, createClassroom, joinClassroom } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
 
   // Teacher state
+  const [codeShown, setCodeShown] = useState(false);
   const [teacherData, setTeacherData] = useState<TeacherDashboardData | null>(null);
 
   // Student analytics state
@@ -458,6 +477,21 @@ const Dashboard = () => {
   //  TEACHER VIEW
   // ──────────────────────────────────────────
   if (!teacherData) return <CreateClass onCreate={handleCreateClassroom} />;
+  // First visit with a new class: the code screen, once per class
+  if (user && !codeShown && !seenCode(user.id, teacherData.code)) {
+    return (
+      <ClassCodeReady
+        code={teacherData.code}
+        className={teacherData.className}
+        onCopy={copyCode}
+        onDone={() => {
+          markCodeSeen(user.id, teacherData.code);
+          setCodeShown(true);
+          window.scrollTo({ top: 0 });
+        }}
+      />
+    );
+  }
   return <TeacherDashboard data={teacherData} onCopy={copyCode} />;
 };
 
