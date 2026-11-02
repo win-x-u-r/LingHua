@@ -15,7 +15,10 @@ const ScoreResult = ({ result, earnedXp, compact = true }: ScoreResultProps) => 
   const { t } = useLanguage();
 
   // One concrete next step: the first sound that went wrong, in Hua's words.
-  const slip = result.segments?.find((seg) => !seg.pinyin_correct || !seg.tone_correct);
+  // Only servers that send heard_pinyin can say what was heard; older ones get no tip.
+  const slip = result.segments?.find(
+    (seg) => seg.heard_pinyin !== undefined && (!seg.pinyin_correct || !seg.tone_correct),
+  );
   const tip = slip
     ? (slip.heard_pinyin ? t("hua.tip.heard") : t("hua.tip.missing"))
         .split(/(\{char\}|\{heard\}|\{target\})/)
