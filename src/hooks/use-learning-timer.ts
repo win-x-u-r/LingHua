@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { addLearningSeconds, syncToday } from "@/lib/dailyGoal";
 
 // Pages where time counts toward the daily goal
-const LEARNING_PATHS = ["/flashcards", "/practice", "/grammar", "/tutor", "/translator"];
+const LEARNING_PATHS = ["/flashcards", "/practice", "/grammar", "/tutor", "/translator", "/learn"];
 // Stop counting if nobody has touched, typed or spoken for this long
 const IDLE_MS = 90_000;
 const TICK_MS = 5_000;
@@ -17,7 +17,7 @@ const SYNC_EVERY_TICKS = 12; // about once a minute
 export function useLearningTimer() {
   const { user, profile } = useAuth();
   const { pathname } = useLocation();
-  const counting = !!user && profile?.role !== "teacher" && LEARNING_PATHS.includes(pathname);
+  const counting = !!user && profile?.role !== "teacher" && LEARNING_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   useEffect(() => {
     if (!counting || !user) return;

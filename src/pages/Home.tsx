@@ -16,6 +16,8 @@ import { useTodayMinutes } from "@/hooks/use-today-minutes";
 import GoalIcon from "@/components/GoalIcon";
 import { progressText, tierFor } from "@/lib/dailyGoal";
 import { listLessons, type Lesson } from "@/lib/lessons";
+import { UNIT1 } from "@/content/foundation1/unit1";
+import { loadProgress } from "@/lib/foundationProgress";
 
 const Home = () => {
   const { user } = useAuth();
@@ -84,7 +86,7 @@ const Landing = () => {
         </ul>
       </section>
 
-      {/* Hua gets her own block so she reads as a character, not a feature line */}
+      {/* Hua gets his own block so he reads as a character, not a feature line */}
       <section className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center gap-6 rounded-[14px] border-2 border-stroke bg-secondary dark:bg-card p-6 md:p-8">
         <div className="lantern-glow [--glow-size:200%] [--glow-y:55%] shrink-0">
           <Lantern mood="happy" className="w-28 h-28 md:w-32 md:h-32" />
@@ -145,6 +147,10 @@ const Today = () => {
   const firstName = (user?.user_metadata?.first_name as string | undefined) || (profile?.full_name ?? "").split(" ")[0];
   const goalDone = today.done;
   const isTeacher = profile?.role === "teacher";
+  // Foundation 1 is for every learner except HSK Journey, which has its own curriculum
+  const showFoundation = !isTeacher && learningPath !== "hsk";
+  const unitProgress = loadProgress(user?.id).lessons;
+  const unitDone = UNIT1.lessons.filter((l) => unitProgress[l.key]).length;
 
   const activities = [
     // Teachers reach My Classroom from the big button above, so the list starts with speaking
@@ -157,6 +163,7 @@ const Today = () => {
           desc: dueCount > 0 ? `${dueCount} ${t("today.review.due")}` : t("today.review.none"),
           count: dueCount,
         }]),
+    ...(isTeacher ? [{ to: "/learn", seal: "学", titleKey: "learn.today.teacher", desc: t("learn.today.teacher.desc") }] : []),
     { to: "/tutor", seal: "说", titleKey: "today.speak", desc: t("today.speak.desc") },
     { to: "/grammar", seal: "文", titleKey: "today.grammar", desc: t("today.grammar.desc") },
     { to: "/translator", seal: "译", titleKey: "today.translate", desc: t("today.translate.desc"), tone: "gold" as const },
@@ -226,6 +233,29 @@ const Today = () => {
           </div>
         )}
       </Card>
+
+      {showFoundation && (
+        <section className="rounded-[14px] border-2 border-stroke bg-card p-5 flex flex-col gap-3" aria-labelledby="first-spark">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("learn.f1")}</span>
+          <div className="flex items-center gap-4">
+            <span className="w-12 h-12 shrink-0 rounded-full border-2 border-stroke bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
+              {UNIT1.number}
+            </span>
+            <div className="flex-1 min-w-0">
+              <h2 id="first-spark" className="text-xl font-bold leading-tight">
+                {UNIT1.title[language]} <span lang="zh" className="font-zh text-primary">{UNIT1.zh}</span>
+              </h2>
+              <p className="text-sm text-muted-foreground">{t("learn.today.desc")}</p>
+            </div>
+          </div>
+          <Progress value={(unitDone / UNIT1.lessons.length) * 100} aria-label={`${unitDone} / ${UNIT1.lessons.length}`} />
+          <Link to="/learn">
+            <Button size="lg" variant={unitDone ? "outline" : "default"} className="w-full">
+              {unitDone ? t("learn.today.continue") : t("learn.today.start")}
+            </Button>
+          </Link>
+        </section>
+      )}
 
       {lessons.length > 0 && (
         <section className="flex flex-col gap-3" aria-labelledby="from-teacher">
