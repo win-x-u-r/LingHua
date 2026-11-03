@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { GRAMMAR_TOPICS } from "@/lib/grammarContent";
 import { getLesson, LessonsNotSetUp, saveLesson } from "@/lib/lessons";
+import { pathOfKey } from "@/lib/classPaths";
 
 interface Word {
   id: string;
@@ -52,10 +53,11 @@ const LessonBuilder = () => {
   const [grammarIds, setGrammarIds] = useState<string[]>([]);
   const [words, setWords] = useState<Word[]>([]);
   const [query, setQuery] = useState("");
-  const [level, setLevel] = useState<(typeof LEVELS)[number] | "all">("all");
+  const [level, setLevel] = useState<(typeof LEVELS)[number] | "all" | "picked">("all");
   const [missing, setMissing] = useState(false);
   const [notSetUp, setNotSetUp] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [sourceKey, setSourceKey] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -74,6 +76,8 @@ const LessonBuilder = () => {
         setTitle(l.title);
         setVocabIds(l.vocabIds);
         setGrammarIds(l.grammarIds);
+        setSourceKey(l.sourceKey);
+        if (l.sourceKey) setLevel("picked");
       })
       .catch((e) => e instanceof LessonsNotSetUp && setNotSetUp(true));
   }, [id]);
@@ -82,10 +86,10 @@ const LessonBuilder = () => {
     const q = query.trim().toLowerCase();
     return words.filter(
       (w) =>
-        (level === "all" || w.level === level) &&
+        (level === "all" || w.level === level || (level === "picked" && vocabIds.includes(w.id))) &&
         (!q || w.hanzi.includes(q) || w.pinyin.toLowerCase().includes(q) || w.arabic_translation.includes(q)),
     );
-  }, [words, query, level]);
+  }, [words, query, level, vocabIds]);
 
   const toggle = (list: string[], set: (v: string[]) => void, key: string) =>
     set(list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
@@ -120,6 +124,13 @@ const LessonBuilder = () => {
 
       {notSetUp && (
         <p className="rounded-[12px] border-2 border-stroke bg-accent p-3 font-bold" role="alert">{t("lesson.not_set_up")}</p>
+      )}
+
+      {pathOfKey(sourceKey) && (
+        <p className="rounded-[12px] border-2 border-border bg-card p-3 text-sm">
+          <span className="font-bold">{t("lesson.from_path").replace("{path}", pathOfKey(sourceKey)!.title[language === "ar" ? "ar" : "en"])}.</span>{" "}
+          {t("lesson.based_on")}
+        </p>
       )}
 
       <Card className="p-5 flex flex-col gap-4">
@@ -157,7 +168,7 @@ const LessonBuilder = () => {
           <div className="flex flex-col gap-3">
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("lesson.search")} aria-label={t("lesson.search")} />
             <div className="flex flex-wrap gap-2">
-              {(["all", ...LEVELS] as const).map((l) => (
+              {(["all", "picked", ...LEVELS] as const).map((l) => (
                 <button
                   key={l}
                   type="button"
@@ -167,7 +178,7 @@ const LessonBuilder = () => {
                     level === l ? "border-stroke bg-accent" : "border-border bg-card text-muted-foreground"
                   }`}
                 >
-                  {l === "all" ? t("lesson.all") : t(`common.${l}`)}
+                  {l === "all" ? t("lesson.all") : l === "picked" ? t("lesson.picked").replace("{n}", String(vocabIds.length)) : t(`common.${l}`)}
                 </button>
               ))}
             </div>

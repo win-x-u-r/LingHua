@@ -43,9 +43,9 @@ const ClassCodeReady = ({
   const navigate = useNavigate();
   const [board, setBoard] = useState(false);
   const [makeYours, setMakeYours] = useState(false);
-  const buildLesson = (tab: "words" | "grammar") => {
+  const go = (to: string) => {
     onDone();
-    navigate(`/lessons/new?class=${classId}&tab=${tab}`);
+    navigate(to);
   };
   const url = `${window.location.host}/kids`;
   const how = t("teach.ready.how").replace("{url}", url);
@@ -69,36 +69,43 @@ const ClassCodeReady = ({
     );
   }
 
-  // Optional: pick the class's first words and grammar now, or later from My Classroom
+  // Two ways to start: follow a LingHua path, or build lessons from scratch.
+  // Adapting a path happens later in My Classroom; both stay open there.
   if (makeYours) {
+    const options = [
+      { seal: "路", key: "way.path", zh: "跟随学习路线", to: `/lessons/paths?class=${classId}` },
+      { seal: "创", key: "way.own", zh: "自定义课程", to: `/lessons/new?class=${classId}` },
+    ] as const;
     return (
-      <div className="container mx-auto max-w-md px-4 py-12">
-        <Card className="p-8 flex flex-col items-center text-center gap-5 overflow-hidden">
+      <div className="container mx-auto max-w-lg px-4 py-12">
+        <Card className="p-6 sm:p-8 flex flex-col items-center text-center gap-5 overflow-hidden">
           <div className="lantern-glow [--glow-size:220%]">
             <Lantern mood="delight" entering className="w-24 h-24" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-balance">{t("lesson.intro.title")}</h1>
-            <p lang="zh" className="font-zh text-muted-foreground">现在，打造属于你的课堂。</p>
+            <h1 className="text-3xl font-bold text-balance">{t("way.title")}</h1>
+            <p lang="zh" className="font-zh text-muted-foreground">你的课堂，你做主。</p>
           </div>
-          <p className="text-muted-foreground">{t("lesson.intro.desc")}</p>
-          <div className="w-full flex flex-col gap-2">
-            {([["词", "words", "lesson.choose.words"], ["文", "grammar", "lesson.choose.grammar"]] as const).map(([seal, tab, key]) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => buildLesson(tab)}
-                className="flex items-center gap-3 rounded-[12px] border-2 border-stroke bg-card p-3 font-bold text-start shadow-[3px_3px_0_hsl(var(--stamp))]"
-              >
-                <Seal char={seal} size="md" />
-                {t(key)}
-              </button>
+          <p className="text-muted-foreground">{t("way.sub")}</p>
+          <div className="w-full flex flex-col gap-3 text-start">
+            {options.map((o) => (
+              <div key={o.key} className="rounded-[12px] border-2 border-stroke bg-card p-4 flex flex-col gap-3 shadow-[3px_3px_0_hsl(var(--stamp))]">
+                <div className="flex items-start gap-3">
+                  <Seal char={o.seal} size="md" />
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-bold leading-tight">{t(o.key)}</h2>
+                    <p lang="zh" className="font-zh text-sm text-muted-foreground">{o.zh}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{t(`${o.key}.desc`)}</p>
+                  </div>
+                </div>
+                <Button onClick={() => go(o.to)}>{t(`${o.key}.cta`)}</Button>
+              </div>
             ))}
           </div>
-          <div className="w-full flex flex-col gap-3">
-            <Button size="lg" onClick={() => buildLesson("words")}>{t("lesson.first")}</Button>
-            <Button size="lg" variant="outline" onClick={onDone}>{t("lesson.later")}</Button>
-          </div>
+          <p className="text-sm text-muted-foreground">{t("way.later")}</p>
+          <button type="button" onClick={onDone} className="text-sm font-bold text-primary underline underline-offset-4">
+            {t("way.skip")}
+          </button>
         </Card>
       </div>
     );

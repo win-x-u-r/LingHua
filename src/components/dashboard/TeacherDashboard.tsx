@@ -11,7 +11,8 @@ import { MY_CLASSROOM_ZH } from "@/lib/learningPaths";
 import KidsLoginCard from "./KidsLoginCard";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { deleteLesson, listLessons, LessonsNotSetUp, type Lesson } from "@/lib/lessons";
+import { deleteLesson, listLessons, LessonsNotSetUp, saveOrder, type Lesson } from "@/lib/lessons";
+import { pathOfKey } from "@/lib/classPaths";
 import ClassSetupFields, { AgePicker, LevelPicker } from "@/components/ClassSetupFields";
 import { LEVEL_ZH, type AgeGroup, type ClassLevel } from "@/lib/classSetup";
 import PathIcon from "@/components/PathIcon";
@@ -511,9 +512,20 @@ const TeacherDashboard = ({
   );
 };
 
-/** My Classroom: the lessons this class practises, with New, Edit and Delete */
+/** A small drawn chevron for the lesson order buttons */
+const Chevron = ({ up }: { up?: boolean }) => (
+  <svg viewBox="0 0 24 24" className={cn("w-4 h-4", up && "rotate-180")} aria-hidden="true">
+    <path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/**
+ * My Classroom: the lessons this class practises, in the teacher's order.
+ * Teachers can follow a LingHua path, adapt its lessons (edit, reorder,
+ * delete), or add their own, and switch between these at any time.
+ */
 const LessonsSection = ({ classId }: { classId: string }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const [lessons, setLessons] = useState<Lesson[] | null>(null);
   const [notSetUp, setNotSetUp] = useState(false);
@@ -538,6 +550,21 @@ const LessonsSection = ({ classId }: { classId: string }) => {
     }
   };
 
+  const move = async (i: number, by: -1 | 1) => {
+    const list = [...(lessons ?? [])];
+    const j = i + by;
+    if (j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    const before = lessons;
+    setLessons(list.map((l, k) => ({ ...l, position: k })));
+    try {
+      if (!(await saveOrder(list.map((l) => l.id)))) throw new Error("order");
+    } catch {
+      setLessons(before);
+      toast({ title: t("lesson.failed"), variant: "destructive" });
+    }
+  };
+
   return (
     <Section seal="课" title={t("lesson.title")} note={t("lesson.note")}>
       <div className="flex flex-col gap-3">
@@ -547,29 +574,52 @@ const LessonsSection = ({ classId }: { classId: string }) => {
           <p className="text-sm text-muted-foreground">{t("lesson.none")}</p>
         ) : (
           <ul className="flex flex-col divide-y-2 divide-border">
-            {(lessons ?? []).map((l) => (
-              <li key={l.id} className="py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="flex-1 min-w-[10rem]">
+            {(lessons ?? []).map((l, i, all) => {
+              const path = pathOfKey(l.sourceKey);
+              return (
+              <li key={l.id} className="py-3 flex items-center gap-3">
+                <span className="flex flex-col gap-1 shrink-0">
+                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label={t("lesson.up")} title={t("lesson.up")} className="w-7 h-6 rounded-md border-2 border-stroke bg-card grid place-items-center disabled:opacity-30">
+                    <Chevron up />
+                  </button>
+                  <button type="button" onClick={() => move(i, 1)} disabled={i === all.length - 1} aria-label={t("lesson.down")} title={t("lesson.down")} className="w-7 h-6 rounded-md border-2 border-stroke bg-card grid place-items-center disabled:opacity-30">
+                    <Chevron />
+                  </button>
+                </span>
+                <span className="flex-1 min-w-0">
                   <span className="block font-bold">{l.title}</span>
                   <span className="block text-sm text-muted-foreground">
                     {t("lesson.count").replace("{w}", String(l.vocabIds.length)).replace("{g}", String(l.grammarIds.length))}
                   </span>
+                  {path && (
+                    <span className="mt-1 inline-block rounded-full border-2 border-border px-2 text-xs font-bold text-muted-foreground">
+                      {t("lesson.from_path").replace("{path}", path.title[language === "ar" ? "ar" : "en"])}
+                    </span>
+                  )}
                 </span>
-                <Link to={`/lessons/${l.id}`}>
-                  <Button variant="outline" size="sm">{t("lesson.edit")}</Button>
-                </Link>
-                <Button variant="outline" size="sm" onClick={() => remove(l)}>{t("lesson.delete")}</Button>
+                <span className="flex flex-col sm:flex-row gap-2 shrink-0">
+                  <Link to={`/lessons/${l.id}`}>
+                    <Button variant="outline" size="sm">{t("lesson.edit")}</Button>
+                  </Link>
+                  <Button variant="outline" size="sm" onClick={() => remove(l)}>{t("lesson.delete")}</Button>
+                </span>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
         {!notSetUp && (
-          <Link to={`/lessons/new?class=${classId}`} className="self-start">
-            <Button size="sm">
-              <span aria-hidden="true">+</span>
-              <span>{t("lesson.new")}</span>
-            </Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/lessons/new?class=${classId}`}>
+              <Button size="sm">
+                <span aria-hidden="true">+</span>
+                <span>{t("lesson.new")}</span>
+              </Button>
+            </Link>
+            <Link to={`/lessons/paths?class=${classId}`}>
+              <Button size="sm" variant="outline">{t("paths.add")}</Button>
+            </Link>
+          </div>
         )}
       </div>
     </Section>
