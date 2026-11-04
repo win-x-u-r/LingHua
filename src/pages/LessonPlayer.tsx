@@ -19,7 +19,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PASS_MARKS } from "@/content/foundation1/unit1";
-import { findLesson, FOUNDATION1 } from "@/content/courses";
+import { findLesson, storeFor, unitPath, FOUNDATION1 } from "@/content/courses";
 import type { Activity, StepId } from "@/content/foundation1/types";
 import { loadProgress, saveProgress, type CanDoAnswer, type LessonResult } from "@/lib/foundationProgress";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,9 @@ const LessonPlayer = () => {
   const found = findLesson(key);
   const lesson = found?.lesson ?? null;
   const course = found?.course ?? FOUNDATION1;
-  const unit = course.unit;
+  const unit = found?.unit ?? course.units[0];
+  const store = storeFor(unit);
+  const back = unitPath(course, unit);
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -51,19 +53,20 @@ const LessonPlayer = () => {
   const [spoken, setSpoken] = useState({ done: 0, total: 0 });
   const [pending, setPending] = useState<ActivityResult | undefined>();
   const [finished, setFinished] = useState<LessonResult | null>(null);
-  const [canDo, setCanDo] = useState<Record<number, CanDoAnswer>>(() => loadProgress(user?.id, course.store).canDo);
+  const [canDo, setCanDo] = useState<Record<number, CanDoAnswer>>(() => loadProgress(user?.id, store).canDo);
 
   if (!lesson) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-2xl">
-        <Link to={course.base}><Button>{t("learn.back_unit")}</Button></Link>
+        <Link to={back}><Button>{t("learn.back_unit")}</Button></Link>
       </div>
     );
   }
 
   const current = flat[index];
   const lessonIndex = unit.lessons.findIndex((l) => l.key === lesson.key);
-  const nextLesson = unit.lessons[lessonIndex + 1];
+  // After a unit's last lesson, carry on into the next unit
+  const nextLesson = unit.lessons[lessonIndex + 1] ?? course.units[course.units.indexOf(unit) + 1]?.lessons[0];
 
   const onReady = (result?: ActivityResult) => {
     setPending(result);
@@ -102,12 +105,12 @@ const LessonPlayer = () => {
       });
       result.passed = partsPass && nextSpoken.done === nextSpoken.total;
     }
-    const progress = loadProgress(user?.id, course.store);
+    const progress = loadProgress(user?.id, store);
     // Keep a passed check passed, even if a later practice run goes less well
     const before = progress.lessons[lesson.key];
     progress.lessons[lesson.key] = before?.passed && !result.passed ? { ...result, passed: true } : result;
     progress.canDo = canDo;
-    saveProgress(user?.id, progress, course.store);
+    saveProgress(user?.id, progress, store);
     setFinished(result);
     window.scrollTo({ top: 0 });
   };
@@ -145,7 +148,7 @@ const LessonPlayer = () => {
           {lesson.isCheck ? (passed ? t("learn.finish.check_pass") : t("learn.not_yet")) : t("learn.finish.title")}
         </h1>
         {lesson.isCheck && !passed && <p className="text-lg text-muted-foreground max-w-md">{t("learn.finish.check_retry")}</p>}
-        {lesson.isCheck && passed && <p className="text-lg font-bold text-success-foreground">{t("learn.lit")}</p>}
+        {lesson.isCheck && passed && <p className="text-lg font-bold text-success-foreground">{t("learn.lit").replace("{n}", String(unit.number))}</p>}
 
         <ul className="w-full flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden text-start">
           {stepsWithScores.map((s) => {
@@ -179,7 +182,7 @@ const LessonPlayer = () => {
               {nextLesson.isCheck ? t("learn.take_check") : t("learn.next")}
             </Button>
           )}
-          <Link to={course.base}>
+          <Link to={back}>
             <Button size="lg" variant={nextLesson ? "outline" : "default"}>{t("learn.back_unit")}</Button>
           </Link>
         </div>
@@ -200,7 +203,7 @@ const LessonPlayer = () => {
               {lesson.title[language]} <bdi lang="zh" dir="ltr" className="font-zh text-primary">{lesson.zh}</bdi>
             </h1>
           </div>
-          <Link to={course.base}>
+          <Link to={back}>
             <Button variant="ghost" size="sm">{t("learn.exit")}</Button>
           </Link>
         </div>

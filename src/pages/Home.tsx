@@ -17,7 +17,7 @@ import GoalIcon from "@/components/GoalIcon";
 import { progressText, tierFor } from "@/lib/dailyGoal";
 import { listLessons, type Lesson } from "@/lib/lessons";
 import { UNIT1 } from "@/content/foundation1/unit1";
-import { MOVE_UNIT1 } from "@/content/onTheMove/unit1";
+import { ON_THE_MOVE, storeFor } from "@/content/courses";
 import { loadProgress } from "@/lib/foundationProgress";
 
 const Home = () => {
@@ -167,8 +167,8 @@ const Today = () => {
   const unitProgress = loadProgress(user?.id).lessons;
   const unitDone = UNIT1.lessons.filter((l) => unitProgress[l.key]).length;
   const onTheMove = !isTeacher && learningPath === "on_the_move";
-  const moveProgress = loadProgress(user?.id, "move").lessons;
-  const moveDone = MOVE_UNIT1.lessons.filter((l) => moveProgress[l.key]).length;
+  const moveLessons = ON_THE_MOVE.units.flatMap((u) => u.lessons.map((l) => ({ l, store: storeFor(u) })));
+  const moveDone = moveLessons.filter(({ l, store }) => loadProgress(user?.id, store).lessons[l.key]).length;
 
   const activities = [
     // Teachers reach My Classroom from the big button above, so the list starts with speaking
@@ -254,20 +254,19 @@ const Today = () => {
 
       {onTheMove && (
         <section className="rounded-[14px] border-2 border-stroke bg-card p-5 flex flex-col gap-3" aria-labelledby="on-the-move">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("move.label")}</span>
           <div className="flex items-center gap-4">
             <PathIcon path="on_the_move" className="w-12 h-12 shrink-0" />
             <div className="flex-1 min-w-0">
               <h2 id="on-the-move" className="text-xl font-bold leading-tight">
-                {MOVE_UNIT1.title[language]} <span lang="zh" className="font-zh text-primary">{MOVE_UNIT1.zh}</span>
+                {t("path.on_the_move")} <span lang="zh" className="font-zh text-primary">{PATH_ZH.on_the_move}</span>
               </h2>
-              <p className="text-sm text-muted-foreground">{t("move.today.desc")}</p>
+              <p className="text-sm text-muted-foreground">{t("move.hub.sub")}</p>
             </div>
           </div>
-          <Progress value={(moveDone / MOVE_UNIT1.lessons.length) * 100} aria-label={`${moveDone} / ${MOVE_UNIT1.lessons.length}`} />
+          <Progress value={(moveDone / moveLessons.length) * 100} aria-label={`${moveDone} / ${moveLessons.length}`} />
           <div className="grid sm:grid-cols-2 gap-3">
             <Link to="/move">
-              <Button size="lg" className="w-full">{moveDone ? t("learn.continue") : t("move.today.start")}</Button>
+              <Button size="lg" className="w-full">{moveDone ? t("move.hub.continue") : t("move.hub.start")}</Button>
             </Link>
             <Link to="/move/phrases">
               <Button size="lg" variant="outline" className="w-full">{t("move.phrases.open")}</Button>

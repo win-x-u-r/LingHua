@@ -4,16 +4,16 @@ import Lantern from "@/components/lantern/Lantern";
 import { TickMark } from "@/components/grammar/GrammarIcons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOUNDATION1, type Course } from "@/content/courses";
+import { FOUNDATION1, storeFor, type Course } from "@/content/courses";
+import type { Unit } from "@/content/foundation1/types";
 import { loadProgress } from "@/lib/foundationProgress";
 import { cn } from "@/lib/utils";
 
 /** One unit's lessons: Foundation 1 at /learn, Mandarin on the Move at /move */
-const Learn = ({ course = FOUNDATION1, children }: { course?: Course; children?: React.ReactNode }) => {
+const Learn = ({ course = FOUNDATION1, unit = course.units[0], top, children }: { course?: Course; unit?: Unit; top?: React.ReactNode; children?: React.ReactNode }) => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
-  const progress = loadProgress(user?.id, course.store);
-  const unit = course.unit;
+  const progress = loadProgress(user?.id, storeFor(unit));
   const check = unit.lessons.find((l) => l.isCheck);
   // A unit is lit when its check is passed, or, with no check, when every lesson is done
   const lit = check ? !!progress.lessons[check.key]?.passed : unit.lessons.every((l) => progress.lessons[l.key]);
@@ -21,6 +21,7 @@ const Learn = ({ course = FOUNDATION1, children }: { course?: Course; children?:
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12 max-w-2xl flex flex-col gap-6">
+      {top}
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <span className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">{t(course.labelKey)}</span>
@@ -34,7 +35,7 @@ const Learn = ({ course = FOUNDATION1, children }: { course?: Course; children?:
         </div>
       </div>
 
-      {lit && <p className="font-bold text-success-foreground">{t("learn.lit")}</p>}
+      {lit && <p className="font-bold text-success-foreground">{t("learn.lit").replace("{n}", String(unit.number))}</p>}
 
       <section className="rounded-[14px] border-2 border-stroke bg-secondary dark:bg-card p-5 flex flex-col gap-2">
         <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("learn.outcome")}</h2>
