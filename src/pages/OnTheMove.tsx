@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 
 const TOOLS = [
   { to: "/move/phrases", seal: "语", titleKey: "move.tool.phrases", descKey: "move.tool.phrases.desc", tone: "red" as const },
+  { to: "/move/nearby", seal: "近", titleKey: "move.tool.nearby", descKey: "move.tool.nearby.desc", tone: "gold" as const },
+  { to: "/move/trains", seal: "铁", titleKey: "move.tool.trains", descKey: "move.tool.trains.desc", tone: "red" as const },
   { to: "/move/taxi", seal: "车", titleKey: "move.tool.taxi", descKey: "move.tool.taxi.desc", tone: "gold" as const },
   { to: "/move/numbers", seal: "数", titleKey: "move.tool.numbers", descKey: "move.tool.numbers.desc", tone: "red" as const },
   { to: "/move/etiquette", seal: "礼", titleKey: "move.tool.etiquette", descKey: "move.tool.etiquette.desc", tone: "gold" as const },

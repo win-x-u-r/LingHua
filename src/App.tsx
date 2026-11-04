@@ -30,6 +30,8 @@ import MoveUnit from "./pages/MoveUnit";
 import Etiquette from "./pages/Etiquette";
 import TaxiCard from "./pages/TaxiCard";
 import Numbers from "./pages/Numbers";
+import Trains from "./pages/Trains";
+import Nearby from "./pages/Nearby";
 import Tutor from "./pages/Tutor";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
@@ -71,6 +73,8 @@ const AppRoutes = () => {
         <Route path="/move/etiquette" element={<Etiquette />} />
         <Route path="/move/taxi" element={<TaxiCard />} />
         <Route path="/move/numbers" element={<Numbers />} />
+        <Route path="/move/trains" element={<Trains />} />
+        <Route path="/move/nearby" element={<Nearby />} />
         <Route path="/move/unit/:unitKey" element={<MoveUnit />} />
         <Route path="/move/:key" element={<LessonPlayer />} />
         <Route path="/grammar" element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
