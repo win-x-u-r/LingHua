@@ -1,6 +1,24 @@
 export type Language = "ar" | "en";
 
 const translations: Record<string, Record<Language, string>> = {
+  // Mandarin on the Move
+  "move.label": { en: "Mandarin on the Move · 实用中文", ar: "الصينية أينما كنت · 实用中文" },
+  "move.phrases.card": { en: "Pocket phrasebook", ar: "دليل العبارات" },
+  "move.phrases.card.desc": { en: "Phrases for taxis, hotels, food and meetings. Tap to hear, or show them full screen.", ar: "عبارات لسيارات الأجرة والفنادق والطعام والاجتماعات. اضغط لتسمعها، أو اعرضها بملء الشاشة." },
+  "move.phrases.open": { en: "Open the phrasebook", ar: "افتح دليل العبارات" },
+  "move.phrases.title": { en: "Pocket phrasebook", ar: "دليل العبارات" },
+  "move.phrases.intro": { en: "Tap Listen to hear a phrase. Tap Show to hold it up for a driver, receptionist or waiter.", ar: "اضغط «استمع» لتسمع العبارة، واضغط «اعرض» لتريها لسائق أو موظف استقبال أو نادل." },
+  "move.phrases.show": { en: "Show", ar: "اعرض" },
+  "move.phrases.close": { en: "Close", ar: "إغلاق" },
+  "move.phrases.back": { en: "Back to Mandarin on the Move", ar: "العودة إلى الصينية أينما كنت" },
+  "move.save.title": { en: "Keep going with LingHua", ar: "تابع مع لينغ هوا" },
+  "move.save.desc": { en: "Create a free account to save your progress and practise with Hua every day.", ar: "أنشئ حسابًا مجانيًا لتحفظ تقدّمك وتتدرّب مع هوا كل يوم." },
+  "move.save.cta": { en: "Create a free account", ar: "أنشئ حسابًا مجانيًا" },
+  "move.today.desc": { en: "Hello, China: the airport, a business meeting and a taxi to your hotel.", ar: "أهلاً بك في الصين: المطار، ولقاء عمل، وسيارة أجرة إلى فندقك." },
+  "move.today.start": { en: "Start Hello, China", ar: "ابدأ: أهلاً بك في الصين" },
+  "move.home.title": { en: "Travelling to China?", ar: "مسافر إلى الصين؟" },
+  "move.home.desc": { en: "Try a short travel lesson with Hua. No account needed.", ar: "جرّب درس سفر قصيرًا مع هوا، دون حساب." },
+  "move.home.cta": { en: "Try Mandarin on the Move", ar: "جرّب الصينية أينما كنت" },
   // Foundation 1 lessons
   "learn.f1": { en: "Foundation 1 · First Steps in Mandarin", ar: "الأساس 1 · خطواتك الأولى في الصينية" },
   "learn.unit": { en: "Unit {n}", ar: "الوحدة {n}" },

@@ -39,7 +39,7 @@ export const useText = () => {
 const isZh = (label: T | Zh): label is Zh => "zh" in label;
 
 /** A play button that says what it plays and can't be pressed twice at once */
-const PlayButton = ({ text, hua = false, label, size = "sm", variant = "outline" }: {
+export const PlayButton = ({ text, hua = false, label, size = "sm", variant = "outline" }: {
   text: string;
   hua?: boolean;
   label?: string;
@@ -69,7 +69,7 @@ const PlayButton = ({ text, hua = false, label, size = "sm", variant = "outline"
 };
 
 /** Mandarin with its pinyin underneath */
-const ZhText = ({ zh, pinyin, size = "md" }: Zh & { size?: "sm" | "md" | "lg" | "xl" }) => (
+export const ZhText = ({ zh, pinyin, size = "md" }: Zh & { size?: "sm" | "md" | "lg" | "xl" }) => (
   <span className="inline-flex flex-col items-center" dir="ltr">
     <span
       lang="zh"

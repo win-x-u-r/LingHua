@@ -18,11 +18,12 @@ export interface FoundationProgress {
   canDo: Record<number, CanDoAnswer>;
 }
 
-const keyFor = (userId: string | undefined) => `linghua.foundation1.${userId ?? "guest"}`;
+/** Each course keeps its own progress: "foundation1" or "move" */
+const keyFor = (userId: string | undefined, store = "foundation1") => `linghua.${store}.${userId ?? "guest"}`;
 
-export function loadProgress(userId: string | undefined): FoundationProgress {
+export function loadProgress(userId: string | undefined, store?: string): FoundationProgress {
   try {
-    const raw = localStorage.getItem(keyFor(userId));
+    const raw = localStorage.getItem(keyFor(userId, store));
     if (raw) return { lessons: {}, canDo: {}, ...JSON.parse(raw) };
   } catch {
     // Private window or blocked storage: start fresh
@@ -30,9 +31,9 @@ export function loadProgress(userId: string | undefined): FoundationProgress {
   return { lessons: {}, canDo: {} };
 }
 
-export function saveProgress(userId: string | undefined, progress: FoundationProgress) {
+export function saveProgress(userId: string | undefined, progress: FoundationProgress, store?: string) {
   try {
-    localStorage.setItem(keyFor(userId), JSON.stringify(progress));
+    localStorage.setItem(keyFor(userId, store), JSON.stringify(progress));
   } catch {
     // Nothing to do: progress stays for this visit only
   }

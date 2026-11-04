@@ -24,6 +24,8 @@ import LessonBuilder from "./pages/LessonBuilder";
 import Grammar from "./pages/Grammar";
 import Learn from "./pages/Learn";
 import LessonPlayer from "./pages/LessonPlayer";
+import OnTheMove from "./pages/OnTheMove";
+import Phrasebook from "./pages/Phrasebook";
 import Tutor from "./pages/Tutor";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
@@ -60,6 +62,9 @@ const AppRoutes = () => {
         <Route path="/lessons/:id" element={<ProtectedRoute><LessonBuilder /></ProtectedRoute>} />
         <Route path="/learn" element={<ProtectedRoute><Learn /></ProtectedRoute>} />
         <Route path="/learn/:key" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
+        <Route path="/move" element={<OnTheMove />} />
+        <Route path="/move/phrases" element={<Phrasebook />} />
+        <Route path="/move/:key" element={<LessonPlayer />} />
         <Route path="/grammar" element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
         <Route path="/tutor" element={<ProtectedRoute><Tutor /></ProtectedRoute>} />
         <Route path="/about" element={<About />} />

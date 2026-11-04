@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,10 @@ const GOAL_MOOD: Record<GoalTier, LanternMood> = {
 };
 
 const Auth = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  // /auth?mode=signup&path=on_the_move opens sign-up with that path picked (from Mandarin on the Move)
+  const [params] = useSearchParams();
+  const fromMove = params.get("path") === "on_the_move";
+  const [isSignUp, setIsSignUp] = useState(params.get("mode") === "signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -36,7 +39,7 @@ const Auth = () => {
   const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
   // Sign-up starts with the path. Teacher's Corner is the teachers' own path; Little Lanterns
   // join their class with the code at /kids; everyone else learns on their own path.
-  const [choice, setChoice] = useState<PathChoice>(DEFAULT_PATH);
+  const [choice, setChoice] = useState<PathChoice>(fromMove ? "on_the_move" : DEFAULT_PATH);
   const role: UserRole = choice === "teacher" ? "teacher" : "independent";
   const [className, setClassName] = useState("");
   const [classAge, setClassAge] = useState<AgeGroup | null>(null);
@@ -46,7 +49,9 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Sign-up steps. Learners: path and details, then the daily goal. Teachers: Teacher's Corner
   // and details, then their own welcome where they name the classroom.
-  const [step, setStep] = useState<"path" | "details" | "goal" | "teacher" | "class">("details");
+  const [step, setStep] = useState<"path" | "details" | "goal" | "teacher" | "class">(
+    params.get("mode") === "signup" ? "path" : "details",
+  );
   const goalStep = step === "goal";
   const [goalMinutes, setGoalMinutes] = useState(DEFAULT_GOAL_MINUTES);
   const [reminderOn, setReminderOn] = useState(true);

@@ -17,6 +17,7 @@ import GoalIcon from "@/components/GoalIcon";
 import { progressText, tierFor } from "@/lib/dailyGoal";
 import { listLessons, type Lesson } from "@/lib/lessons";
 import { UNIT1 } from "@/content/foundation1/unit1";
+import { MOVE_UNIT1 } from "@/content/onTheMove/unit1";
 import { loadProgress } from "@/lib/foundationProgress";
 
 const Home = () => {
@@ -69,6 +70,20 @@ const Landing = () => {
             <Lantern mood="idle" className="w-28 h-28 md:w-36 md:h-36" />
           </div>
         </Card>
+      </section>
+
+      {/* Mandarin on the Move is open to visitors: a lesson and the phrasebook, no account needed */}
+      <section className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center gap-5 rounded-[14px] border-2 border-stroke bg-card p-5 md:p-6 text-center sm:text-start">
+        <PathIcon path="on_the_move" className="w-16 h-16 shrink-0" />
+        <div className="flex-1 flex flex-col gap-1">
+          <h2 className="text-2xl font-bold">
+            {t("move.home.title")} <span lang="zh" className="font-zh text-primary">{PATH_ZH.on_the_move}</span>
+          </h2>
+          <p className="text-muted-foreground">{t("move.home.desc")}</p>
+        </div>
+        <Link to="/move" className="shrink-0">
+          <Button size="lg" variant="outline">{t("move.home.cta")}</Button>
+        </Link>
       </section>
 
       <section className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
@@ -151,6 +166,9 @@ const Today = () => {
   const showFoundation = !isTeacher && learningPath !== "hsk";
   const unitProgress = loadProgress(user?.id).lessons;
   const unitDone = UNIT1.lessons.filter((l) => unitProgress[l.key]).length;
+  const onTheMove = !isTeacher && learningPath === "on_the_move";
+  const moveProgress = loadProgress(user?.id, "move").lessons;
+  const moveDone = MOVE_UNIT1.lessons.filter((l) => moveProgress[l.key]).length;
 
   const activities = [
     // Teachers reach My Classroom from the big button above, so the list starts with speaking
@@ -233,6 +251,30 @@ const Today = () => {
           </div>
         )}
       </Card>
+
+      {onTheMove && (
+        <section className="rounded-[14px] border-2 border-stroke bg-card p-5 flex flex-col gap-3" aria-labelledby="on-the-move">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("move.label")}</span>
+          <div className="flex items-center gap-4">
+            <PathIcon path="on_the_move" className="w-12 h-12 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h2 id="on-the-move" className="text-xl font-bold leading-tight">
+                {MOVE_UNIT1.title[language]} <span lang="zh" className="font-zh text-primary">{MOVE_UNIT1.zh}</span>
+              </h2>
+              <p className="text-sm text-muted-foreground">{t("move.today.desc")}</p>
+            </div>
+          </div>
+          <Progress value={(moveDone / MOVE_UNIT1.lessons.length) * 100} aria-label={`${moveDone} / ${MOVE_UNIT1.lessons.length}`} />
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Link to="/move">
+              <Button size="lg" className="w-full">{moveDone ? t("learn.continue") : t("move.today.start")}</Button>
+            </Link>
+            <Link to="/move/phrases">
+              <Button size="lg" variant="outline" className="w-full">{t("move.phrases.open")}</Button>
+            </Link>
+          </div>
+        </section>
+      )}
 
       {showFoundation && (
         <section className="rounded-[14px] border-2 border-stroke bg-card p-5 flex flex-col gap-3" aria-labelledby="first-spark">
