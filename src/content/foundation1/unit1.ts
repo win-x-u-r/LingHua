@@ -77,7 +77,7 @@ export const UNIT1: Unit = {
                 en: "Characters are how Mandarin is written. Pinyin spells the sound in Latin letters, with a mark for the tone. The Arabic sound guide is a helper: listen first, then use it if you need it.",
                 ar: "الحروف الصينية هي طريقة كتابة الصينية. والبينيين يكتب الصوت بحروف لاتينية مع علامة للنغمة. أما دليل النطق بالعربية فهو مساعد: استمع أولًا، ثم استعن به إن احتجت.",
               },
-              examples: [{ zh: "你好", pinyin: "nǐ hǎo", meaning: { en: "Hello · ني هاو", ar: "مرحباً · ني هاو" } }],
+              examples: [{ zh: "你好", pinyin: "nǐ hǎo", meaning: { en: "Hello · نِي هَاوْ", ar: "مرحباً · نِي هَاوْ" } }],
             },
           ],
         },
@@ -167,7 +167,7 @@ export const UNIT1: Unit = {
               zh: "你好",
               pinyin: "nǐ hǎo",
               meaning: { en: "Hello", ar: "مرحباً" },
-              sound: "ني هاو",
+              sound: "نِي هَاوْ",
               note: {
                 en: "你 is you and 好 is good. Two third tones in a row change: the first one rises, so you say ní hǎo.",
                 ar: "你 تعني أنت و好 تعني جيد. وعندما تأتي نغمتان ثالثتان متتاليتان ترتفع الأولى، فتقول ní hǎo.",
@@ -190,7 +190,7 @@ export const UNIT1: Unit = {
               zh: "老师",
               pinyin: "lǎoshī",
               meaning: { en: "Teacher", ar: "مُعلّم / مُعلّمة" },
-              sound: "لاو شْ",
+              sound: "لَاوْ شْ",
               note: {
                 en: "For shī, say ش with the tip of your tongue curled up and back. The i is a buzz, not ي.",
                 ar: "في shī قل ش مع رفع طرف اللسان إلى الخلف. والـ i هنا طنين خفيف، وليست ياءً.",
@@ -212,7 +212,7 @@ export const UNIT1: Unit = {
               zh: "再见",
               pinyin: "zàijiàn",
               meaning: { en: "Goodbye", ar: "مع السلامة" },
-              sound: "دْزاي جْيان",
+              sound: "دْزَايْ جِيَانْ",
               note: {
                 en: "z isn't ز. It's a quick d and z together, like the end of \"kids\". Both syllables fall.",
                 ar: "صوت z ليس زايًا، بل دال وزاي معًا بسرعة. وكلا المقطعين بنغمة هابطة.",
@@ -326,7 +326,7 @@ export const UNIT1: Unit = {
               zh: "叫",
               pinyin: "jiào",
               meaning: { en: "To be called", ar: "يُدعى" },
-              sound: "جْياو",
+              sound: "جِيَاوْ",
               note: {
                 en: "我叫 means \"I am called\". Arabic says اسمي (my name). Mandarin says I am called.",
                 ar: "我叫 تعني «أُدعى». العربية تقول «اسمي»، أما الصينية فتقول «أُدعى».",
@@ -345,7 +345,7 @@ export const UNIT1: Unit = {
               zh: "名字",
               pinyin: "míngzi",
               meaning: { en: "Name", ar: "اسم" },
-              sound: "مِينغ دْزِ",
+              sound: "مِينْغ دْزِ",
               bonus: true,
               note: {
                 en: "A bonus word. For -ng, say ن at the back of your mouth, and don't say the غ out loud.",
@@ -377,7 +377,7 @@ export const UNIT1: Unit = {
               zh: "认识你很高兴",
               pinyin: "rènshi nǐ hěn gāoxìng",
               meaning: { en: "Nice to meet you", ar: "تشرّفنا" },
-              sound: "رِنْ شْ ني هِن كاو شِينغ",
+              sound: "رِنْ شْ نِي هِنْ كَاوْ شِينْغ",
               note: {
                 en: "Learn it as one phrase. 认识 is to meet or know, 很 links to 高兴, happy. The r is not rolled: curl your tongue back without touching anything.",
                 ar: "احفظها عبارةً واحدة. 认识 تعني يتعرّف، و很 تربط بـ高兴 أي سعيد. والـ r هنا لا تُلفظ مثل الراء العربية: ارفع لسانك إلى الخلف دون أن يلمس شيئًا.",

@@ -61,7 +61,7 @@ const Landing = () => {
             <span lang="ar" dir="rtl" className="text-2xl self-start">مرحباً</span>
             <div className="mt-3 pt-3 border-t-2 border-border flex flex-col gap-1">
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("home.sample.sounds")}</span>
-              <span lang="ar" dir="rtl" className="text-2xl font-bold self-start">ني هاو</span>
+              <span lang="ar" dir="rtl" className="text-2xl font-bold self-start">نِي هَاوْ</span>
               <span className="text-sm text-muted-foreground">{t("home.sample.bridge")}</span>
             </div>
           </div>
