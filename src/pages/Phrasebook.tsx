@@ -110,10 +110,20 @@ const Phrasebook = () => {
             <div className="flex-1 min-w-0">
               <span className="block font-bold text-lg leading-tight">{ph.meaning[language]}</span>
               <span lang="zh" dir="ltr" className="block font-zh font-bold text-2xl mt-1">{ph.zh}</span>
-              <span dir="ltr" className="block font-pinyin font-bold text-primary">{ph.pinyin}</span>
-              <span className="block text-sm text-muted-foreground mt-0.5">
-                {t("learn.sound")}: <bdi dir="rtl" lang="ar">{ph.sound}</bdi>
-              </span>
+              {language === "ar" ? (
+                <>
+                  {/* Arabic readers get the sound guide first, written like pinyin */}
+                  <span lang="ar" dir="rtl" className="block font-bold text-lg text-primary mt-0.5" title={t("learn.sound")}>{ph.sound}</span>
+                  <span className="block font-pinyin font-bold text-primary"><bdi dir="ltr">{ph.pinyin}</bdi></span>
+                </>
+              ) : (
+                <>
+                  <span dir="ltr" className="block font-pinyin font-bold text-primary">{ph.pinyin}</span>
+                  <span className="block text-sm text-muted-foreground mt-0.5">
+                    {t("learn.sound")}: <bdi dir="rtl" lang="ar">{ph.sound}</bdi>
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex gap-2 shrink-0">
               <PlayButton text={spoken(ph.zh)} />
