@@ -43,11 +43,11 @@ export const MOVE_UNIT2: Unit = {
         ],
       },
       words: [
-        word("预订", "yùdìng", "يُوي دِينغ", ["Reservation", "حجز"], ["我有预订 means I have a reservation. ü is like ي with rounded lips.", "我有预订 تعني لديّ حجز. وصوت ü مثل الياء مع ضمّ الشفتين."]),
-        word("护照", "hùzhào", "خُو جاو", ["Passport", "جواز السفر"], ["zh is close to ج, with the tongue curled back.", "صوت zh قريب من الجيم، مع رفع طرف اللسان إلى الخلف."]),
-        word("房间", "fángjiān", "فانغ جْيان", ["Room", "غرفة"]),
-        word("请", "qǐng", "تْشِينغ", ["Please", "من فضلك"], ["请 goes before the verb: 请进 come in, 请坐 have a seat.", "تأتي 请 قبل الفعل: 请进 تفضّل بالدخول، 请坐 تفضّل بالجلوس."]),
-        word("楼", "lóu", "لو", ["Floor (of a building)", "طابق"], ["Number first: 八楼 is the eighth floor.", "الرقم أولًا: 八楼 تعني الطابق الثامن."]),
+        word("预订", "yùdìng", "يُوي دِينْغ", ["Reservation", "حجز"], ["我有预订 means I have a reservation. ü is like ي with rounded lips.", "我有预订 تعني لديّ حجز. وصوت ü مثل الياء مع ضمّ الشفتين."]),
+        word("护照", "hùzhào", "خُو جَاوْ", ["Passport", "جواز السفر"], ["zh is close to ج, with the tongue curled back.", "صوت zh قريب من الجيم، مع رفع طرف اللسان إلى الخلف."]),
+        word("房间", "fángjiān", "فَانْغ جِيَانْ", ["Room", "غرفة"]),
+        word("请", "qǐng", "تْشِينْغ", ["Please", "من فضلك"], ["请 goes before the verb: 请进 come in, 请坐 have a seat.", "تأتي 请 قبل الفعل: 请进 تفضّل بالدخول، 请坐 تفضّل بالجلوس."]),
+        word("楼", "lóu", "لُو", ["Floor (of a building)", "طابق"], ["Number first: 八楼 is the eighth floor.", "الرقم أولًا: 八楼 تعني الطابق الثامن."]),
       ],
       notes: [
         {
@@ -88,10 +88,10 @@ export const MOVE_UNIT2: Unit = {
         ],
       },
       words: [
-        word("早饭", "zǎofàn", "دْزاو فان", ["Breakfast", "الفطور"], ["早 is early or morning, 饭 is a meal.", "早 تعني الصباح، و饭 تعني وجبة."]),
-        word("几点", "jǐ diǎn", "جِي دْيان", ["What time?", "في أي ساعة؟"], ["几 asks how many, 点 is o'clock. Put it after the thing you ask about.", "几 تسأل عن العدد، و点 تعني الساعة. ضعها بعد الشيء الذي تسأل عنه."]),
-        word("密码", "mìmǎ", "مي ما", ["Password", "كلمة السر"]),
-        word("太好了", "tài hǎo le", "تاي هاو لَه", ["Great!", "رائع!"]),
+        word("早饭", "zǎofàn", "دْزَاوْ فَانْ", ["Breakfast", "الفطور"], ["早 is early or morning, 饭 is a meal.", "早 تعني الصباح، و饭 تعني وجبة."]),
+        word("几点", "jǐ diǎn", "جِي دِيَانْ", ["What time?", "في أي ساعة؟"], ["几 asks how many, 点 is o'clock. Put it after the thing you ask about.", "几 تسأل عن العدد، و点 تعني الساعة. ضعها بعد الشيء الذي تسأل عنه."]),
+        word("密码", "mìmǎ", "مِي مَا", ["Password", "كلمة السر"]),
+        word("太好了", "tài hǎo le", "تَايْ هَاوْ لَه", ["Great!", "رائع!"]),
       ],
       notes: [
         {
@@ -153,12 +153,12 @@ export const MOVE_UNIT3: Unit = {
         ],
       },
       words: [
-        word("请问", "qǐngwèn", "تْشِينغ وِن", ["Excuse me (to ask)", "لو سمحت (للسؤال)"], ["Start any question to a stranger with 请问. It means may I ask.", "ابدأ أي سؤال لشخص لا تعرفه بـ请问، ومعناها «اسمح لي أن أسأل»."]),
-        word("在哪儿", "zài nǎr", "دْزاي نار", ["Where is…?", "أين…؟"], ["The place comes first: 地铁站在哪儿？ The metro station is where?", "المكان يأتي أولًا: 地铁站在哪儿؟ أي المحطة أين؟"]),
-        word("往左拐", "wǎng zuǒ guǎi", "وانغ دْزوو كواي", ["Turn left", "انعطف يسارًا"]),
-        word("往右拐", "wǎng yòu guǎi", "وانغ يو كواي", ["Turn right", "انعطف يمينًا"]),
-        word("地铁站", "dìtiě zhàn", "دي تْيِه جان", ["Metro station", "محطة المترو"]),
-        word("远", "yuǎn", "يُوان", ["Far", "بعيد"], ["不远 is not far. 远吗？ is it far?", "不远 تعني ليس بعيدًا، و远吗؟ تعني هل هو بعيد؟"]),
+        word("请问", "qǐngwèn", "تْشِينْغ وِنْ", ["Excuse me (to ask)", "لو سمحت (للسؤال)"], ["Start any question to a stranger with 请问. It means may I ask.", "ابدأ أي سؤال لشخص لا تعرفه بـ请问، ومعناها «اسمح لي أن أسأل»."]),
+        word("在哪儿", "zài nǎr", "دْزَايْ نَارْ", ["Where is…?", "أين…؟"], ["The place comes first: 地铁站在哪儿？ The metro station is where?", "المكان يأتي أولًا: 地铁站在哪儿؟ أي المحطة أين؟"]),
+        word("往左拐", "wǎng zuǒ guǎi", "وَانْغ دْزْوُو كْوَايْ", ["Turn left", "انعطف يسارًا"]),
+        word("往右拐", "wǎng yòu guǎi", "وَانْغ يُو كْوَايْ", ["Turn right", "انعطف يمينًا"]),
+        word("地铁站", "dìtiě zhàn", "دِي تْيِه جَانْ", ["Metro station", "محطة المترو"]),
+        word("远", "yuǎn", "يُوَانْ", ["Far", "بعيد"], ["不远 is not far. 远吗？ is it far?", "不远 تعني ليس بعيدًا، و远吗؟ تعني هل هو بعيد؟"]),
       ],
       notes: [
         {
@@ -199,11 +199,11 @@ export const MOVE_UNIT3: Unit = {
         ],
       },
       words: [
-        word("票", "piào", "بْياو", ["Ticket", "تذكرة"]),
-        word("高铁", "gāotiě", "كاو تْيِه", ["High-speed train", "القطار السريع"], ["China's bullet trains link most big cities. You show your passport to buy a ticket and to board.", "القطارات السريعة تربط معظم المدن الكبرى في الصين. تُظهر جواز سفرك لشراء التذكرة وللصعود."]),
-        word("下午", "xiàwǔ", "شْيا وو", ["Afternoon, pm", "بعد الظهر"]),
-        word("上午", "shàngwǔ", "شانغ وو", ["Morning, am", "قبل الظهر"]),
-        word("一张", "yì zhāng", "يِي جانغ", ["One (ticket, card, sheet)", "واحدة (تذكرة أو بطاقة أو ورقة)"], ["张 is the counting word for flat things: tickets, business cards, tables.", "张 كلمة العدّ للأشياء المسطّحة: التذاكر وبطاقات العمل والطاولات."]),
+        word("票", "piào", "بِيَاوْ", ["Ticket", "تذكرة"]),
+        word("高铁", "gāotiě", "كَاوْ تْيِه", ["High-speed train", "القطار السريع"], ["China's bullet trains link most big cities. You show your passport to buy a ticket and to board.", "القطارات السريعة تربط معظم المدن الكبرى في الصين. تُظهر جواز سفرك لشراء التذكرة وللصعود."]),
+        word("下午", "xiàwǔ", "شِيَا وُو", ["Afternoon, pm", "بعد الظهر"]),
+        word("上午", "shàngwǔ", "شَانْغ وُو", ["Morning, am", "قبل الظهر"]),
+        word("一张", "yì zhāng", "يِي جَانْغ", ["One (ticket, card, sheet)", "واحدة (تذكرة أو بطاقة أو ورقة)"], ["张 is the counting word for flat things: tickets, business cards, tables.", "张 كلمة العدّ للأشياء المسطّحة: التذاكر وبطاقات العمل والطاولات."]),
       ],
       notes: [
         {
@@ -260,11 +260,11 @@ export const MOVE_UNIT4: Unit = {
         ],
       },
       words: [
-        word("公司", "gōngsī", "كونغ سْ", ["Company", "شركة"], ["The s in sī is a buzz, not سي.", "صوت s في sī طنين خفيف، وليس «سي»."]),
-        word("经理", "jīnglǐ", "جِينغ لي", ["Manager", "مدير"]),
-        word("我们", "wǒmen", "وُو مِن", ["We, us", "نحن"], ["们 makes a plural: 你们 is you all, 他们 is they.", "们 تجعل الضمير جمعًا: 你们 أنتم، و他们 هم."]),
+        word("公司", "gōngsī", "كُونْغ سِ", ["Company", "شركة"], ["The s in sī is a buzz, not سي.", "صوت s في sī طنين خفيف، وليس «سي»."]),
+        word("经理", "jīnglǐ", "جِينْغ لِي", ["Manager", "مدير"]),
+        word("我们", "wǒmen", "وُو مِنْ", ["We, us", "نحن"], ["们 makes a plural: 你们 is you all, 他们 is they.", "们 تجعل الضمير جمعًا: 你们 أنتم، و他们 هم."]),
         word("是", "shì", "شْ", ["To be (am, is, are)", "يكون"], ["是 links two nouns: 我是 Omar. It never changes.", "是 تربط بين اسمين: 我是 Omar، ولا تتغيّر أبدًا."]),
-        word("迪拜", "Díbài", "دي باي", ["Dubai", "دبي"], ["阿联酋 (Āliánqiú) is the UAE.", "阿联酋 (Āliánqiú) تعني الإمارات."], true),
+        word("迪拜", "Díbài", "دِي بَايْ", ["Dubai", "دبي"], ["阿联酋 (Āliánqiú) is the UAE.", "阿联酋 (Āliánqiú) تعني الإمارات."], true),
       ],
       notes: [
         {
@@ -305,11 +305,11 @@ export const MOVE_UNIT4: Unit = {
         ],
       },
       words: [
-        word("明天", "míngtiān", "مِينغ تْيان", ["Tomorrow", "غدًا"]),
-        word("有时间", "yǒu shíjiān", "يو شْ جْيان", ["To have time", "لديه وقت"]),
-        word("怎么样", "zěnmeyàng", "دْزِن مَه يانغ", ["How about…?", "ما رأيك في…؟"], ["Put it after an idea to suggest it: 三点怎么样？", "ضعها بعد الاقتراح: 三点怎么样؟ أي ما رأيك في الثالثة؟"]),
-        word("没问题", "méi wèntí", "مَي وِن تِي", ["No problem", "لا مشكلة"]),
-        word("今天", "jīntiān", "جِين تْيان", ["Today", "اليوم"]),
+        word("明天", "míngtiān", "مِينْغ تِيَانْ", ["Tomorrow", "غدًا"]),
+        word("有时间", "yǒu shíjiān", "يُو شْ جِيَانْ", ["To have time", "لديه وقت"]),
+        word("怎么样", "zěnmeyàng", "دْزِنْ مَه يَانْغ", ["How about…?", "ما رأيك في…؟"], ["Put it after an idea to suggest it: 三点怎么样？", "ضعها بعد الاقتراح: 三点怎么样؟ أي ما رأيك في الثالثة؟"]),
+        word("没问题", "méi wèntí", "مَيْ وِنْ تِي", ["No problem", "لا مشكلة"]),
+        word("今天", "jīntiān", "جِينْ تِيَانْ", ["Today", "اليوم"]),
       ],
       notes: [
         {
@@ -372,12 +372,12 @@ export const MOVE_UNIT5: Unit = {
         ],
       },
       words: [
-        word("清真", "qīngzhēn", "تْشِينغ جِن", ["Halal", "حلال"], ["Look for 清真 on signs and menus. A 清真寺 is a mosque.", "ابحث عن 清真 على اللافتات وقوائم الطعام. و清真寺 تعني المسجد."]),
-        word("菜单", "càidān", "تْساي دان", ["Menu", "قائمة الطعام"], ["c is like تس in one quick sound.", "صوت c مثل «تس» بسرعة في صوت واحد."]),
-        word("我要这个", "wǒ yào zhège", "وُو ياو جَه كَه", ["I'll have this one", "أريد هذا"], ["Point at a picture and say it. It works everywhere.", "أشِر إلى الصورة وقلها، وستنجح في كل مكان."]),
-        word("猪肉", "zhūròu", "جو رو", ["Pork", "لحم الخنزير"]),
-        word("好吃", "hǎochī", "هاو تْشْ", ["Delicious", "لذيذ"]),
-        word("牛肉", "niúròu", "نْيو رو", ["Beef", "لحم البقر"], ["羊肉 (yángròu) is lamb and 鸡肉 (jīròu) is chicken.", "羊肉 (yángròu) لحم الضأن، و鸡肉 (jīròu) لحم الدجاج."]),
+        word("清真", "qīngzhēn", "تْشِينْغ جِنْ", ["Halal", "حلال"], ["Look for 清真 on signs and menus. A 清真寺 is a mosque.", "ابحث عن 清真 على اللافتات وقوائم الطعام. و清真寺 تعني المسجد."]),
+        word("菜单", "càidān", "تْسَايْ دَانْ", ["Menu", "قائمة الطعام"], ["c is like تس in one quick sound.", "صوت c مثل «تس» بسرعة في صوت واحد."]),
+        word("我要这个", "wǒ yào zhège", "وُو يَاوْ جَه كَه", ["I'll have this one", "أريد هذا"], ["Point at a picture and say it. It works everywhere.", "أشِر إلى الصورة وقلها، وستنجح في كل مكان."]),
+        word("猪肉", "zhūròu", "جُو رُو", ["Pork", "لحم الخنزير"]),
+        word("好吃", "hǎochī", "هَاوْ تْشْ", ["Delicious", "لذيذ"]),
+        word("牛肉", "niúròu", "نِيُو رُو", ["Beef", "لحم البقر"], ["羊肉 (yángròu) is lamb and 鸡肉 (jīròu) is chicken.", "羊肉 (yángròu) لحم الضأن، و鸡肉 (jīròu) لحم الدجاج."]),
       ],
       notes: [
         {
@@ -417,11 +417,11 @@ export const MOVE_UNIT5: Unit = {
         ],
       },
       words: [
-        word("干杯", "gānbēi", "كان بَي", ["Cheers!", "في صحتكم!"], ["It means dry the glass. With tea or juice, a small sip is fine.", "معناها جفّف الكأس. ومع الشاي أو العصير تكفي رشفة صغيرة."]),
-        word("我不喝酒", "wǒ bù hē jiǔ", "وُو بُو خَه جْيُو", ["I don't drink alcohol", "لا أشرب الكحول"]),
-        word("以茶代酒", "yǐ chá dài jiǔ", "يِي تْشا داي جْيُو", ["Tea in place of wine", "الشاي بدل الخمر"], ["A classic, polite phrase. Raise your tea and everyone understands.", "عبارة تقليدية مهذّبة. ارفع كوب الشاي وسيفهم الجميع."]),
-        word("合作愉快", "hézuò yúkuài", "خَه دْزوو يُوي كواي", ["To a great partnership", "نخب شراكة ناجحة"], ["Use it for toasts, at the end of a meeting and in messages.", "استخدمها في الأنخاب وفي نهاية الاجتماع وفي الرسائل."]),
-        word("谢谢您的招待", "xièxie nín de zhāodài", "شْيِه شْيِه نِين دَه جاو داي", ["Thank you for your hospitality", "شكراً على حسن ضيافتك"]),
+        word("干杯", "gānbēi", "كَانْ بَيْ", ["Cheers!", "في صحتكم!"], ["It means dry the glass. With tea or juice, a small sip is fine.", "معناها جفّف الكأس. ومع الشاي أو العصير تكفي رشفة صغيرة."]),
+        word("我不喝酒", "wǒ bù hē jiǔ", "وُو بُو هَه جِيُو", ["I don't drink alcohol", "لا أشرب الكحول"]),
+        word("以茶代酒", "yǐ chá dài jiǔ", "يِي تْشَا دَايْ جِيُو", ["Tea in place of wine", "الشاي بدل الخمر"], ["A classic, polite phrase. Raise your tea and everyone understands.", "عبارة تقليدية مهذّبة. ارفع كوب الشاي وسيفهم الجميع."]),
+        word("合作愉快", "hézuò yúkuài", "هَه دْزْوُو يُوي كْوَايْ", ["To a great partnership", "نخب شراكة ناجحة"], ["Use it for toasts, at the end of a meeting and in messages.", "استخدمها في الأنخاب وفي نهاية الاجتماع وفي الرسائل."]),
+        word("谢谢您的招待", "xièxie nín de zhāodài", "شْيِه شْيِه نِينْ دَه جَاوْ دَايْ", ["Thank you for your hospitality", "شكراً على حسن ضيافتك"]),
       ],
       notes: [
         {
@@ -474,10 +474,10 @@ export const MOVE_UNIT6: Unit = {
         ],
       },
       words: [
-        word("百", "bǎi", "باي", ["Hundred", "مئة"]),
-        word("千", "qiān", "تْشْيان", ["Thousand", "ألف"]),
-        word("万", "wàn", "وان", ["Ten thousand", "عشرة آلاف"], ["The key business number. 一万 is 10,000.", "أهم رقم في التجارة. 一万 تعني 10,000."]),
-        word("一共", "yígòng", "يِي كونغ", ["In total", "المجموع"]),
+        word("百", "bǎi", "بَايْ", ["Hundred", "مئة"]),
+        word("千", "qiān", "تْشِيَانْ", ["Thousand", "ألف"]),
+        word("万", "wàn", "وَانْ", ["Ten thousand", "عشرة آلاف"], ["The key business number. 一万 is 10,000.", "أهم رقم في التجارة. 一万 تعني 10,000."]),
+        word("一共", "yígòng", "يِي كُونْغ", ["In total", "المجموع"]),
         word("个", "ge", "كَه", ["(counting word)", "(كلمة عدّ)"], ["The general counting word: 一个, 两个, 一千个.", "كلمة العدّ العامة: 一个 و两个 و一千个."]),
       ],
       notes: [
@@ -519,11 +519,11 @@ export const MOVE_UNIT6: Unit = {
         ],
       },
       words: [
-        word("太贵了", "tài guì le", "تاي كوي لَه", ["Too expensive", "غالٍ جدًا"]),
-        word("便宜一点", "piányi yìdiǎn", "بْيان يِي يِي دْيان", ["A bit cheaper", "أرخص قليلًا"]),
-        word("能…吗", "néng…ma", "نَنغ… ما", ["Can you…?", "هل يمكنك…؟"], ["能 is can. Wrap a request in 能…吗 to make it a polite question.", "能 تعني يستطيع. ضع الطلب بين 能…吗 ليصبح سؤالًا مهذّبًا."]),
-        word("成交", "chéngjiāo", "تْشَنغ جْياو", ["Deal!", "اتفقنا!"]),
-        word("打折", "dǎzhé", "دا جَه", ["Discount", "خصم"], ["Careful: 打八折 means pay 80%, a 20% discount.", "انتبه: 打八折 تعني أن تدفع 80%، أي خصم 20%."]),
+        word("太贵了", "tài guì le", "تَايْ كْوَيْ لَه", ["Too expensive", "غالٍ جدًا"]),
+        word("便宜一点", "piányi yìdiǎn", "بِيَانْ يِي يِي دِيَانْ", ["A bit cheaper", "أرخص قليلًا"]),
+        word("能…吗", "néng…ma", "نَنْغ مَا", ["Can you…?", "هل يمكنك…؟"], ["能 is can. Wrap a request in 能…吗 to make it a polite question.", "能 تعني يستطيع. ضع الطلب بين 能…吗 ليصبح سؤالًا مهذّبًا."]),
+        word("成交", "chéngjiāo", "تْشَنْغ جِيَاوْ", ["Deal!", "اتفقنا!"]),
+        word("打折", "dǎzhé", "دَا جَه", ["Discount", "خصم"], ["Careful: 打八折 means pay 80%, a 20% discount.", "انتبه: 打八折 تعني أن تدفع 80%، أي خصم 20%."]),
       ],
       notes: [
         {
@@ -577,11 +577,11 @@ export const MOVE_UNIT7: Unit = {
         ],
       },
       words: [
-        word("微信", "Wēixìn", "وَي شِين", ["WeChat", "وي تشات"]),
-        word("加微信", "jiā Wēixìn", "جْيا وَي شِين", ["Add on WeChat", "الإضافة على وي تشات"], ["吧 at the end makes it a friendly suggestion: let's.", "吧 في آخر الجملة تجعلها اقتراحًا وديًّا: هيا بنا."]),
-        word("扫", "sǎo", "ساو", ["To scan", "يمسح (رمزًا)"], ["我扫您 means I'll scan your QR code.", "我扫您 تعني سأمسح رمزك."]),
-        word("电话号码", "diànhuà hàomǎ", "دْيان خْوا هاو ما", ["Phone number", "رقم الهاتف"]),
-        word("保持联系", "bǎochí liánxì", "باو تْشْ لْيان شي", ["Keep in touch", "لنبقَ على تواصل"]),
+        word("微信", "Wēixìn", "وَيْ شِينْ", ["WeChat", "وي تشات"]),
+        word("加微信", "jiā Wēixìn", "جِيَا وَيْ شِينْ", ["Add on WeChat", "الإضافة على وي تشات"], ["吧 at the end makes it a friendly suggestion: let's.", "吧 في آخر الجملة تجعلها اقتراحًا وديًّا: هيا بنا."]),
+        word("扫", "sǎo", "سَاوْ", ["To scan", "يمسح (رمزًا)"], ["我扫您 means I'll scan your QR code.", "我扫您 تعني سأمسح رمزك."]),
+        word("电话号码", "diànhuà hàomǎ", "دِيَانْ خْوَا هَاوْ مَا", ["Phone number", "رقم الهاتف"]),
+        word("保持联系", "bǎochí liánxì", "بَاوْ تْشْ لِيَانْ شِي", ["Keep in touch", "لنبقَ على تواصل"]),
       ],
       notes: [
         {
@@ -622,11 +622,11 @@ export const MOVE_UNIT7: Unit = {
         ],
       },
       words: [
-        word("不舒服", "bù shūfu", "بُو شو فو", ["Unwell", "متوعّك"]),
-        word("医院", "yīyuàn", "يِي يُوان", ["Hospital", "مستشفى"]),
-        word("附近", "fùjìn", "فو جِين", ["Nearby", "قريب"], ["附近有…吗？ asks if there's one nearby.", "附近有…吗؟ تسأل إن كان هناك واحد قريب."]),
-        word("头疼", "tóu téng", "تو تَنغ", ["Headache", "صداع"]),
-        word("太谢谢您了", "tài xièxie nín le", "تاي شْيِه شْيِه نِين لَه", ["Thank you so much", "شكراً جزيلاً"]),
+        word("不舒服", "bù shūfu", "بُو شُو فُو", ["Unwell", "متوعّك"]),
+        word("医院", "yīyuàn", "يِي يُوَانْ", ["Hospital", "مستشفى"]),
+        word("附近", "fùjìn", "فُو جِينْ", ["Nearby", "قريب"], ["附近有…吗？ asks if there's one nearby.", "附近有…吗؟ تسأل إن كان هناك واحد قريب."]),
+        word("头疼", "tóu téng", "تُو تَنْغ", ["Headache", "صداع"]),
+        word("太谢谢您了", "tài xièxie nín le", "تَايْ شْيِه شْيِه نِينْ لَه", ["Thank you so much", "شكراً جزيلاً"]),
       ],
       notes: [
         {

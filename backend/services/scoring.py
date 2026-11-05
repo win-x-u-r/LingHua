@@ -15,6 +15,7 @@ import re
 import difflib
 from pypinyin import pinyin, Style
 from models.pronunciation_model import PronunciationModel
+from services.arabic_sounds import syllable_to_arabic
 
 # Singleton model instance (loaded once at startup)
 _model = None
@@ -77,8 +78,13 @@ _PINYIN_TO_ARABIC = {
 
 def _syllable_to_arabic(base: str) -> str:
     """Convert one toneless pinyin syllable (e.g. 'hao') to its Arabic
-    phonetic approximation using greedy 3/2/1-char chunk matching."""
+    phonetic approximation. Uses the fully voweled guides in
+    services/arabic_sounds.py, and falls back to greedy 3/2/1-char chunk
+    matching for anything that isn't a standard syllable."""
     base = base.lower()
+    voweled = syllable_to_arabic(base)
+    if voweled:
+        return voweled
     arabic = ""
     i = 0
     while i < len(base):

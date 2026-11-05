@@ -68,7 +68,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "您好",
               pinyin: "nín hǎo",
               meaning: { en: "Hello (polite)", ar: "مرحباً (بأدب)" },
-              sound: "نِين هاو",
+              sound: "نِينْ هَاوْ",
               note: {
                 en: "您 is the polite you. Use it with officials, clients, hotel staff and anyone older than you.",
                 ar: "您 هي «أنتَ» المهذّبة، مثل «حضرتك». استخدمها مع الموظفين والعملاء وموظفي الفندق ومن هو أكبر منك سنًّا.",
@@ -102,7 +102,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "再见",
               pinyin: "zàijiàn",
               meaning: { en: "Goodbye", ar: "مع السلامة" },
-              sound: "دْزاي جْيان",
+              sound: "دْزَايْ جِيَانْ",
               note: {
                 en: "z isn't ز. It's a quick d and z together, like the end of \"kids\". Both syllables fall.",
                 ar: "صوت z ليس زايًا، بل دال وزاي معًا بسرعة. وكلا المقطعين بنغمة هابطة.",
@@ -113,7 +113,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "欢迎",
               pinyin: "huānyíng",
               meaning: { en: "Welcome", ar: "أهلاً وسهلاً" },
-              sound: "خْوان يِينغ",
+              sound: "خْوَانْ يِينْغ",
               bonus: true,
               note: {
                 en: "You'll hear it everywhere: at the airport, in hotels and in shops. The h is close to خ, but softer.",
@@ -207,7 +207,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "我叫",
               pinyin: "wǒ jiào",
               meaning: { en: "My name is", ar: "اسمي" },
-              sound: "وُو جْياو",
+              sound: "وُو جِيَاوْ",
               note: {
                 en: "我 is I and 叫 is to be called. Add your own name after it: 我叫 Omar.",
                 ar: "我 تعني أنا و叫 تعني يُدعى. أضف اسمك بعدها: 我叫 Omar.",
@@ -218,7 +218,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "先生",
               pinyin: "xiānsheng",
               meaning: { en: "Mr, sir", ar: "السيد" },
-              sound: "شْيان شُنغ",
+              sound: "شِيَانْ شَنْغ",
               note: {
                 en: "The surname comes first, then the title: 王先生 is Mr Wang. For a woman, use 女士 (nǚshì).",
                 ar: "اسم العائلة أولًا ثم اللقب: 王先生 تعني السيد وانغ. وللمرأة استخدم 女士 (nǚshì).",
@@ -229,7 +229,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "名片",
               pinyin: "míngpiàn",
               meaning: { en: "Business card", ar: "بطاقة العمل" },
-              sound: "مِينغ بْيان",
+              sound: "مِينْغ بِيَانْ",
               note: {
                 en: "p is a puff of air, a strong ب. You'll swap these at almost every first meeting.",
                 ar: "صوت p باء قوية مع نفَس. ستتبادل هذه البطاقات في كل لقاء أول تقريبًا.",
@@ -248,7 +248,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "认识您很高兴",
               pinyin: "rènshi nín hěn gāoxìng",
               meaning: { en: "Nice to meet you (polite)", ar: "تشرّفنا (بأدب)" },
-              sound: "رِنْ شْ نِين هِن كاو شِينغ",
+              sound: "رِنْ شْ نِينْ هِنْ كَاوْ شِينْغ",
               note: {
                 en: "Learn it as one phrase. With a client or partner, use 您 instead of 你.",
                 ar: "احفظها عبارةً واحدة. ومع العميل أو الشريك استخدم 您 بدلًا من 你.",
@@ -354,7 +354,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "我要去",
               pinyin: "wǒ yào qù",
               meaning: { en: "I want to go to", ar: "أريد أن أذهب إلى" },
-              sound: "وُو ياو تْشْيُو",
+              sound: "وُو يَاوْ تْشْيُو",
               note: {
                 en: "Put the place straight after it, with no extra word for \"to\": 我要去酒店.",
                 ar: "ضع المكان بعدها مباشرة، دون كلمة مثل «إلى»: 我要去酒店.",
@@ -365,7 +365,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "酒店",
               pinyin: "jiǔdiàn",
               meaning: { en: "Hotel", ar: "فندق" },
-              sound: "جْيُو دْيان",
+              sound: "جِيُو دِيَانْ",
               note: {
                 en: "Drivers know hotel names in Chinese. Keep your hotel's name and address in characters on your phone.",
                 ar: "السائقون يعرفون أسماء الفنادق بالصينية. احتفظ باسم فندقك وعنوانه بالحروف الصينية على هاتفك.",
@@ -376,7 +376,7 @@ export const MOVE_UNIT1: Unit = {
               zh: "多少钱",
               pinyin: "duōshao qián",
               meaning: { en: "How much is it?", ar: "كم السعر؟" },
-              sound: "دوو شاو تْشْيان",
+              sound: "دْوُو شَاوْ تْشِيَانْ",
               note: {
                 en: "Works in taxis, shops and markets. q is like تش with a smile.",
                 ar: "تصلح في سيارات الأجرة والمحلات والأسواق. وصوت q مثل «تش» مع ابتسامة.",
