@@ -116,6 +116,12 @@ export function setPreferredVoice(name: string | null) {
  *   Huawei SIS international doesn't offer Chinese TTS voices.
  */
 export async function speakText(text: string, lang: string): Promise<void> {
+  // The server always answers Chinese with "use the browser voice", so skip
+  // the round trip: Listen then works even when the server can't be reached.
+  if (lang === "zh" && typeof window !== "undefined" && window.speechSynthesis) {
+    return browserSpeak(text, "zh-CN");
+  }
+
   const response = await fetch(`${API_BASE}/tts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
