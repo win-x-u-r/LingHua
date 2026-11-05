@@ -13,13 +13,21 @@ export interface Place {
   tags: Record<string, string>;
 }
 
-const ENDPOINTS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+// Public Overpass servers are often busy, so we ask them all at once and use
+// the first answer. Each one gets a time limit so the search never hangs.
+const ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+];
+const WAIT_MS = 20000;
 
 const FOOD = "restaurant|fast_food|cafe|food_court";
 
 function query(lat: number, lon: number, radius: number) {
   const a = `(around:${radius},${lat},${lon})`;
-  return `[out:json][timeout:25];
+  return `[out:json][timeout:20];
 (
   nwr${a}["amenity"~"${FOOD}"]["diet:halal"~"yes|only"];
   nwr${a}["amenity"~"${FOOD}"]["cuisine"~"halal",i];
@@ -56,33 +64,52 @@ function kindOf(tags: Record<string, string>): PlaceKind | null {
   return "halal";
 }
 
+async function ask(url: string, data: string, signal: AbortSignal): Promise<OverpassElement[]> {
+  const res = await fetch(url, { method: "POST", body: new URLSearchParams({ data }), signal });
+  if (!res.ok) throw new Error(`Overpass ${res.status}`);
+  const json: { elements?: OverpassElement[] } = await res.json();
+  if (!Array.isArray(json.elements)) throw new Error("Overpass: no elements");
+  return json.elements;
+}
+
+/** The first promise to succeed; fails only when all of them fail */
+function firstSuccess<T>(promises: Promise<T>[]): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let failed = 0;
+    promises.forEach((p) =>
+      p.then(resolve, (e) => {
+        if (++failed === promises.length) reject(e);
+      }),
+    );
+  });
+}
+
 export async function findNearby(lat: number, lon: number, radius = 5000): Promise<Place[]> {
-  let lastError: unknown;
-  for (const url of ENDPOINTS) {
-    try {
-      const res = await fetch(url, { method: "POST", body: new URLSearchParams({ data: query(lat, lon, radius) }) });
-      if (!res.ok) throw new Error(`Overpass ${res.status}`);
-      const json: { elements: OverpassElement[] } = await res.json();
-      const seen = new Set<string>();
-      return json.elements
-        .map((el) => {
-          const pLat = el.lat ?? el.center?.lat;
-          const pLon = el.lon ?? el.center?.lon;
-          const tags = el.tags ?? {};
-          const kind = kindOf(tags);
-          if (pLat == null || pLon == null || !kind) return null;
-          const id = `${el.type}/${el.id}`;
-          if (seen.has(id)) return null;
-          seen.add(id);
-          return { id, kind, lat: pLat, lon: pLon, tags, distance: distance(lat, lon, pLat, pLon) };
-        })
-        .filter((p): p is Place => p !== null)
-        .sort((a, b) => a.distance - b.distance);
-    } catch (e) {
-      lastError = e;
-    }
+  const data = query(lat, lon, radius);
+  const controllers = ENDPOINTS.map(() => new AbortController());
+  const timer = setTimeout(() => controllers.forEach((c) => c.abort()), WAIT_MS);
+  let elements: OverpassElement[];
+  try {
+    elements = await firstSuccess(ENDPOINTS.map((url, i) => ask(url, data, controllers[i].signal)));
+  } finally {
+    clearTimeout(timer);
+    controllers.forEach((c) => c.abort());
   }
-  throw lastError;
+  const seen = new Set<string>();
+  return elements
+    .map((el) => {
+      const pLat = el.lat ?? el.center?.lat;
+      const pLon = el.lon ?? el.center?.lon;
+      const tags = el.tags ?? {};
+      const kind = kindOf(tags);
+      if (pLat == null || pLon == null || !kind) return null;
+      const id = `${el.type}/${el.id}`;
+      if (seen.has(id)) return null;
+      seen.add(id);
+      return { id, kind, lat: pLat, lon: pLon, tags, distance: distance(lat, lon, pLat, pLon) };
+    })
+    .filter((p): p is Place => p !== null)
+    .sort((a, b) => a.distance - b.distance);
 }
 
 /** A place's name in the learner's language, with its Chinese name if different */
