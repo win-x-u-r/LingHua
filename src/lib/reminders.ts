@@ -28,9 +28,9 @@ type Line = { en: string; ar: string };
 export const HUA_LINES = {
   daily: { en: "Ready for a little Mandarin today?", ar: "مستعد لقليل من الماندرين اليوم؟" },
   streak: { en: "You're building a lovely streak. Keep it going!", ar: "أنت تبني سلسلة رائعة. استمر!" },
-  vocabulary: { en: "Hua has a new word for you!", ar: "لدى هوا كلمة جديدة لك!" },
+  vocabulary: { en: "Hua has a new word for you!", ar: "لدى هُوا كلمة جديدة لك!" },
   progress: { en: "Look how far you've come!", ar: "انظر كم تقدّمت!" },
-  nudge: { en: "A few minutes of Mandarin? Hua is here!", ar: "بضع دقائق من الماندرين؟ هوا هنا!" },
+  nudge: { en: "A few minutes of Mandarin? Hua is here!", ar: "بضع دقائق من الماندرين؟ هُوا هنا!" },
 } satisfies Record<string, Line>;
 
 export type ReminderKind = keyof typeof HUA_LINES;
@@ -38,7 +38,7 @@ export type ReminderKind = keyof typeof HUA_LINES;
 // Days with nothing special to say rotate through these
 const EVERYDAY: ReminderKind[] = ["daily", "nudge"];
 
-export const REMINDER_TITLE: Line = { en: "Hua", ar: "هوا" };
+export const REMINDER_TITLE: Line = { en: "Hua", ar: "هُوا" };
 
 /**
  * Which reminder fits right now, first match wins: already started today = progress,

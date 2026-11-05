@@ -5,7 +5,7 @@
 // scripts still need a native teacher's review before release.
 import type { Unit, SceneLine, T } from "./types";
 
-const HUA: T = { en: "Hua", ar: "هوا" };
+const HUA: T = { en: "Hua", ar: "هُوا" };
 const TEACHER: T = { en: "Teacher", ar: "المعلّم" };
 const LAYLA: T = { en: "Layla", ar: "ليلى" };
 const DAMING: T = { en: "Daming", ar: "دا مينغ" };
@@ -53,7 +53,7 @@ export const UNIT1: Unit = {
               lines: [
                 line("a", PASSER, "你好！", "Nǐ hǎo!", "Hello!", "مرحباً!"),
                 line("b", LAYLA, "你好！", "Nǐ hǎo!", "Hello!", "مرحباً!"),
-                line("hua", HUA, "你好！我叫话。", "Nǐ hǎo! Wǒ jiào Huà.", "Hello! My name is Hua.", "مرحباً! اسمي هوا."),
+                line("hua", HUA, "你好！我叫话。", "Nǐ hǎo! Wǒ jiào Huà.", "Hello! My name is Hua.", "مرحباً! اسمي هُوا."),
               ],
             },
           ],
@@ -237,7 +237,7 @@ export const UNIT1: Unit = {
               hua: { zh: "你好！", pinyin: "Nǐ hǎo!" },
               zh: "你好",
               pinyin: "nǐ hǎo",
-              prompt: { en: "Hua says hello. Say hello back!", ar: "هوا يُحيّيك. ردّ التحية!" },
+              prompt: { en: "Hua says hello. Say hello back!", ar: "هُوا يُحيّيك. ردّ التحية!" },
             },
             {
               kind: "choice",
@@ -253,14 +253,14 @@ export const UNIT1: Unit = {
               kind: "say",
               zh: "谢谢",
               pinyin: "xièxie",
-              prompt: { en: "Hua hands you a little lantern. Say thank you.", ar: "هوا يعطيك فانوسًا صغيرًا. قل شكراً." },
+              prompt: { en: "Hua hands you a little lantern. Say thank you.", ar: "هُوا يعطيك فانوسًا صغيرًا. قل شكراً." },
             },
             {
               kind: "say",
               hua: { zh: "再见！", pinyin: "Zàijiàn!" },
               zh: "再见",
               pinyin: "zàijiàn",
-              prompt: { en: "Hua waves goodbye. Say goodbye back.", ar: "هوا يلوّح مودّعًا. ودّعه أنت أيضًا." },
+              prompt: { en: "Hua waves goodbye. Say goodbye back.", ar: "هُوا يلوّح مودّعًا. ودّعه أنت أيضًا." },
             },
           ],
         },
@@ -385,7 +385,7 @@ export const UNIT1: Unit = {
             },
             {
               kind: "note",
-              title: { en: "Hua's name", ar: "اسم هوا" },
+              title: { en: "Hua's name", ar: "اسم هُوا" },
               body: {
                 en: "My name is 话 (huà). It means words, or speech. It's the 话 in 灵话, and I'm here to help you speak.",
                 ar: "اسمي 话 (huà)، ومعناه الكلام. إنه 话 في 灵话، وأنا هنا لأساعدك على الكلام.",
@@ -428,20 +428,20 @@ export const UNIT1: Unit = {
               zh: "我叫",
               pinyin: "wǒ jiào",
               nameSlot: true,
-              prompt: { en: "Your first conversation! Answer Hua.", ar: "أول محادثة لك! أجب هوا." },
+              prompt: { en: "Your first conversation! Answer Hua.", ar: "أول محادثة لك! أجب هُوا." },
             },
             {
               kind: "say",
               zh: "你叫什么名字",
               pinyin: "nǐ jiào shénme míngzi",
-              prompt: { en: "Now ask Hua his name.", ar: "والآن اسأل هوا عن اسمه." },
+              prompt: { en: "Now ask Hua his name.", ar: "والآن اسأل هُوا عن اسمه." },
             },
             {
               kind: "say",
               hua: { zh: "我叫话。认识你很高兴！", pinyin: "Wǒ jiào Huà. Rènshi nǐ hěn gāoxìng!" },
               zh: "认识你很高兴",
               pinyin: "rènshi nǐ hěn gāoxìng",
-              prompt: { en: "Hua is happy to meet you. Say it back!", ar: "هوا سعيد بالتعرّف عليك. قل له الشيء نفسه!" },
+              prompt: { en: "Hua is happy to meet you. Say it back!", ar: "هُوا سعيد بالتعرّف عليك. قل له الشيء نفسه!" },
             },
           ],
         },
@@ -461,7 +461,7 @@ export const UNIT1: Unit = {
               listen: { zh: "你好！我叫大明。", pinyin: "Nǐ hǎo! Wǒ jiào Dàmíng." },
               options: [
                 { label: { en: "Daming", ar: "دا مينغ" }, correct: true },
-                { label: { en: "Hua", ar: "هوا" } },
+                { label: { en: "Hua", ar: "هُوا" } },
                 { label: { en: "Layla", ar: "ليلى" } },
               ],
               why: { en: "The name comes right after 我叫: 我叫大明.", ar: "الاسم يأتي بعد 我叫 مباشرة: 我叫大明." },
@@ -476,7 +476,7 @@ export const UNIT1: Unit = {
       isCheck: true,
       title: { en: "First Spark check", ar: "اختبار الشرارة الأولى" },
       zh: "小测验",
-      goal: { en: "Show Hua what you can do. Get about 4 in 5 right and finish the conversation.", ar: "أرِ هوا ما تستطيع فعله. أجب عن نحو 4 من كل 5 إجابة صحيحة وأكمل المحادثة." },
+      goal: { en: "Show Hua what you can do. Get about 4 in 5 right and finish the conversation.", ar: "أرِ هُوا ما تستطيع فعله. أجب عن نحو 4 من كل 5 إجابة صحيحة وأكمل المحادثة." },
       minutes: 5,
       steps: [
         {
@@ -521,10 +521,10 @@ export const UNIT1: Unit = {
         {
           id: "speaking",
           activities: [
-            { kind: "say", hua: { zh: "你好！", pinyin: "Nǐ hǎo!" }, zh: "你好", pinyin: "nǐ hǎo", prompt: { en: "Greet Hua.", ar: "حيِّ هوا." } },
-            { kind: "say", hua: { zh: "你叫什么名字？", pinyin: "Nǐ jiào shénme míngzi?" }, zh: "我叫", pinyin: "wǒ jiào", nameSlot: true, prompt: { en: "Tell Hua your name.", ar: "قل لهوا اسمك." } },
-            { kind: "say", zh: "你叫什么名字", pinyin: "nǐ jiào shénme míngzi", prompt: { en: "Ask Hua his name.", ar: "اسأل هوا عن اسمه." } },
-            { kind: "say", hua: { zh: "我叫话。再见！", pinyin: "Wǒ jiào Huà. Zàijiàn!" }, zh: "再见", pinyin: "zàijiàn", prompt: { en: "Say goodbye.", ar: "ودّع هوا." } },
+            { kind: "say", hua: { zh: "你好！", pinyin: "Nǐ hǎo!" }, zh: "你好", pinyin: "nǐ hǎo", prompt: { en: "Greet Hua.", ar: "حيِّ هُوا." } },
+            { kind: "say", hua: { zh: "你叫什么名字？", pinyin: "Nǐ jiào shénme míngzi?" }, zh: "我叫", pinyin: "wǒ jiào", nameSlot: true, prompt: { en: "Tell Hua your name.", ar: "قل لهُوا اسمك." } },
+            { kind: "say", zh: "你叫什么名字", pinyin: "nǐ jiào shénme míngzi", prompt: { en: "Ask Hua his name.", ar: "اسأل هُوا عن اسمه." } },
+            { kind: "say", hua: { zh: "我叫话。再见！", pinyin: "Wǒ jiào Huà. Zàijiàn!" }, zh: "再见", pinyin: "zàijiàn", prompt: { en: "Say goodbye.", ar: "ودّع هُوا." } },
           ],
         },
         { id: "self", activities: [{ kind: "canDo" }] },
