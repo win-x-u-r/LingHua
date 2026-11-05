@@ -148,7 +148,7 @@ const LessonPlayer = () => {
           {lesson.isCheck ? (passed ? t("learn.finish.check_pass") : t("learn.not_yet")) : t("learn.finish.title")}
         </h1>
         {lesson.isCheck && !passed && <p className="text-lg text-muted-foreground max-w-md">{t("learn.finish.check_retry")}</p>}
-        {lesson.isCheck && passed && <p className="text-lg font-bold text-success-foreground">{t("learn.lit").replace("{n}", String(unit.number))}</p>}
+        {lesson.isCheck && passed && <p className="text-lg font-bold text-success-foreground">{t("learn.lit.unit").replace("{n}", String(unit.number))}</p>}
 
         <ul className="w-full flex flex-col border-2 border-stroke rounded-[14px] bg-card overflow-hidden text-start">
           {stepsWithScores.map((s) => {

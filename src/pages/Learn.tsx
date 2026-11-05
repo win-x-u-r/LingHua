@@ -35,7 +35,7 @@ const Learn = ({ course = FOUNDATION1, unit = course.units[0], top, children }: 
         </div>
       </div>
 
-      {lit && <p className="font-bold text-success-foreground">{t("learn.lit").replace("{n}", String(unit.number))}</p>}
+      {lit && <p className="font-bold text-success-foreground">{t("learn.lit.unit").replace("{n}", String(unit.number))}</p>}
 
       <section className="rounded-[14px] border-2 border-stroke bg-secondary dark:bg-card p-5 flex flex-col gap-2">
         <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("learn.outcome")}</h2>

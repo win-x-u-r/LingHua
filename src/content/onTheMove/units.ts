@@ -66,7 +66,7 @@ export const MOVE_UNIT2: Unit = {
       ],
       use: [
         listen("请给我您的护照。", "Qǐng gěi wǒ nín de hùzhào.", ["Listen. What does the receptionist want?", "استمع. ماذا تطلب موظفة الاستقبال؟"], [["Your passport", "جواز سفرك"], ["Your name", "اسمك"], ["Your room number", "رقم غرفتك"]], ["护照 is passport, and 请给我 is please give me.", "护照 تعني جواز السفر، و请给我 تعني أعطني من فضلك."]),
-        say("我有预订", "wǒ yǒu yùdìng", ["Hua is at the front desk. Tell him you have a reservation.", "هوا في مكتب الاستقبال. أخبره أن لديك حجزًا."], { hua: { zh: "您好！欢迎光临。", pinyin: "Nín hǎo! Huānyíng guānglín." } }),
+        say("我有预订", "wǒ yǒu yùdìng", ["Hua is at the front desk. Tell him you have a reservation.", "هُوا في مكتب الاستقبال. أخبره أن لديك حجزًا."], { hua: { zh: "您好！欢迎光临。", pinyin: "Nín hǎo! Huānyíng guānglín." } }),
         listen("您的房间在十二楼。", "Nín de fángjiān zài shí'èr lóu.", ["Listen. Which floor is your room on?", "استمع. في أي طابق غرفتك؟"], [["12th floor", "الطابق 12"], ["2nd floor", "الطابق 2"], ["10th floor", "الطابق 10"]], ["十二 is twelve: ten and two.", "十二 تعني اثني عشر: عشرة واثنان."]),
         order(["Put the words in order: my room is on the eighth floor.", "رتّب الكلمات: غرفتي في الطابق الثامن."], ["我的", "房间", "在", "八楼"], "Wǒ de fángjiān zài bā lóu.", ["My room is on the eighth floor.", "غرفتي في الطابق الثامن."]),
       ],
@@ -115,7 +115,7 @@ export const MOVE_UNIT2: Unit = {
       use: [
         listen("早上七点。", "Zǎoshang qī diǎn.", ["Listen. What time is breakfast?", "استمع. متى الفطور؟"], [["7 am", "7 صباحاً"], ["7 pm", "7 مساءً"], ["10 am", "10 صباحاً"]], ["早上 is the morning and 七点 is seven o'clock.", "早上 تعني الصباح، و七点 تعني الساعة السابعة."]),
         listen("晚上八点。", "Wǎnshang bā diǎn.", ["Listen. When is the dinner?", "استمع. متى العشاء؟"], [["8 pm", "8 مساءً"], ["8 am", "8 صباحاً"], ["4 pm", "4 بعد الظهر"]], ["晚上 is the evening.", "晚上 تعني المساء."]),
-        say("太好了", "tài hǎo le", ["Hua says your room has a sea view. Say: great!", "هوا يقول إن غرفتك تطلّ على البحر. قل: رائع!"], { hua: { zh: "您的房间可以看海。", pinyin: "Nín de fángjiān kěyǐ kàn hǎi." } }),
+        say("太好了", "tài hǎo le", ["Hua says your room has a sea view. Say: great!", "هُوا يقول إن غرفتك تطلّ على البحر. قل: رائع!"], { hua: { zh: "您的房间可以看海。", pinyin: "Nín de fángjiān kěyǐ kàn hǎi." } }),
         order(["Put the words in order: what time is breakfast?", "رتّب الكلمات: متى الفطور؟"], ["早饭", "几", "点"], "Zǎofàn jǐ diǎn?", ["What time is breakfast?", "متى الفطور؟"]),
       ],
       canDo: true,
@@ -178,7 +178,7 @@ export const MOVE_UNIT3: Unit = {
       use: [
         pickZh(["You want to ask a stranger the way. How do you start?", "تريد أن تسأل شخصًا لا تعرفه عن الطريق. بماذا تبدأ؟"], [{ zh: "请问", pinyin: "qǐngwèn" }, { zh: "再见", pinyin: "zàijiàn" }, { zh: "太贵了", pinyin: "tài guì le" }], ["请问 means may I ask. It opens any polite question.", "请问 تعني اسمح لي أن أسأل، وتبدأ بها أي سؤال مهذّب."]),
         listen("往右拐。", "Wǎng yòu guǎi.", ["Listen. Which way?", "استمع. إلى أي اتجاه؟"], [["Turn right", "انعطف يمينًا"], ["Turn left", "انعطف يسارًا"], ["Go straight", "امشِ إلى الأمام"]], ["右 is right and 左 is left.", "右 تعني اليمين، و左 تعني اليسار."]),
-        say("洗手间在哪儿", "xǐshǒujiān zài nǎr", ["Ask Hua where the restroom is.", "اسأل هوا أين دورة المياه."]),
+        say("洗手间在哪儿", "xǐshǒujiān zài nǎr", ["Ask Hua where the restroom is.", "اسأل هُوا أين دورة المياه."]),
         order(["Put the words in order: where is the metro station?", "رتّب الكلمات: أين محطة المترو؟"], ["地铁站", "在", "哪儿"], "Dìtiě zhàn zài nǎr?", ["Where is the metro station?", "أين محطة المترو؟"]),
       ],
     }),
@@ -222,7 +222,7 @@ export const MOVE_UNIT3: Unit = {
       use: [
         listen("上午十点的。", "Shàngwǔ shí diǎn de.", ["Listen. Which train?", "استمع. أي قطار؟"], [["10 am", "10 صباحاً"], ["10 pm", "10 مساءً"], ["2 pm", "2 بعد الظهر"]], ["上午 is the morning, before noon.", "上午 تعني الصباح، قبل الظهر."]),
         pickZh(["You need two tickets. What do you say?", "تحتاج إلى تذكرتين. ماذا تقول؟"], [{ zh: "两张票", pinyin: "liǎng zhāng piào" }, { zh: "二张票", pinyin: "èr zhāng piào" }, { zh: "两点", pinyin: "liǎng diǎn" }], ["Before a counting word like 张, two is 两.", "قبل كلمة عدّ مثل 张 نقول 两."]),
-        say("我要一张票", "wǒ yào yì zhāng piào", ["Hua sells tickets today. Ask him for one.", "هوا يبيع التذاكر اليوم. اطلب منه تذكرة."], { hua: { zh: "您好！去哪儿？", pinyin: "Nín hǎo! Qù nǎr?" } }),
+        say("我要一张票", "wǒ yào yì zhāng piào", ["Hua sells tickets today. Ask him for one.", "هُوا يبيع التذاكر اليوم. اطلب منه تذكرة."], { hua: { zh: "您好！去哪儿？", pinyin: "Nín hǎo! Qù nǎr?" } }),
         order(["Put the words in order: I'd like one ticket.", "رتّب الكلمات: أريد تذكرة واحدة."], ["我", "要", "一张", "票"], "Wǒ yào yì zhāng piào.", ["I'd like one ticket.", "أريد تذكرة واحدة."]),
       ],
       canDo: true,
@@ -284,7 +284,7 @@ export const MOVE_UNIT4: Unit = {
       use: [
         pickZh(["You meet Mr Zhang, the general manager. How do you greet him?", "تقابل السيد تشانغ، المدير العام. كيف تحيّيه؟"], [{ zh: "张总，您好！", pinyin: "Zhāng zǒng, nín hǎo!" }, { zh: "小张，你好！", pinyin: "Xiǎo Zhāng, nǐ hǎo!" }, { zh: "张，你好！", pinyin: "Zhāng, nǐ hǎo!" }], ["Surname + 总 with 您好 shows respect. 小张 is for someone younger or junior.", "اسم العائلة + 总 مع 您好 يُظهر الاحترام. أما 小张 فتُقال لمن هو أصغر سنًّا أو أقل منصبًا."]),
         listen("你们公司在哪儿？", "Nǐmen gōngsī zài nǎr?", ["Listen. What are they asking?", "استمع. ماذا يسألون؟"], [["Where is your company?", "أين تقع شركتكم؟"], ["What's your name?", "ما اسمك؟"], ["Is it far?", "هل هو بعيد؟"]], ["你们公司 is your company, 在哪儿 is where.", "你们公司 تعني شركتكم، و在哪儿 تعني أين."]),
-        say("我们公司在迪拜", "wǒmen gōngsī zài Díbài", ["Hua asks where your company is. Tell him.", "هوا يسأل أين تقع شركتك. أخبره."], { hua: { zh: "你们公司在哪儿？", pinyin: "Nǐmen gōngsī zài nǎr?" } }),
+        say("我们公司在迪拜", "wǒmen gōngsī zài Díbài", ["Hua asks where your company is. Tell him.", "هُوا يسأل أين تقع شركتك. أخبره."], { hua: { zh: "你们公司在哪儿？", pinyin: "Nǐmen gōngsī zài nǎr?" } }),
         order(["Put the words in order: our company is in Dubai.", "رتّب الكلمات: شركتنا في دبي."], ["我们", "公司", "在", "迪拜"], "Wǒmen gōngsī zài Díbài.", ["Our company is in Dubai.", "شركتنا في دبي."]),
       ],
     }),
@@ -333,8 +333,8 @@ export const MOVE_UNIT4: Unit = {
       ],
       use: [
         listen("下午三点怎么样？", "Xiàwǔ sān diǎn zěnmeyàng?", ["Listen. What does Manager Li suggest?", "استمع. ماذا يقترح المدير لي؟"], [["3 pm", "الثالثة بعد الظهر"], ["3 am", "الثالثة صباحاً"], ["Tomorrow morning", "صباح الغد"]], ["下午 is the afternoon, 三点 is three o'clock, and 怎么样 suggests it.", "下午 بعد الظهر، و三点 الساعة الثالثة، و怎么样 للاقتراح."]),
-        say("没问题", "méi wèntí", ["Hua suggests a time. Say: no problem.", "هوا يقترح موعدًا. قل: لا مشكلة."], { hua: { zh: "明天上午十点怎么样？", pinyin: "Míngtiān shàngwǔ shí diǎn zěnmeyàng?" } }),
-        say("明天见", "míngtiān jiàn", ["Hua says see you tomorrow. Say it back.", "هوا يقول أراك غدًا. ردّ عليه."], { hua: { zh: "明天见！", pinyin: "Míngtiān jiàn!" } }),
+        say("没问题", "méi wèntí", ["Hua suggests a time. Say: no problem.", "هُوا يقترح موعدًا. قل: لا مشكلة."], { hua: { zh: "明天上午十点怎么样？", pinyin: "Míngtiān shàngwǔ shí diǎn zěnmeyàng?" } }),
+        say("明天见", "míngtiān jiàn", ["Hua says see you tomorrow. Say it back.", "هُوا يقول أراك غدًا. ردّ عليه."], { hua: { zh: "明天见！", pinyin: "Míngtiān jiàn!" } }),
         order(["Put the words in order: do you have time today?", "رتّب الكلمات: هل لديك وقت اليوم؟"], ["今天", "您", "有时间", "吗"], "Jīntiān nín yǒu shíjiān ma?", ["Do you have time today?", "هل لديك وقت اليوم؟"]),
       ],
       canDo: true,
@@ -396,7 +396,7 @@ export const MOVE_UNIT5: Unit = {
       ],
       use: [
         pick(["You see a green sign that says 清真. What does it mean?", "ترى لافتة خضراء مكتوبًا عليها 清真. ماذا تعني؟"], [["Halal", "حلال"], ["Open", "مفتوح"], ["Exit", "مخرج"]], ["清真 is halal. You'll see it on restaurants and food packets.", "清真 تعني حلال، وستراها على المطاعم وعبوات الطعام."]),
-        say("有清真菜吗", "yǒu qīngzhēn cài ma", ["Hua is your waiter. Ask if they have halal dishes.", "هوا هو النادل. اسأله إن كان لديهم أطباق حلال."], { hua: { zh: "您好！这是菜单。", pinyin: "Nín hǎo! Zhè shì càidān." } }),
+        say("有清真菜吗", "yǒu qīngzhēn cài ma", ["Hua is your waiter. Ask if they have halal dishes.", "هُوا هو النادل. اسأله إن كان لديهم أطباق حلال."], { hua: { zh: "您好！这是菜单。", pinyin: "Nín hǎo! Zhè shì càidān." } }),
         listen("牛肉面很好吃。", "Niúròu miàn hěn hǎochī.", ["Listen. What does the waiter recommend?", "استمع. بماذا ينصح النادل؟"], [["Beef noodles", "نودلز باللحم البقري"], ["Chicken rice", "أرز بالدجاج"], ["Lamb soup", "شوربة لحم الضأن"]], ["牛肉 is beef and 面 is noodles.", "牛肉 لحم البقر، و面 النودلز."]),
         order(["Put the words in order: I don't eat pork.", "رتّب الكلمات: لا آكل لحم الخنزير."], ["我", "不", "吃", "猪肉"], "Wǒ bù chī zhūròu.", ["I don't eat pork.", "لا آكل لحم الخنزير."]),
       ],
@@ -436,7 +436,7 @@ export const MOVE_UNIT5: Unit = {
       ],
       use: [
         pickZh(["Manager Li raises his glass: 干杯！ You don't drink alcohol. What's the best reply?", "يرفع المدير لي كأسه: 干杯! أنت لا تشرب الكحول. ما أفضل رد؟"], [{ zh: "我以茶代酒！", pinyin: "Wǒ yǐ chá dài jiǔ!" }, { zh: "太贵了！", pinyin: "Tài guì le!" }, { zh: "我不舒服。", pinyin: "Wǒ bù shūfu." }], ["以茶代酒 lets you join the toast politely with tea.", "以茶代酒 تتيح لك المشاركة في النخب بأدب بكوب شاي."]),
-        say("以茶代酒", "yǐ chá dài jiǔ", ["Hua raises his glass. Join the toast with tea.", "هوا يرفع كأسه. شارك في النخب بالشاي."], { hua: { zh: "来，干杯！", pinyin: "Lái, gānbēi!" } }),
+        say("以茶代酒", "yǐ chá dài jiǔ", ["Hua raises his glass. Join the toast with tea.", "هُوا يرفع كأسه. شارك في النخب بالشاي."], { hua: { zh: "来，干杯！", pinyin: "Lái, gānbēi!" } }),
         pick(["You're toasting Mr Wang, the boss. How do you hold your glass?", "تشرب نخب السيد وانغ، المدير العام. كيف تمسك كأسك؟"], [["A little lower than his", "أخفض قليلًا من كأسه"], ["Higher than his", "أعلى من كأسه"], ["On the table", "على الطاولة"]], ["A lower glass is a small sign of respect.", "الكأس الأخفض علامة احترام صغيرة."]),
         order(["Put the words in order: thank you for your hospitality.", "رتّب الكلمات: شكراً على حسن ضيافتك."], ["谢谢", "您的", "招待"], "Xièxie nín de zhāodài.", ["Thank you for your hospitality.", "شكراً على حسن ضيافتك."]),
       ],
@@ -538,7 +538,7 @@ export const MOVE_UNIT6: Unit = {
       ],
       use: [
         listen("好吧，一个四十块。", "Hǎo ba, yí ge sìshí kuài.", ["Listen. What's the new price?", "استمع. ما السعر الجديد؟"], [["40 yuan each", "40 يوانًا للقطعة"], ["14 yuan each", "14 يوانًا للقطعة"], ["400 yuan each", "400 يوان للقطعة"]], ["四十 is forty: four tens. 十四 would be fourteen.", "四十 تعني أربعين، أي أربع عشرات. أما 十四 فتعني أربعة عشر."]),
-        say("能便宜一点吗", "néng piányi yìdiǎn ma", ["Hua quotes you a price. Ask for a bit less.", "هوا يعطيك سعرًا. اطلب تخفيضًا بسيطًا."], { hua: { zh: "一个五十块。", pinyin: "Yí ge wǔshí kuài." } }),
+        say("能便宜一点吗", "néng piányi yìdiǎn ma", ["Hua quotes you a price. Ask for a bit less.", "هُوا يعطيك سعرًا. اطلب تخفيضًا بسيطًا."], { hua: { zh: "一个五十块。", pinyin: "Yí ge wǔshí kuài." } }),
         pick(["A shop sign says 打八折. What does it mean?", "لافتة متجر تقول 打八折. ماذا تعني؟"], [["20% off", "خصم 20%"], ["80% off", "خصم 80%"], ["8 yuan off", "خصم 8 يوانات"]], ["八折 means you pay eight tenths of the price.", "八折 تعني أنك تدفع ثمانية أعشار السعر."]),
         order(["Put the words in order: can you make it a bit cheaper?", "رتّب الكلمات: هل يمكن أن تخفّض السعر قليلًا؟"], ["能", "便宜", "一点", "吗"], "Néng piányi yìdiǎn ma?", ["Can you make it a bit cheaper?", "هل يمكن أن تخفّض السعر قليلًا؟"]),
       ],
@@ -601,7 +601,7 @@ export const MOVE_UNIT7: Unit = {
       ],
       use: [
         listen("您的电话号码是多少？", "Nín de diànhuà hàomǎ shì duōshao?", ["Listen. What do they want?", "استمع. ماذا يريدون؟"], [["Your phone number", "رقم هاتفك"], ["Your room number", "رقم غرفتك"], ["The price", "السعر"]], ["电话号码 is phone number.", "电话号码 تعني رقم الهاتف."]),
-        say("我扫您", "wǒ sǎo nín", ["Hua shows you his QR code. Say you'll scan it.", "هوا يريك رمز QR الخاص به. قل إنك ستمسحه."], { hua: { zh: "我们加个微信吧！", pinyin: "Wǒmen jiā ge Wēixìn ba!" } }),
+        say("我扫您", "wǒ sǎo nín", ["Hua shows you his QR code. Say you'll scan it.", "هُوا يريك رمز QR الخاص به. قل إنك ستمسحه."], { hua: { zh: "我们加个微信吧！", pinyin: "Wǒmen jiā ge Wēixìn ba!" } }),
         order(["Put the words in order: let's add each other on WeChat.", "رتّب الكلمات: لنضف بعضنا على وي تشات."], ["我们", "加个", "微信", "吧"], "Wǒmen jiā ge Wēixìn ba!", ["Let's add each other on WeChat!", "لنضف بعضنا على وي تشات!"]),
       ],
     }),
@@ -646,7 +646,7 @@ export const MOVE_UNIT7: Unit = {
       use: [
         pick(["You need an ambulance in China. Which number do you call?", "تحتاج إلى سيارة إسعاف في الصين. بأي رقم تتصل؟"], [["120", "120"], ["110", "110"], ["119", "119"]], ["120 is the ambulance. 110 is the police and 119 is fire.", "120 للإسعاف، و110 للشرطة، و119 للإطفاء."]),
         listen("我帮您叫车。", "Wǒ bāng nín jiào chē.", ["Listen. What will the receptionist do?", "استمع. ماذا ستفعل موظفة الاستقبال؟"], [["Call a car for you", "تطلب لك سيارة"], ["Call the police", "تتصل بالشرطة"], ["Give you a room", "تعطيك غرفة"]], ["帮您 is help you, and 叫车 is call a car.", "帮您 تعني أساعدك، و叫车 تعني أطلب سيارة."]),
-        say("附近有医院吗", "fùjìn yǒu yīyuàn ma", ["Hua asks what's wrong. Ask him for a hospital nearby.", "هوا يسأل ما بك. اسأله عن مستشفى قريب."], { hua: { zh: "哪儿不舒服？", pinyin: "Nǎr bù shūfu?" } }),
+        say("附近有医院吗", "fùjìn yǒu yīyuàn ma", ["Hua asks what's wrong. Ask him for a hospital nearby.", "هُوا يسأل ما بك. اسأله عن مستشفى قريب."], { hua: { zh: "哪儿不舒服？", pinyin: "Nǎr bù shūfu?" } }),
       ],
       canDo: true,
     }),
