@@ -70,7 +70,7 @@ def health_check():
     return jsonify({
         "status": "ok",
         "service": "linghua-backend",
-        "pronunciation": "iflytek" if iflytek_ise.enabled() else "whisper",
+        "pronunciation": "iflytek" if iflytek_ise.enabled() else "off (iFlytek keys missing)",
     })
 
 
@@ -192,18 +192,23 @@ def asr():
 @app.route("/pronounce", methods=["POST"])
 @guarded("speech")
 def pronounce():
-    """Combined ASR + pronunciation scoring in a single request.
+    """Score how a learner said a Chinese phrase, with iFlytek.
+
+    iFlytek listens to the recording against the expected Chinese and scores
+    every syllable's sounds and tone. There is no Whisper fallback: if iFlytek
+    is not set up or can't score, the answer is an error and the app asks the
+    learner to try again.
 
     Request:
-        FormData with 'file' (audio), 'expected' (text), optional 'lang'.
+        FormData with 'file' (audio), 'expected' (Chinese text).
 
     Response JSON:
-        { "score": int, "recognized": str, "expected_pinyin": str,
-          "recognized_pinyin": str, "breakdown": {...}, "unclear": null }
-        or, when the recording could not be understood (silence, guessing,
-        known hallucination), no score at all:
-        { "unclear": "no_speech" | "low_confidence" | "hallucination",
+        { "engine": "iflytek", "score": int, "expected_pinyin": str,
+          "segments": [...], "breakdown": {...}, "unclear": null, ... }
+        or, when the recording could not be scored (silence, noise), no score:
+        { "unclear": "no_speech" | "low_confidence",
           "expected_pinyin": str, "expected_arabic": str }
+        Errors: 400 not_chinese, 413 too_long, 503 scoring_unavailable.
     """
     if "file" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -213,33 +218,17 @@ def pronounce():
         return jsonify({"error": "Missing 'expected' field"}), 400
     if len(expected) > 200:
         return jsonify({"error": "too_long"}), 413
-
-    audio_file = request.files["file"]
-    lang = request.form.get("lang", "zh")
+    if not iflytek_ise.clean_text(expected):
+        return jsonify({"error": "not_chinese"}), 400
+    if not iflytek_ise.enabled():
+        logger.error("iFlytek keys are not set: IFLYTEK_APPID / IFLYTEK_API_KEY / IFLYTEK_API_SECRET")
+        return jsonify({"error": "scoring_unavailable"}), 503
 
     try:
-        audio_bytes = audio_file.read()
-        # iFlytek scores the sounds and tones directly. If it is off (no keys)
-        # or fails for any reason, carry on with Whisper below.
-        if lang == "zh" and iflytek_ise.enabled() and iflytek_ise.clean_text(expected):
-            try:
-                return jsonify(iflytek_ise.score(audio_bytes, expected))
-            except Exception as e:  # never let iFlytek break Practice
-                logger.warning("iFlytek unavailable, using Whisper: %s", e)
-        heard = transcribe(audio_bytes, audio_file.filename, lang)
-        if heard.unclear:
-            # Never grade a guess: tell the learner we didn't catch it.
-            return jsonify({
-                "unclear": heard.unclear,
-                "expected_pinyin": get_pinyin_display(expected),
-                "expected_arabic": pinyin_to_arabic(expected),
-            })
-        result = score_pronunciation(expected, heard.text)
-        result["unclear"] = None
-        return jsonify(result)
+        return jsonify(iflytek_ise.score(request.files["file"].read(), expected))
     except Exception as e:
-        traceback.print_exc()
-        return jsonify({"error": f"Pronunciation scoring failed: {str(e)}"}), 500
+        logger.warning("iFlytek could not score: %s", e)
+        return jsonify({"error": "scoring_unavailable"}), 503
 
 
 @app.route("/score", methods=["POST"])

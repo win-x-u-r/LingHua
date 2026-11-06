@@ -194,3 +194,39 @@ def test_iflytek_error_code_raises(monkeypatch):
 def test_too_short_is_no_speech(monkeypatch):
     fake_ws(monkeypatch, FakeSocket([]))
     assert ise.score(tone_wav(0.1), "你好")["unclear"] == "no_speech"
+
+
+def pronounce(client, text="你好"):
+    return client.post("/pronounce", data={"expected": text, "file": (io.BytesIO(tone_wav(1.0)), "a.wav")})
+
+
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    monkeypatch.setenv("RATE_LIMIT_DB", str(tmp_path / "limits.sqlite3"))
+    import app as backend
+    return backend.app.test_client()
+
+
+def test_pronounce_never_falls_back_to_whisper(client, monkeypatch):
+    import app as backend
+    monkeypatch.setattr(backend, "transcribe", lambda *a, **k: pytest.fail("Whisper must not be used"))
+    monkeypatch.setattr(Config, "IFLYTEK_ISE_URL", "wss://127.0.0.1:9/v2/ise")  # unreachable
+    r = pronounce(client)
+    assert r.status_code == 503 and r.json["error"] == "scoring_unavailable"
+
+
+def test_pronounce_without_keys_is_unavailable(client, monkeypatch):
+    monkeypatch.setattr(Config, "IFLYTEK_APPID", "")
+    r = pronounce(client)
+    assert r.status_code == 503
+
+
+def test_pronounce_rejects_non_chinese(client):
+    assert pronounce(client, "hello").status_code == 400
+
+
+def test_pronounce_uses_iflytek(client, monkeypatch):
+    xml = base64.b64encode(RESULT_XML.encode()).decode()
+    fake_ws(monkeypatch, FakeSocket([{"code": 0, "sid": "s", "data": {"status": 2, "data": xml}}]))
+    r = pronounce(client, "你好吗")
+    assert r.status_code == 200 and r.json["engine"] == "iflytek" and r.json["score"] == 78

@@ -8,8 +8,8 @@ so a wrong tone is caught even when the word is recognisable.
 Privacy: the recording is decoded in memory, streamed to iFlytek and dropped.
 Nothing is written to disk and no audio is logged.
 
-Needs in the backend environment (all three, or iFlytek stays off and
-/pronounce keeps using Whisper):
+Needs in the backend environment (all three; without them /pronounce answers
+503 "scoring_unavailable", there is no Whisper fallback):
   IFLYTEK_APPID
   IFLYTEK_API_KEY
   IFLYTEK_API_SECRET
@@ -55,7 +55,7 @@ _PUNCT = re.compile(r"[\s　-〿＀-￯!-/:-@\[-`{-~…—·]")
 
 
 class IflytekError(RuntimeError):
-    """iFlytek could not score this clip; the caller falls back to Whisper."""
+    """iFlytek could not score this clip."""
 
 
 def enabled() -> bool:
