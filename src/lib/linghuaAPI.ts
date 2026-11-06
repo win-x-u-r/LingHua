@@ -1,5 +1,24 @@
+import { supabase } from "@/integrations/supabase/client";
+
 // API Base URL - reads from env var, falls back to localhost for development
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
+/**
+ * The signed-in learner's log-in token, so the server knows who is asking.
+ * The tutor needs it; the other tools work without it (with a smaller
+ * shared allowance for visitors who are not signed in).
+ */
+async function authHeaders(json = true): Promise<Record<string, string>> {
+  const headers: Record<string, string> = json ? { "Content-Type": "application/json" } : {};
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) headers.Authorization = `Bearer ${token}`;
+  } catch {
+    // not signed in, or storage unavailable: send without a token
+  }
+  return headers;
+}
 
 export interface TranslateResponse {
   translatedText: string;
@@ -71,7 +90,7 @@ export async function translateText(
 ): Promise<string> {
   const response = await fetch(`${API_BASE}/translate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await authHeaders(),
     body: JSON.stringify({ text, source, target }),
   });
 
@@ -124,7 +143,7 @@ export async function speakText(text: string, lang: string): Promise<void> {
 
   const response = await fetch(`${API_BASE}/tts`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await authHeaders(),
     body: JSON.stringify({ text, lang }),
   });
 
@@ -181,7 +200,7 @@ export function stopSpeakText(): void {
 export async function speakTutorText(text: string): Promise<void> {
   const response = await fetch(`${API_BASE}/tutor/tts`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await authHeaders(),
     body: JSON.stringify({ text }),
   });
   if (!response.ok) throw new Error(`Tutor TTS failed: ${response.statusText}`);
@@ -246,6 +265,7 @@ export async function pronounceAndScore(
 
   const response = await fetch(`${API_BASE}/pronounce`, {
     method: "POST",
+    headers: await authHeaders(false),
     body: formData,
   });
 
@@ -264,6 +284,7 @@ export async function speechToText(file: File, lang: string = "zh"): Promise<str
 
   const response = await fetch(`${API_BASE}/asr`, {
     method: "POST",
+    headers: await authHeaders(false),
     body: formData,
   });
 
@@ -292,7 +313,7 @@ export async function tutorStream(
 ): Promise<string> {
   const response = await fetch(`${API_BASE}/tutor/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await authHeaders(),
     body: JSON.stringify({ messages }),
   });
 
@@ -340,7 +361,7 @@ export async function tutorStream(
 export async function tutorChat(messages: TutorMessage[]): Promise<string> {
   const response = await fetch(`${API_BASE}/tutor/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await authHeaders(),
     body: JSON.stringify({ messages }),
   });
 

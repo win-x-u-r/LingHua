@@ -35,8 +35,11 @@ from services.asr import transcribe
 from services.scoring import score_pronunciation, get_breakdown, get_pinyin_display, pinyin_to_arabic
 from services.tutor import chat as tutor_chat, chat_stream as tutor_chat_stream
 from services import kids
+from services.access import guarded, clean_tutor_history
 
 app = Flask(__name__)
+# Speech clips are a few seconds long; refuse anything huge before reading it
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 CORS(app, origins=Config.CORS_ORIGINS)
 
 
@@ -67,6 +70,7 @@ def health_check():
 
 
 @app.route("/translate", methods=["POST"])
+@guarded("translate")
 def translate():
     """Translate text between Arabic and Chinese.
 
@@ -86,6 +90,8 @@ def translate():
 
     if not text:
         return jsonify({"translatedText": ""})
+    if len(text) > 1000:
+        return jsonify({"error": "too_long"}), 413
 
     try:
         translated = translate_text(text, source, target)
@@ -96,6 +102,7 @@ def translate():
 
 
 @app.route("/tts", methods=["POST"])
+@guarded("tts")
 def tts():
     """Convert text to speech audio.
 
@@ -114,6 +121,8 @@ def tts():
 
     if not text:
         return jsonify({"error": "Empty text"}), 400
+    if len(text) > 1500:
+        return jsonify({"error": "too_long"}), 413
 
     try:
         audio_bytes = text_to_speech(text, lang)
@@ -145,6 +154,7 @@ def tts():
 
 
 @app.route("/asr", methods=["POST"])
+@guarded("speech")
 def asr():
     """Convert speech audio to text.
 
@@ -175,6 +185,7 @@ def asr():
 
 
 @app.route("/pronounce", methods=["POST"])
+@guarded("speech")
 def pronounce():
     """Combined ASR + pronunciation scoring in a single request.
 
@@ -195,6 +206,8 @@ def pronounce():
     expected = request.form.get("expected", "").strip()
     if not expected:
         return jsonify({"error": "Missing 'expected' field"}), 400
+    if len(expected) > 200:
+        return jsonify({"error": "too_long"}), 413
 
     audio_file = request.files["file"]
     lang = request.form.get("lang", "zh")
@@ -267,51 +280,8 @@ def breakdown():
         return jsonify({"error": f"Breakdown failed: {str(e)}"}), 500
 
 
-@app.route("/tutor/realtime-session", methods=["POST"])
-def tutor_realtime_session():
-    """WebRTC SDP signaling for OpenAI Realtime GA API.
-
-    Accepts a WebRTC SDP offer from the browser, forwards it to OpenAI with
-    the server-side API key, and returns the SDP answer plus session config.
-
-    Request JSON:
-        { "sdp": "<offer SDP string>", "model": str (optional), "voice": str (optional) }
-
-    Response JSON:
-        { "sdp": "<answer SDP string>", "instructions": str }
-    """
-    import requests as http_req
-    from services.tutor import SYSTEM_PROMPT
-
-    if not Config.OPENAI_API_KEY:
-        return jsonify({"error": "OPENAI_API_KEY is not configured"}), 503
-
-    data = request.get_json()
-    if not data or "sdp" not in data:
-        return jsonify({"error": "Missing 'sdp' field"}), 400
-
-    model = data.get("model", "gpt-realtime-2025-08-28")
-    sdp_offer = data["sdp"]
-
-    # voice is NOT a valid query param for the GA API — set it via session.update
-    # after the data channel opens (handled on the frontend)
-    resp = http_req.post(
-        f"https://api.openai.com/v1/realtime?model={model}",
-        headers={
-            "Authorization": f"Bearer {Config.OPENAI_API_KEY}",
-            "Content-Type": "application/sdp",
-        },
-        data=sdp_offer,
-        timeout=30,
-    )
-
-    if not resp.ok:
-        return jsonify({"error": resp.text}), resp.status_code
-
-    return jsonify({"sdp": resp.text, "instructions": SYSTEM_PROMPT})
-
-
 @app.route("/tutor/stream", methods=["POST"])
+@guarded("tutor", login_required=True)
 def tutor_stream():
     """Streaming AI tutor endpoint — returns Server-Sent Events.
 
@@ -326,8 +296,9 @@ def tutor_stream():
     if not data or "messages" not in data:
         return jsonify({"error": "Missing 'messages' field"}), 400
 
-    messages = data["messages"]
-    if not isinstance(messages, list) or not messages:
+    # Only the last few turns, each cut to a sensible length
+    messages = clean_tutor_history(data["messages"])
+    if not messages:
         return jsonify({"error": "'messages' must be a non-empty array"}), 400
 
     if not Config.ANTHROPIC_API_KEY:
@@ -354,6 +325,7 @@ def tutor_stream():
 
 
 @app.route("/tutor/tts", methods=["POST"])
+@guarded("tutor_tts")
 def tutor_tts():
     """Tutor-only TTS via ElevenLabs (custom Hua voice).
 
@@ -374,6 +346,8 @@ def tutor_tts():
     text = data["text"].strip()
     if not text:
         return jsonify({"error": "Empty text"}), 400
+    if len(text) > 3000:
+        return jsonify({"error": "too_long"}), 413
 
     if not Config.ELEVENLABS_API_KEY:
         return jsonify({"error": "ELEVENLABS_API_KEY is not configured"}), 503
@@ -391,6 +365,7 @@ def tutor_tts():
 
 
 @app.route("/tutor/chat", methods=["POST"])
+@guarded("tutor", login_required=True)
 def tutor():
     """AI tutor conversation endpoint powered by Claude.
 
@@ -404,8 +379,9 @@ def tutor():
     if not data or "messages" not in data:
         return jsonify({"error": "Missing 'messages' field"}), 400
 
-    messages = data["messages"]
-    if not isinstance(messages, list) or not messages:
+    # Only the last few turns, each cut to a sensible length
+    messages = clean_tutor_history(data["messages"])
+    if not messages:
         return jsonify({"error": "'messages' must be a non-empty array"}), 400
 
     if not Config.ANTHROPIC_API_KEY:

@@ -75,7 +75,7 @@ class Config:
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
     # ────────────────────────────────────────────────────────────────
-    # OpenAI — Realtime voice conversation + Whisper STT
+    # OpenAI — Whisper speech recognition
     # ────────────────────────────────────────────────────────────────
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
