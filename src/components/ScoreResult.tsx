@@ -15,12 +15,23 @@ const ScoreResult = ({ result, earnedXp, compact = true }: ScoreResultProps) => 
   const { t } = useLanguage();
 
   // One concrete next step: the first sound that went wrong, in Hua's words.
-  // Only servers that send heard_pinyin can say what was heard; older ones get no tip.
+  // Whisper scoring says what it heard (heard_pinyin). iFlytek scoring says what
+  // kind of slip it was (sound or tone) instead. Older servers send neither: no tip.
+  const iflytek = result.engine === "iflytek";
   const slip = result.segments?.find(
-    (seg) => seg.heard_pinyin !== undefined && (!seg.pinyin_correct || !seg.tone_correct),
+    (seg) => (seg.heard_pinyin !== undefined || iflytek) && (!seg.pinyin_correct || !seg.tone_correct),
   );
-  const tip = slip
-    ? (slip.heard_pinyin ? t("hua.tip.heard") : t("hua.tip.missing"))
+  const tipKey = !slip
+    ? null
+    : slip.heard_pinyin === ""
+      ? "hua.tip.missing"
+      : slip.heard_pinyin
+        ? "hua.tip.heard"
+        : slip.pinyin_correct
+          ? "hua.tip.tone"
+          : "hua.tip.sound";
+  const tip = slip && tipKey
+    ? t(tipKey)
         .split(/(\{char\}|\{heard\}|\{target\})/)
         .map((piece, i) =>
           piece === "{char}" ? (

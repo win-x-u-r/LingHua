@@ -497,6 +497,8 @@ const translations: Record<string, Record<Language, string>> = {
   "hua.miss.short": { en: "That was very quick. Say the whole phrase, then tap Stop.", ar: "كان ذلك سريعًا جدًا. انطق العبارة كاملة، ثم اضغط إيقاف." },
   "hua.miss.unclear": { en: "I didn't quite catch that. Try again, a little slower.", ar: "لم أفهم ذلك جيدًا. حاول مرة أخرى ببطء أكثر." },
   "hua.tip.heard": { en: "For {char} I heard {heard}. Aim for {target}.", ar: "في {char} سمعت {heard}. حاول أن تقول {target}." },
+  "hua.tip.tone": { en: "For {char} the sound was right, but the tone was off. Aim for {target}.", ar: "في {char} كان الصوت صحيحًا، لكنّ النغمة لم تكن دقيقة. حاول أن تقول {target}." },
+  "hua.tip.sound": { en: "For {char} the sound wasn't quite right. Aim for {target}.", ar: "في {char} لم يكن الصوت دقيقًا تمامًا. حاول أن تقول {target}." },
   "hua.tip.missing": { en: "I didn't hear {char} ({target}). Try it again.", ar: "لم أسمع {char} ({target}). جرّبها مرة أخرى." },
   "translator.miss.title": { en: "Hua didn't catch that", ar: "لم يفهم هُوا ذلك" },
   "flashcards.finish": { en: "Finish", ar: "إنهاء" },

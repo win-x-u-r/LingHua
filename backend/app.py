@@ -32,6 +32,7 @@ from config import Config
 from services.translation import translate_text
 from services.tts import text_to_speech, text_to_speech_tutor
 from services.asr import transcribe
+from services import iflytek_ise
 from services.scoring import score_pronunciation, get_breakdown, get_pinyin_display, pinyin_to_arabic
 from services.tutor import chat as tutor_chat, chat_stream as tutor_chat_stream
 from services import kids
@@ -66,7 +67,11 @@ def _log_request_out(response):
 @app.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint."""
-    return jsonify({"status": "ok", "service": "linghua-backend"})
+    return jsonify({
+        "status": "ok",
+        "service": "linghua-backend",
+        "pronunciation": "iflytek" if iflytek_ise.enabled() else "whisper",
+    })
 
 
 @app.route("/translate", methods=["POST"])
@@ -214,6 +219,13 @@ def pronounce():
 
     try:
         audio_bytes = audio_file.read()
+        # iFlytek scores the sounds and tones directly. If it is off (no keys)
+        # or fails for any reason, carry on with Whisper below.
+        if lang == "zh" and iflytek_ise.enabled() and iflytek_ise.clean_text(expected):
+            try:
+                return jsonify(iflytek_ise.score(audio_bytes, expected))
+            except Exception as e:  # never let iFlytek break Practice
+                logger.warning("iFlytek unavailable, using Whisper: %s", e)
         heard = transcribe(audio_bytes, audio_file.filename, lang)
         if heard.unclear:
             # Never grade a guess: tell the learner we didn't catch it.
