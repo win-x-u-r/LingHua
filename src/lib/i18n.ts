@@ -680,9 +680,6 @@ const translations: Record<string, Record<Language, string>> = {
   "pwa.ios_step2": { en: "Scroll down and tap 'Add to Home Screen'.", ar: ".مرّر للأسفل واضغط على 'أضف إلى الشاشة الرئيسية'" },
   "pwa.ios_step3": { en: "Tap 'Add' in the top right to finish.", ar: ".اضغط على 'إضافة' في الأعلى يمين لإنهاء التثبيت" },
   "pwa.got_it": { en: "Got it", ar: "فهمت" },
-  "update.ready": { en: "New update ready", ar: "تحديث جديد جاهز" },
-  "update.refresh": { en: "Refresh", ar: "حدّث" },
-  "update.later": { en: "Later", ar: "لاحقًا" },
 
   // Common
   "common.recording": { en: "Recording", ar: "جارٍ التسجيل" },
