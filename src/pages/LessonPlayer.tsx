@@ -122,7 +122,7 @@ const LessonPlayer = () => {
 
   const renderActivity = (a: Activity) => {
     switch (a.kind) {
-      case "scene": return <SceneActivity activity={a} onReady={onReady} />;
+      case "scene": return <SceneActivity activity={a} onReady={onReady} lessonKey={lesson.key} />;
       case "word": return <WordActivity activity={a} onReady={onReady} />;
       case "note": return <NoteActivity activity={a} onReady={onReady} />;
       case "tones": return <TonesActivity activity={a} onReady={onReady} />;

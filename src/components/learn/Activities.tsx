@@ -6,7 +6,7 @@ import Lantern, { type LanternMood } from "@/components/lantern/Lantern";
 import ScoreResult from "@/components/ScoreResult";
 import { TickMark, CrossMark } from "@/components/grammar/GrammarIcons";
 import ToneLine from "@/components/learn/ToneLine";
-import { playHua, playZh } from "@/components/learn/audio";
+import { playHua, playSceneLine, playZh } from "@/components/learn/audio";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone, recordingFile } from "@/hooks/use-microphone";
@@ -109,7 +109,7 @@ const speakerTone: Record<SceneLine["who"], string> = {
   teacher: "bg-primary text-primary-foreground",
 };
 
-export const SceneActivity = ({ activity, onReady }: ActivityProps<"scene">) => {
+export const SceneActivity = ({ activity, onReady, lessonKey }: ActivityProps<"scene"> & { lessonKey: string }) => {
   const { t } = useLanguage();
   const tx = useText();
   const { toast } = useToast();
@@ -125,7 +125,7 @@ export const SceneActivity = ({ activity, onReady }: ActivityProps<"scene">) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const playLine = (l: SceneLine) => (l.who === "hua" ? playHua(l.zh) : playZh(l.zh));
+  const playLine = (l: SceneLine) => playSceneLine(lessonKey, activity.lines.indexOf(l), l);
 
   const playAll = async () => {
     stop.current = false;

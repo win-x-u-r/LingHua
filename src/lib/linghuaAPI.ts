@@ -160,6 +160,23 @@ export async function speakText(text: string, lang: string): Promise<void> {
   });
 }
 
+/** Play a recorded sound file (e.g. a scene line). Stopped by stopSpeakText(). */
+export function playAudioUrl(url: string): Promise<void> {
+  if (_currentAudio) {
+    _currentAudio.pause();
+    _currentAudio = null;
+  }
+  if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+  return new Promise<void>((resolve, reject) => {
+    const audio = new Audio(url);
+    audio.volume = 1.0;
+    _currentAudio = audio;
+    audio.onended = () => { _currentAudio = null; resolve(); };
+    audio.onerror = () => { _currentAudio = null; reject(new Error("Audio playback failed")); };
+    audio.play().catch((e) => { _currentAudio = null; reject(e); });
+  });
+}
+
 /**
  * Stop any currently playing TTS (both Huawei audio and browser speech synthesis).
  */

@@ -86,9 +86,21 @@ export default defineConfig(({ mode }) => ({
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/api\//,                 // backend (proxied at /api/ in prod)
-          /\.(?:woff2?|png|jpg|svg)$/, // direct asset URLs
+          /\.(?:woff2?|png|jpg|svg|mp3)$/, // direct asset URLs
         ],
         runtimeCaching: [
+          {
+            // Recorded scene voices: fetched the first time a scene plays, then
+            // kept (file names change whenever a recording does)
+            urlPattern: /\/assets\/.*\.mp3$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "scene-voices",
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+              rangeRequests: true,
+            },
+          },
           {
             // Google Fonts CSS — stale-while-revalidate
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
