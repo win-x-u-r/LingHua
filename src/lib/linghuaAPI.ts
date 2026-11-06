@@ -66,6 +66,8 @@ export function isUnclear(r: ScoreResponse | UnclearResponse): r is UnclearRespo
 
 export interface ScoreResponse {
   unclear?: null;
+  /** "iflytek" when iFlytek scored the sounds and tones directly; absent for Whisper. */
+  engine?: "iflytek";
   score: number;
   recognized: string;
   expected_pinyin: string;

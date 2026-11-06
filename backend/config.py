@@ -82,6 +82,13 @@ class Config:
     # ────────────────────────────────────────────────────────────────
     # ElevenLabs — AI Voice TTS
     # ────────────────────────────────────────────────────────────────
+    # iFlytek Global pronunciation assessment (services/iflytek_ise.py).
+    # Leave empty to keep scoring with Whisper.
+    IFLYTEK_APPID = os.getenv("IFLYTEK_APPID", "")
+    IFLYTEK_API_KEY = os.getenv("IFLYTEK_API_KEY", "")
+    IFLYTEK_API_SECRET = os.getenv("IFLYTEK_API_SECRET", "")
+    IFLYTEK_ISE_URL = os.getenv("IFLYTEK_ISE_URL", "wss://ise-api-sg.xf-yun.com/v2/ise")
+
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
     # Multilingual v2 voice — warm, natural, great Chinese pronunciation
     ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "9BWtsMINqrJLrRacOk9x")  # Aria
