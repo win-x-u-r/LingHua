@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import UpdateReady from "@/components/UpdateReady";
 import InstallPWA from "./components/InstallPWA";
 import HuaReminder from "./components/HuaReminder";
 import { useLearningTimer } from "./hooks/use-learning-timer";
@@ -86,6 +87,7 @@ const AppRoutes = () => {
     <Footer />
     <InstallPWA />
     <HuaReminder />
+    <UpdateReady />
   </div>
   );
 };

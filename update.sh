@@ -2,7 +2,8 @@
 #
 # Ling Hua - quick update for a server already set up with deploy.sh.
 # Pulls the latest master, updates Python and Node packages, rebuilds the
-# website and restarts the backend. Does not touch nginx, SSL or the firewall.
+# website and restarts the backend. Keeps nginx's cache rules up to date
+# (nginx-cache.conf); does not touch SSL or the firewall.
 #
 # Usage (run from the install folder):
 #   sudo bash update.sh <domain>
@@ -61,10 +62,40 @@ cd "$INSTALL_DIR"
 sed -i "s|^VITE_API_BASE=.*|VITE_API_BASE=\"https://${DOMAIN}/api\"|" "$INSTALL_DIR/.env"
 npm install --include=dev --legacy-peer-deps --no-audit --no-fund
 npm run build
-mkdir -p "$WEB_ROOT"
-rm -rf "${WEB_ROOT:?}"/*
+mkdir -p "$WEB_ROOT/assets"
+# Replace everything except assets/. Old hashed files in assets/ stay for a week,
+# so a page that is still open from the last release can finish loading its parts.
+find "${WEB_ROOT:?}" -mindepth 1 -maxdepth 1 ! -name assets -exec rm -rf {} +
+find "$WEB_ROOT/assets" -type f -mtime +7 -delete
 cp -r "$INSTALL_DIR/dist/." "$WEB_ROOT/"
 chown -R www-data:www-data "$WEB_ROOT"
+
+log "Updating nginx cache rules..."
+SITE_CONF="/etc/nginx/sites-available/linghua"
+SNIPPET="/etc/nginx/snippets/linghua-cache.conf"
+install -D -m 644 "$INSTALL_DIR/nginx-cache.conf" "$SNIPPET"
+if [[ -f "$SITE_CONF" ]] && ! grep -q "linghua-cache.conf" "$SITE_CONF"; then
+  # One-time switch from the old rule that cached every JS file (the service
+  # worker too) for 30 days, which kept people on old versions.
+  cp "$SITE_CONF" "$SITE_CONF.bak-$(date +%Y%m%d%H%M%S)"
+  perl -0pi -e 's![ \t]*# Cache static assets\n[ \t]*location ~\* \\\.\(js\|css\|png\|jpg\|jpeg\|gif\|svg\|woff\|woff2\)\$ \{[^}]*\}\n!    include /etc/nginx/snippets/linghua-cache.conf;\n!g' "$SITE_CONF"
+  grep -q "linghua-cache.conf" "$SITE_CONF" || \
+    echo "WARNING: could not find the old cache rule in $SITE_CONF. Add this line inside each server { } block that serves the site, then run: sudo nginx -t && sudo systemctl reload nginx
+    include /etc/nginx/snippets/linghua-cache.conf;" >&2
+elif [[ ! -f "$SITE_CONF" ]]; then
+  echo "WARNING: $SITE_CONF not found. Add 'include $SNIPPET;' to the nginx site for ${DOMAIN}." >&2
+fi
+if nginx -t 2>/dev/null; then
+  systemctl reload nginx
+else
+  nginx -t || true
+  LATEST_BAK="$(ls -t "$SITE_CONF".bak-* 2>/dev/null | head -1 || true)"
+  if [[ -n "$LATEST_BAK" ]]; then
+    echo "nginx did not accept the new cache rules; putting back $LATEST_BAK" >&2
+    cp "$LATEST_BAK" "$SITE_CONF"
+    nginx -t && systemctl reload nginx
+  fi
+fi
 
 sleep 10
 if systemctl is-active --quiet "$SERVICE_NAME"; then

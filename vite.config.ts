@@ -5,6 +5,8 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 
+const BUILD_STAMP = Date.now().toString(36);
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -20,7 +22,10 @@ export default defineConfig(({ mode }) => ({
     basicSsl(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt": a new version waits until LingHua applies it (see UpdateReady.tsx),
+      // so an open lesson is never swapped out underneath someone.
+      registerType: "prompt",
+      injectRegister: false,
       includeAssets: [
         "favicon.ico",
         "favicon-192.png",
@@ -76,7 +81,8 @@ export default defineConfig(({ mode }) => ({
         // strategies. Never cache the backend API or Supabase responses.
         globPatterns: ["**/*.{js,css,html,png,jpg,jpeg,svg,woff,woff2,ico}"],
         // Opens LingHua when someone taps one of Hua's reminders
-        importScripts: ["/hua-sw.js"],
+        // The build stamp makes every release fetch a fresh copy, never a cached one.
+        importScripts: [`/hua-sw.js?v=${BUILD_STAMP}`],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/api\//,                 // backend (proxied at /api/ in prod)

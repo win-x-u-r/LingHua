@@ -267,6 +267,7 @@ chown -R www-data:www-data "$WEB_ROOT"
 #  Step 5 — nginx configuration
 # ─────────────────────────────────────────────
 log "Configuring nginx..."
+install -D -m 644 "$INSTALL_DIR/nginx-cache.conf" /etc/nginx/snippets/linghua-cache.conf
 cat > /etc/nginx/sites-available/linghua <<EOF
 server {
     listen 80;
@@ -296,11 +297,9 @@ server {
         proxy_send_timeout 90s;
     }
 
-    # Cache static assets
-    location ~* \.(js|css|png|jpg|jpeg|gif|svg|woff|woff2)$ {
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
+    # Cache rules (no-cache for the page and service worker, long cache for
+    # hashed files). Kept in the repo as nginx-cache.conf.
+    include /etc/nginx/snippets/linghua-cache.conf;
 
     # Gzip
     gzip on;
